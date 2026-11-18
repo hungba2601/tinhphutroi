@@ -4595,18 +4595,18 @@ function initialSetup() {
         btnAdmin.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
 
         roleBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200";
-        roleDesc.textContent = "Đăng nhập phân hệ Giáo Viên (kể cả Ban Giám Hiệu)";
-        submitText.textContent = "Đăng Nhập Giáo Viên";
+        roleDesc.textContent = "Đăng nhập phân hệ Giáo Viên & Ban Giám Hiệu (BGH)";
+        submitText.textContent = "Đăng Nhập Giáo Viên / BGH";
         usernameInput.placeholder = "Nhập tài khoản giáo viên hoặc BGH (SĐT)...";
         setTimeout(updateLoginSchoolHint, 50);
       } else {
-        // Quản trị: Chỉ dành cho Admin tối cao của trường
+        // Quản trị: Dành cho Quản trị viên của trường
         if (schoolGroup) schoolGroup.classList.add('hidden');
         btnAdmin.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-slate-900 text-white shadow-md shadow-slate-900/20";
         btnGv.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
 
         roleBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-900 border border-purple-200";
-        roleDesc.textContent = "Đăng nhập phân hệ Quản Trị (Chỉ tài khoản Admin)";
+        roleDesc.textContent = "Đăng nhập phân hệ Quản Trị Viên (Admin)";
         submitText.textContent = "Đăng Nhập Quản Trị";
         usernameInput.placeholder = "Nhập tài khoản quản trị (VD: admin...)";
       }
@@ -4741,31 +4741,25 @@ function initialSetup() {
         }
 
         const user = loginResult.user;
+        const userIsAdmin = isRoleAdmin(user.quyen);
         const userIsSuperAdmin = isSuperAdmin(user.quyen);
         const userIsBgh = isRoleBgh(user.quyen);
 
         // KIỂM TRA PHÂN HỆ ĐĂNG NHẬP:
-        // 1. Nếu đang ở tab Quản Trị mà không phải là Admin -> CHẶN (BGH cũng không vào tab Quản Trị)
-        if (currentLoginRole === 'admin' && !userIsSuperAdmin) {
-          if (userIsBgh) {
-            throw new Error("Tài khoản Ban Giám Hiệu (BGH) vui lòng bấm chọn tab 'Giáo Viên' ở trên để đăng nhập và kê khai sổ tiết!");
-          }
-          throw new Error("Tài khoản của Thầy/Cô không có quyền Quản trị! Chỉ tài khoản Admin mới vào được cổng Quản trị. Vui lòng chọn tab 'Giáo Viên' để đăng nhập.");
-        }
-
-        // 2. Nếu đang ở tab Giáo Viên mà là tài khoản Quản trị Admin -> NHẮC CHUYỂN TAB QUẢN TRỊ
-        if (currentLoginRole === 'gv' && userIsSuperAdmin) {
-          throw new Error("Đây là tài khoản Quản trị viên (Admin). Vui lòng bấm chọn tab 'Quản Trị' ở trên để đăng nhập đúng phân hệ!");
+        // Nếu đang ở tab Quản Trị mà không có quyền Quản trị (không phải Admin và không phải BGH) -> CHẶN
+        if (currentLoginRole === 'admin' && !userIsAdmin) {
+          throw new Error("Tài khoản của Thầy/Cô không có quyền Quản trị! Vui lòng chọn tab 'Giáo Viên' để đăng nhập.");
         }
 
         // Lưu thông tin người dùng (chuẩn hóa tài khoản luôn có số 0 ở đầu nếu là SĐT)
+        // Nếu tài khoản có quyền Admin hoặc BGH thì isLoggedInAsAdmin luôn là TRUE để vào cổng quản trị/giám sát
         currentUser = {
           taiKhoan: normalizeUsername(user.taiKhoan),
           tenGv: user.tenGv,
           ngaySinh: user.ngaySinh || "",
           quyen: user.quyen || (userIsSuperAdmin ? "admin" : (userIsBgh ? "bgh" : "gv")),
           subject: "Toán",
-          isLoggedInAsAdmin: (currentLoginRole === 'admin' && userIsSuperAdmin)
+          isLoggedInAsAdmin: userIsAdmin
         };
 
         // Khởi tạo dataStore cá nhân
@@ -4961,9 +4955,13 @@ function initialSetup() {
 
       const btnBackAdmin = document.getElementById('btn-switch-back-admin');
       if (btnBackAdmin) {
-        // Chỉ tài khoản Quản trị viên (Admin) mới có nút quay về cổng Quản trị
-        if (isSuperAdmin(currentUser.quyen)) {
+        // Cả Quản trị viên (Admin) và Ban Giám Hiệu (BGH) đều có nút quay về Cổng Quản trị / BGH
+        if (isRoleAdmin(currentUser.quyen)) {
           btnBackAdmin.classList.remove('hidden');
+          const spanText = btnBackAdmin.querySelector('span');
+          if (spanText) {
+            spanText.textContent = isRoleBgh(currentUser.quyen) ? "Về Bảng BGH" : "Về Quản Trị";
+          }
         } else {
           btnBackAdmin.classList.add('hidden');
         }
@@ -5046,8 +5044,8 @@ function initialSetup() {
     }
 
     function showAdminPortal() {
-      // Chỉ tài khoản Quản trị viên (Admin) mới được vào phân hệ Quản Trị
-      if (!currentUser || !isSuperAdmin(currentUser.quyen)) {
+      // Cho phép cả Quản trị viên (Admin) và Ban Giám Hiệu (BGH) vào Cổng Quản trị / BGH
+      if (!currentUser || !isRoleAdmin(currentUser.quyen)) {
         showTeacherPortal();
         return;
       }
@@ -5068,39 +5066,57 @@ function initialSetup() {
         }
       }
 
-      // ⭐️ KIỂM TRA LẦN ĐẦU ĐĂNG NHẬP CỦA TÀI KHOẢN ADMIN TRƯỜNG KHÁC (CHƯA CÓ URL RIÊNG)
-      const adminHeaderSchoolName = document.getElementById('admin-header-school-name');
-      const isCentralAdmin = (currentUser.taiKhoan || "").toLowerCase() === 'admin';
-      const configuredSchool = getAdminConfiguredSchool(currentUser.taiKhoan);
-
-      if (!isCentralAdmin && !configuredSchool) {
-        // Tài khoản admin trường khác lần đầu đăng nhập: Hiển thị thông báo yêu cầu cài đặt URL
-        if (adminHeaderSchoolName) {
-          adminHeaderSchoolName.textContent = `${currentUser.tenGv || currentUser.taiKhoan} | Chưa cấu hình Backend riêng`;
+      // Ẩn Tab 4 (Cấu Hình Backend) đối với quyền BGH (chỉ Admin tối cao của trường mới cấu hình backend)
+      const btnTabBackend = document.getElementById('btn-admin-subtab-backend');
+      if (btnTabBackend) {
+        if (isSuperAdmin(currentUser.quyen)) {
+          btnTabBackend.classList.remove('hidden');
+        } else {
+          btnTabBackend.classList.add('hidden');
         }
-        adminTeachersList = [];
-        renderAdminTeachersTable();
-        renderAdminSummaryTable();
-        showAdminSetupBackendModal();
-        return;
       }
 
-      if (configuredSchool) {
-        localStorage.setItem(BACKEND_URL_STORAGE_KEY, configuredSchool.url);
-        localStorage.setItem('backend_url_' + (currentUser.taiKhoan || "").toLowerCase(), configuredSchool.url);
-        localStorage.setItem(SELECTED_SCHOOL_NAME_KEY, configuredSchool.tenTruong);
-        localStorage.setItem('school_name_' + (currentUser.taiKhoan || "").toLowerCase(), configuredSchool.tenTruong);
-        refreshGlobalBackendUrl();
-        if (adminHeaderSchoolName) {
-          adminHeaderSchoolName.textContent = `${configuredSchool.tenTruong} | Quản lý phụ trội toàn trường`;
+      // ⭐️ KIỂM TRA LẦN ĐẦU ĐĂNG NHẬP CỦA TÀI KHOẢN ADMIN TRƯỜNG KHÁC (CHƯA CÓ URL RIÊNG)
+      const adminHeaderSchoolName = document.getElementById('admin-header-school-name');
+      if (isSuperAdmin(currentUser.quyen)) {
+        const isCentralAdmin = (currentUser.taiKhoan || "").toLowerCase() === 'admin';
+        const configuredSchool = getAdminConfiguredSchool(currentUser.taiKhoan);
+
+        if (!isCentralAdmin && !configuredSchool) {
+          // Tài khoản admin trường khác lần đầu đăng nhập: Hiển thị thông báo yêu cầu cài đặt URL
+          if (adminHeaderSchoolName) {
+            adminHeaderSchoolName.textContent = `${currentUser.tenGv || currentUser.taiKhoan} | Chưa cấu hình Backend riêng`;
+          }
+          adminTeachersList = [];
+          renderAdminTeachersTable();
+          renderAdminSummaryTable();
+          showAdminSetupBackendModal();
+          return;
         }
-      } else if (isCentralAdmin) {
-        const centralName = "THCS AN NHƠN ( TRỤ SỞ CHÍNH)";
-        localStorage.setItem(BACKEND_URL_STORAGE_KEY, MASTER_GOOGLE_APPS_SCRIPT_URL);
-        localStorage.setItem(SELECTED_SCHOOL_NAME_KEY, centralName);
-        refreshGlobalBackendUrl();
+
+        if (configuredSchool) {
+          localStorage.setItem(BACKEND_URL_STORAGE_KEY, configuredSchool.url);
+          localStorage.setItem('backend_url_' + (currentUser.taiKhoan || "").toLowerCase(), configuredSchool.url);
+          localStorage.setItem(SELECTED_SCHOOL_NAME_KEY, configuredSchool.tenTruong);
+          localStorage.setItem('school_name_' + (currentUser.taiKhoan || "").toLowerCase(), configuredSchool.tenTruong);
+          refreshGlobalBackendUrl();
+          if (adminHeaderSchoolName) {
+            adminHeaderSchoolName.textContent = `${configuredSchool.tenTruong} | Quản lý phụ trội toàn trường`;
+          }
+        } else if (isCentralAdmin) {
+          const centralName = "THCS AN NHƠN ( TRỤ SỞ CHÍNH)";
+          localStorage.setItem(BACKEND_URL_STORAGE_KEY, MASTER_GOOGLE_APPS_SCRIPT_URL);
+          localStorage.setItem(SELECTED_SCHOOL_NAME_KEY, centralName);
+          refreshGlobalBackendUrl();
+          if (adminHeaderSchoolName) {
+            adminHeaderSchoolName.textContent = `${centralName} | Quản lý phụ trội toàn trường`;
+          }
+        }
+      } else {
+        // Đối với BGH: Hiển thị tên trường đã chọn khi đăng nhập
+        const schoolName = localStorage.getItem(SELECTED_SCHOOL_NAME_KEY) || currentUser.tenGv || "Trường THCS An Nhơn";
         if (adminHeaderSchoolName) {
-          adminHeaderSchoolName.textContent = `${centralName} | Quản lý phụ trội toàn trường`;
+          adminHeaderSchoolName.textContent = `${schoolName} | Cổng Ban Giám Hiệu Giám Sát`;
         }
       }
 
@@ -5111,7 +5127,7 @@ function initialSetup() {
     }
 
     function switchBackToAdminDashboard() {
-      if (!currentUser || !isSuperAdmin(currentUser.quyen)) {
+      if (!currentUser || !isRoleAdmin(currentUser.quyen)) {
         showTeacherPortal();
         return;
       }
@@ -11268,7 +11284,7 @@ function initialSetup() {
             } else if (savedModule === '1') {
               if (savedView === 'teacher') {
                 showTeacherPortal();
-              } else if ((savedView === 'admin' || currentUser.isLoggedInAsAdmin) && isSuperAdmin(currentUser.quyen)) {
+              } else if ((savedView === 'admin' || currentUser.isLoggedInAsAdmin) && isRoleAdmin(currentUser.quyen)) {
                 showAdminPortal();
               } else {
                 showTeacherPortal();
