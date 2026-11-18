@@ -747,10 +747,10 @@
             <div class="flex items-center gap-2 flex-wrap">
               <select id="hn-admin-status-filter" onchange="handleHoaNhapAdminStatusFilterChange(this.value)"
                 class="text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
-                <option value="all">-- Tất cả giáo viên --</option>
-                <option value="has_hn">Chỉ GV có lớp hòa nhập</option>
-                <option value="declared">Đã kê khai hòa nhập</option>
-                <option value="not_declared">Chưa kê khai hòa nhập</option>
+                <option value="all">1. Tất cả GV có HS hòa nhập</option>
+                <option value="declared">2. GV đã kê khai</option>
+                <option value="not_declared">3. GV chưa kê khai</option>
+                <option value="all_school">4. Toàn bộ GV trong trường</option>
               </select>
 
               <button type="button" onclick="reloadHoaNhapData()"
@@ -15477,25 +15477,52 @@ function initialSetup() {
         });
       }
 
-      // Lọc trạng thái
-      if (hoaNhapAdminStatusFilter === 'has_hn') {
-        list = list.filter(t => getTeacherHoaNhapStats(t).hasHnClasses);
-      } else if (hoaNhapAdminStatusFilter === 'declared') {
-        list = list.filter(t => getTeacherHoaNhapStats(t).isDeclared);
+      // Lọc trạng thái:
+      // 1. Tất cả GV: là tất cả GV có HS hòa nhập
+      // 2. GV đã kê khai: là GV có HS hòa nhập đã kê khai
+      // 3. GV chưa kê khai: là GV có HS hòa nhập nhưng chưa kê khai
+      if (hoaNhapAdminStatusFilter === 'declared') {
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return (stats.hasHnClasses || stats.isDeclared) && stats.isDeclared;
+        });
       } else if (hoaNhapAdminStatusFilter === 'not_declared') {
-        list = list.filter(t => !getTeacherHoaNhapStats(t).isDeclared);
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return stats.hasHnClasses && !stats.isDeclared;
+        });
+      } else if (hoaNhapAdminStatusFilter === 'all_school') {
+        // Toàn bộ giáo viên trong trường
+      } else {
+        // Mặc định hoặc 'all' / 'has_hn': Tất cả giáo viên có học sinh hòa nhập
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return stats.hasHnClasses || stats.isDeclared;
+        });
       }
 
+      // Cập nhật badge số lượng giáo viên hòa nhập ở Tab Quản lý GV
+      let baseList = adminTeachersList || [];
+      if (isRoleBgh(currentUser.quyen)) {
+        baseList = baseList.filter(t => !isSuperAdmin(t.quyen));
+      }
+      const hnGvTotal = baseList.filter(t => {
+        const s = getTeacherHoaNhapStats(t);
+        return s.hasHnClasses || s.isDeclared;
+      }).length;
+
       const badgeCount = document.getElementById('hn-badge-admin-teachers-count');
-      if (badgeCount) badgeCount.textContent = (adminTeachersList || []).length;
+      if (badgeCount) badgeCount.textContent = hnGvTotal;
 
       // Cập nhật dòng thông tin thống kê trên tiêu đề bảng
       const statsInfoEl = document.getElementById('hn-admin-teachers-stats-info');
       if (statsInfoEl) {
-        const totalGv = (adminTeachersList || []).length;
-        const hnGv = (adminTeachersList || []).filter(t => getTeacherHoaNhapStats(t).hasHnClasses).length;
-        const declaredGv = (adminTeachersList || []).filter(t => getTeacherHoaNhapStats(t).isDeclared).length;
-        statsInfoEl.textContent = `Hiển thị ${list.length}/${totalGv} giáo viên • ${hnGv} GV có lớp hòa nhập • ${declaredGv} GV đã kê khai`;
+        const declaredGv = baseList.filter(t => {
+          const s = getTeacherHoaNhapStats(t);
+          return (s.hasHnClasses || s.isDeclared) && s.isDeclared;
+        }).length;
+        const notDeclaredGv = hnGvTotal - declaredGv;
+        statsInfoEl.textContent = `Hiển thị ${list.length} GV • Tổng ${hnGvTotal} GV có HS hòa nhập (${declaredGv} đã kê khai, ${notDeclaredGv} chưa kê khai)`;
       }
 
       if (list.length === 0) {
@@ -16470,12 +16497,24 @@ function initialSetup() {
           return name.includes(hoaNhapAdminSearchQuery) || tk.includes(hoaNhapAdminSearchQuery) || mon.includes(hoaNhapAdminSearchQuery) || lop.includes(hoaNhapAdminSearchQuery);
         });
       }
-      if (hoaNhapAdminStatusFilter === 'has_hn') {
-        list = list.filter(t => getTeacherHoaNhapStats(t).hasHnClasses);
-      } else if (hoaNhapAdminStatusFilter === 'declared') {
-        list = list.filter(t => getTeacherHoaNhapStats(t).isDeclared);
+      if (hoaNhapAdminStatusFilter === 'declared') {
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return (stats.hasHnClasses || stats.isDeclared) && stats.isDeclared;
+        });
       } else if (hoaNhapAdminStatusFilter === 'not_declared') {
-        list = list.filter(t => !getTeacherHoaNhapStats(t).isDeclared);
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return stats.hasHnClasses && !stats.isDeclared;
+        });
+      } else if (hoaNhapAdminStatusFilter === 'all_school') {
+        // Toàn bộ giáo viên
+      } else {
+        // Mặc định hoặc 'all': Tất cả GV có HS hòa nhập
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return stats.hasHnClasses || stats.isDeclared;
+        });
       }
 
       if (list.length === 0) {
@@ -16614,12 +16653,24 @@ function initialSetup() {
           return name.includes(hoaNhapAdminSearchQuery) || tk.includes(hoaNhapAdminSearchQuery) || mon.includes(hoaNhapAdminSearchQuery) || lop.includes(hoaNhapAdminSearchQuery);
         });
       }
-      if (hoaNhapAdminStatusFilter === 'has_hn') {
-        list = list.filter(t => getTeacherHoaNhapStats(t).hasHnClasses);
-      } else if (hoaNhapAdminStatusFilter === 'declared') {
-        list = list.filter(t => getTeacherHoaNhapStats(t).isDeclared);
+      if (hoaNhapAdminStatusFilter === 'declared') {
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return (stats.hasHnClasses || stats.isDeclared) && stats.isDeclared;
+        });
       } else if (hoaNhapAdminStatusFilter === 'not_declared') {
-        list = list.filter(t => !getTeacherHoaNhapStats(t).isDeclared);
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return stats.hasHnClasses && !stats.isDeclared;
+        });
+      } else if (hoaNhapAdminStatusFilter === 'all_school') {
+        // Toàn bộ giáo viên
+      } else {
+        // Mặc định hoặc 'all': Tất cả GV có HS hòa nhập
+        list = list.filter(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          return stats.hasHnClasses || stats.isDeclared;
+        });
       }
 
       if (list.length === 0) {
