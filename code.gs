@@ -842,9 +842,9 @@ function handleLogin(taiKhoan, matKhau) {
     }
   }
 
-  // Nếu là tài khoản quản trị, tra cứu trong Sheet HUB_SERVER để biết URL và Tên trường của Admin này
+  // Nếu là tài khoản quản trị (Admin), tra cứu trong Sheet HUB_SERVER để biết URL và Tên trường của Admin này
   let matchedSchool = null;
-  if (isRoleAdmin(foundUser.quyen)) {
+  if (isSuperAdmin(foundUser.quyen)) {
     try {
       const sheetHub = ss.getSheetByName(SHEET_HUB_SERVER);
       if (sheetHub) {

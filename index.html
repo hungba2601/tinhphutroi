@@ -4589,24 +4589,24 @@ function initialSetup() {
       if (errorBox) errorBox.classList.add('hidden');
 
       if (role === 'gv') {
-        // Giáo viên: Hiện hộp chọn trường
+        // Giáo viên & BGH: Hiện hộp chọn trường
         if (schoolGroup) schoolGroup.classList.remove('hidden');
         btnGv.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-md shadow-emerald-600/20";
         btnAdmin.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
 
         roleBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200";
-        roleDesc.textContent = "Đăng nhập phân hệ Giáo Viên";
+        roleDesc.textContent = "Đăng nhập phân hệ Giáo Viên (kể cả Ban Giám Hiệu)";
         submitText.textContent = "Đăng Nhập Giáo Viên";
-        usernameInput.placeholder = "Nhập tài khoản giáo viên (VD: gv_toan...)";
+        usernameInput.placeholder = "Nhập tài khoản giáo viên hoặc BGH (SĐT)...";
         setTimeout(updateLoginSchoolHint, 50);
       } else {
-        // Quản trị: Ẩn hoàn toàn hộp chọn trường theo đúng yêu cầu
+        // Quản trị: Chỉ dành cho Admin tối cao của trường
         if (schoolGroup) schoolGroup.classList.add('hidden');
         btnAdmin.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-slate-900 text-white shadow-md shadow-slate-900/20";
         btnGv.className = "flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900";
 
         roleBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-900 border border-purple-200";
-        roleDesc.textContent = "Đăng nhập phân hệ Quản Trị Viên (BGH)";
+        roleDesc.textContent = "Đăng nhập phân hệ Quản Trị (Chỉ tài khoản Admin)";
         submitText.textContent = "Đăng Nhập Quản Trị";
         usernameInput.placeholder = "Nhập tài khoản quản trị (VD: admin...)";
       }
@@ -4741,17 +4741,21 @@ function initialSetup() {
         }
 
         const user = loginResult.user;
-        const userIsAdmin = isRoleAdmin(user.quyen);
+        const userIsSuperAdmin = isSuperAdmin(user.quyen);
+        const userIsBgh = isRoleBgh(user.quyen);
 
         // KIỂM TRA PHÂN HỆ ĐĂNG NHẬP:
-        // 1. Nếu đang ở tab Quản Trị mà không có quyền admin -> CHẶN
-        if (currentLoginRole === 'admin' && !userIsAdmin) {
-          throw new Error("Tài khoản của Thầy/Cô không có quyền Quản trị! Vui lòng chọn tab 'Giáo Viên' để đăng nhập.");
+        // 1. Nếu đang ở tab Quản Trị mà không phải là Admin -> CHẶN (BGH cũng không vào tab Quản Trị)
+        if (currentLoginRole === 'admin' && !userIsSuperAdmin) {
+          if (userIsBgh) {
+            throw new Error("Tài khoản Ban Giám Hiệu (BGH) vui lòng bấm chọn tab 'Giáo Viên' ở trên để đăng nhập và kê khai sổ tiết!");
+          }
+          throw new Error("Tài khoản của Thầy/Cô không có quyền Quản trị! Chỉ tài khoản Admin mới vào được cổng Quản trị. Vui lòng chọn tab 'Giáo Viên' để đăng nhập.");
         }
 
-        // 2. Nếu đang ở tab Giáo Viên mà là tài khoản admin -> NHẮC CHUYỂN TAB QUẢN TRỊ
-        if (currentLoginRole === 'gv' && userIsAdmin) {
-          throw new Error("Đây là tài khoản Quản trị viên. Vui lòng bấm chọn tab 'Quản Trị' ở trên để đăng nhập đúng phân hệ!");
+        // 2. Nếu đang ở tab Giáo Viên mà là tài khoản Quản trị Admin -> NHẮC CHUYỂN TAB QUẢN TRỊ
+        if (currentLoginRole === 'gv' && userIsSuperAdmin) {
+          throw new Error("Đây là tài khoản Quản trị viên (Admin). Vui lòng bấm chọn tab 'Quản Trị' ở trên để đăng nhập đúng phân hệ!");
         }
 
         // Lưu thông tin người dùng (chuẩn hóa tài khoản luôn có số 0 ở đầu nếu là SĐT)
@@ -4759,9 +4763,9 @@ function initialSetup() {
           taiKhoan: normalizeUsername(user.taiKhoan),
           tenGv: user.tenGv,
           ngaySinh: user.ngaySinh || "",
-          quyen: user.quyen || (userIsAdmin ? "admin" : "gv"),
+          quyen: user.quyen || (userIsSuperAdmin ? "admin" : (userIsBgh ? "bgh" : "gv")),
           subject: "Toán",
-          isLoggedInAsAdmin: (currentLoginRole === 'admin' && userIsAdmin)
+          isLoggedInAsAdmin: (currentLoginRole === 'admin' && userIsSuperAdmin)
         };
 
         // Khởi tạo dataStore cá nhân
@@ -4957,7 +4961,8 @@ function initialSetup() {
 
       const btnBackAdmin = document.getElementById('btn-switch-back-admin');
       if (btnBackAdmin) {
-        if (isRoleAdmin(currentUser.quyen)) {
+        // Chỉ tài khoản Quản trị viên (Admin) mới có nút quay về cổng Quản trị
+        if (isSuperAdmin(currentUser.quyen)) {
           btnBackAdmin.classList.remove('hidden');
         } else {
           btnBackAdmin.classList.add('hidden');
@@ -5041,6 +5046,11 @@ function initialSetup() {
     }
 
     function showAdminPortal() {
+      // Chỉ tài khoản Quản trị viên (Admin) mới được vào phân hệ Quản Trị
+      if (!currentUser || !isSuperAdmin(currentUser.quyen)) {
+        showTeacherPortal();
+        return;
+      }
       sessionStorage.setItem('active_view', 'admin');
       document.getElementById('main-app').classList.add('hidden');
       document.getElementById('admin-portal').classList.remove('hidden');
@@ -5101,6 +5111,10 @@ function initialSetup() {
     }
 
     function switchBackToAdminDashboard() {
+      if (!currentUser || !isSuperAdmin(currentUser.quyen)) {
+        showTeacherPortal();
+        return;
+      }
       sessionStorage.setItem('active_view', 'admin');
       if (Array.isArray(adminTeachersList) && currentUser && currentUser.taiKhoan) {
         const me = adminTeachersList.find(t => isUsernameEqual(t.taiKhoan, currentUser.taiKhoan));
@@ -11254,7 +11268,7 @@ function initialSetup() {
             } else if (savedModule === '1') {
               if (savedView === 'teacher') {
                 showTeacherPortal();
-              } else if (savedView === 'admin' || currentUser.isLoggedInAsAdmin) {
+              } else if ((savedView === 'admin' || currentUser.isLoggedInAsAdmin) && isSuperAdmin(currentUser.quyen)) {
                 showAdminPortal();
               } else {
                 showTeacherPortal();
