@@ -40,9 +40,28 @@
       user-select: auto;
     }
 
+    .pdf-page-portrait {
+      page-break-after: always;
+      page-break-inside: avoid;
+      box-sizing: border-box;
+    }
+    .pdf-page-portrait.pdf-last-page {
+      page-break-after: avoid !important;
+    }
+
     @media print {
       body * {
         visibility: hidden;
+      }
+
+      .pdf-page-portrait {
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .pdf-page-portrait.pdf-last-page {
+        page-break-after: avoid !important;
       }
 
       #print-modal-content,
@@ -15159,6 +15178,7 @@ function initialSetup() {
       const displayClasses = formatTeacherClassesSummary(teacherClasses) || teacherClasses.join(", ") || "Chưa cập nhật";
 
       paper.innerHTML = `
+        <div class="pdf-page-portrait pdf-last-page" style="background: #ffffff; padding: 4px 2px; box-sizing: border-box; page-break-inside: avoid; page-break-after: avoid;">
         <div class="mb-3">
           <!-- Đơn vị chủ quản bên trái -->
           <div class="text-left">
@@ -15239,6 +15259,7 @@ function initialSetup() {
             </div>
           </div>
         </div>
+              </div>
       `;
 
       modal.classList.remove('hidden');
@@ -15277,6 +15298,16 @@ function initialSetup() {
         filename = `Tong_Hop_Tiet_Day_Hoa_Nhap_Toan_Truong_${sem}.pdf`;
       }
 
+      // Xử lý tạm thời container và các trang để khi html2pdf ghép trang hoàn toàn liền mạch, không bị giật trang
+      const originalPadding = paper.style.padding;
+      const pages = paper.querySelectorAll('.pdf-page-portrait');
+      if (pages.length > 0) {
+        paper.style.padding = '0px';
+        pages.forEach(p => {
+          p.style.marginBottom = '0px';
+        });
+      }
+
       const opt = {
         margin: [6, 6, 6, 6],
         filename: filename,
@@ -15290,11 +15321,17 @@ function initialSetup() {
           logging: false
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: 'css' }
       };
 
       if (typeof html2pdf !== 'undefined') {
         html2pdf().set(opt).from(paper).save().then(() => {
+          if (pages.length > 0) {
+            paper.style.padding = originalPadding;
+            pages.forEach((p, idx) => {
+              if (idx < pages.length - 1) p.style.marginBottom = '20px';
+            });
+          }
           if (scrollContainer) scrollContainer.scrollTop = prevScrollTop;
           if (btn) {
             btn.disabled = false;
@@ -15304,6 +15341,12 @@ function initialSetup() {
           if (text) text.textContent = "Tải Tệp PDF";
           showToast("Đã tải tệp PDF thành công!", "success");
         }).catch(err => {
+          if (pages.length > 0) {
+            paper.style.padding = originalPadding;
+            pages.forEach((p, idx) => {
+              if (idx < pages.length - 1) p.style.marginBottom = '20px';
+            });
+          }
           if (scrollContainer) scrollContainer.scrollTop = prevScrollTop;
           if (btn) {
             btn.disabled = false;
@@ -15311,21 +15354,10 @@ function initialSetup() {
           }
           if (icon) icon.className = "fa-solid fa-download";
           if (text) text.textContent = "Tải Tệp PDF";
-          console.error("Lỗi xuất PDF:", err);
           showToast("Lỗi xuất PDF: " + err.message, "error");
         });
-      } else {
-        if (scrollContainer) scrollContainer.scrollTop = prevScrollTop;
-        window.print();
-        if (btn) {
-          btn.disabled = false;
-          btn.classList.remove('cursor-wait', 'opacity-85');
-        }
-        if (icon) icon.className = "fa-solid fa-download";
-        if (text) text.textContent = "Tải Tệp PDF";
       }
     }
-
     function printHoaNhapPaperDirect() {
       window.print();
     }
@@ -16238,6 +16270,49 @@ function initialSetup() {
     }
 
     // Xuất PDF bảng tổng hợp toàn trường
+    // Thuật toán chia trang thông minh cho Báo cáo Tổng hợp Tiết dạy Hòa nhập Toàn trường
+    function paginateHoaNhapSummaryPdf(totalRows) {
+      const pages = [];
+      // Nếu <= 18 dòng: vừa khít trọn vẹn trên đúng 1 trang A4 gồm Tiêu đề + Bảng + Tổng cộng + Chữ ký
+      if (totalRows <= 18) {
+        return [{ pageNum: 1, start: 0, end: totalRows, isFirst: true, isLast: true }];
+      }
+
+      // Từ 19 đến 36 dòng: chia đều làm 2 trang để cả 2 trang đều đầy đặn và cân đối
+      if (totalRows <= 36) {
+        const half = Math.ceil(totalRows / 2);
+        pages.push({ pageNum: 1, start: 0, end: half, isFirst: true, isLast: false });
+        pages.push({ pageNum: 2, start: half, end: totalRows, isFirst: false, isLast: true });
+        return pages;
+      }
+
+      // Khi > 36 dòng:
+      // Trang 1 lấy 22 dòng
+      const p1Take = 22;
+      pages.push({ pageNum: 1, start: 0, end: p1Take, isFirst: true, isLast: false });
+      let cur = p1Take;
+      let p = 2;
+
+      while (cur < totalRows) {
+        const rem = totalRows - cur;
+        if (rem <= 20) {
+          pages.push({ pageNum: p++, start: cur, end: totalRows, isFirst: false, isLast: true });
+          cur = totalRows;
+        } else if (rem <= 40) {
+          const take = Math.ceil(rem / 2);
+          pages.push({ pageNum: p++, start: cur, end: cur + take, isFirst: false, isLast: false });
+          cur += take;
+        } else {
+          pages.push({ pageNum: p++, start: cur, end: cur + 24, isFirst: false, isLast: false });
+          cur += 24;
+        }
+      }
+
+      pages[pages.length - 1].isLast = true;
+      return pages;
+    }
+
+    // Xuất PDF Báo Cáo Tổng Hợp Số Tiết Dạy Hòa Nhập Toàn Trường (Tab 2)
     function exportHoaNhapAdminPdf() {
       const sem = hoaNhapAdminActiveSem;
       currentHoaNhapPdfTeacher = null;
@@ -16258,101 +16333,50 @@ function initialSetup() {
 
       let totalPeriodsPerWeekSchool = 0;
       let totalPeriodsAllSchool = 0;
-
-      let rowsHtml = "";
-      summaryRows.forEach((r, idx) => {
+      summaryRows.forEach(r => {
         totalPeriodsPerWeekSchool += r.tietTuan;
         totalPeriodsAllSchool += r.tongTiet;
-
-        let hsNames = "";
-        let hsKts = "";
-        let hsLevels = "";
-
-        if (Array.isArray(r.students) && r.students.length > 0) {
-          hsNames = r.students.map(s => escapeHtml(s.tenHs || '--')).join('<br>');
-          hsKts = r.students.map(s => escapeHtml(s.dangKhuyetTat || s.loaiHoaNhap || '--')).join('<br>');
-          hsLevels = r.students.map(s => escapeHtml(s.mucDo || 'Nhẹ')).join('<br>');
-        } else {
-          const details = getRowStudentDetails(r);
-          hsNames = details.names.map(name => escapeHtml(name)).join('<br>');
-          hsKts = details.disabilities.map(d => escapeHtml(d)).join('<br>');
-          hsLevels = details.levels.map(lvl => escapeHtml(lvl || 'Nhẹ')).join('<br>');
-        }
-
-        const isNewClassBorder = r.isClassFirstRow && idx > 0 ? "border-t-2 border-slate-500 " : "";
-
-        rowsHtml += `
-          <tr class="${isNewClassBorder}border-b border-slate-300 text-center text-[10px]">
-            <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${idx + 1}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-800 align-middle">${escapeHtml(r.teacherName || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300 align-middle">${escapeHtml(r.monGv || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300 font-black text-indigo-950 align-middle bg-slate-50">${escapeHtml(r.lop || '--')}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left leading-tight align-middle">${hsNames}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left text-[9.5px] leading-tight align-middle">${hsKts}</td>
-            <td class="py-1 px-1 border border-slate-300 align-middle leading-tight">${hsLevels}</td>
-            <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${formatNumber(r.tietTuan)}</td>
-            <td class="py-1 px-1 border border-slate-300 align-middle">${formatNumber(r.soTuan)}</td>
-            <td class="py-1 px-1 border border-slate-300 font-black bg-slate-50 align-middle">${formatNumber(r.tongTiet)}</td>
-          </tr>
-        `;
       });
-
-      if (summaryRows.length === 0) {
-        rowsHtml = `<tr><td colspan="10" class="py-4 text-center text-slate-400 italic">Không có dữ liệu tiết dạy hòa nhập trong kỳ này</td></tr>`;
-      }
 
       if (titleEl) titleEl.textContent = `Báo Cáo Tổng Hợp Số Tiết Dạy Hòa Nhập Toàn Trường - ${semLabel}`;
 
-      paper.innerHTML = `
-        <div class="mb-3">
-          <div class="text-left">
-            <div class="inline-block text-center">
-              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
-              <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
-            </div>
-          </div>
+      const pages = paginateHoaNhapSummaryPdf(summaryRows.length);
+      const totalPages = pages.length;
 
-          <div class="text-center mt-2">
-            <h1 class="text-base sm:text-lg font-black uppercase text-slate-900 leading-tight">
-              BẢNG TỔNG HỢP SỐ TIẾT DẠY HỌC SINH KHUYẾT TẬT HỌC HÒA NHẬP TOÀN TRƯỜNG
-            </h1>
-            <p class="text-xs font-bold text-indigo-800 mt-0.5">${semLabel}</p>
-          </div>
-        </div>
+      // Tiêu đề bảng cố định 10 cột chuẩn khổ dọc A4
+      const tableTheadHtml = `
+        <thead>
+          <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
+            <th style="width: 4.5%;" class="py-1 px-0.5 border border-slate-300 text-center">STT</th>
+            <th style="width: 17%;" class="py-1 px-1 border border-slate-300 text-left">Tên Giáo Viên</th>
+            <th style="width: 9%;" class="py-1 px-0.5 border border-slate-300 text-center">Môn Dạy</th>
+            <th style="width: 7%;" class="py-1 px-0.5 border border-slate-300 font-black text-center">Lớp Dạy</th>
+            <th style="width: 23%;" class="py-1 px-1 border border-slate-300 text-left">Danh Sách Học Sinh Hòa Nhập</th>
+            <th style="width: 17.5%;" class="py-1 px-1 border border-slate-300 text-left">Dạng Khuyết Tật</th>
+            <th style="width: 6%;" class="py-1 px-0.5 border border-slate-300 text-center">Mức Độ</th>
+            <th style="width: 5%;" class="py-1 px-0.5 border border-slate-300 text-center">Tiết/tuần</th>
+            <th style="width: 5%;" class="py-1 px-0.5 border border-slate-300 text-center">Số tuần</th>
+            <th style="width: 6%;" class="py-1 px-0.5 border border-slate-300 bg-slate-200/60 font-black text-center">Tổng tiết</th>
+          </tr>
+        </thead>
+      `;
 
-        <table class="w-full border-collapse border border-slate-400 text-center text-[10px] mb-3">
-          <thead>
-            <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
-              <th class="py-1 px-1 border border-slate-300 w-8">STT</th>
-              <th class="py-1 px-2 border border-slate-300 text-left min-w-[140px]">Tên Giáo Viên</th>
-              <th class="py-1 px-1 border border-slate-300 w-16">Môn Dạy</th>
-              <th class="py-1 px-1 border border-slate-300 w-12 font-black">Lớp Dạy</th>
-              <th class="py-1 px-2 border border-slate-300 text-left min-w-[140px]">Danh Sách Học Sinh Hòa Nhập</th>
-              <th class="py-1 px-2 border border-slate-300 text-left min-w-[130px]">Dạng Khuyết Tật</th>
-              <th class="py-1 px-1 border border-slate-300 w-14">Mức Độ</th>
-              <th class="py-1 px-1 border border-slate-300 w-16">Tiết/tuần</th>
-              <th class="py-1 px-1 border border-slate-300 w-14">Số tuần</th>
-              <th class="py-1 px-1 border border-slate-300 w-16 bg-slate-200/60 font-black">Tổng tiết</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-          <tfoot>
-            <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400">
-              <td colspan="7" class="py-1.5 px-3 text-center uppercase tracking-wider text-[11px]">
-                TỔNG CỘNG TOÀN TRƯỜNG
-              </td>
-              <td class="py-1.5 px-1 border border-slate-300 font-black text-[11px]">${formatNumber(totalPeriodsPerWeekSchool)}</td>
-              <td class="py-1.5 px-1 border border-slate-300 text-slate-400 font-normal italic">--</td>
-              <td class="py-1.5 px-1 border border-slate-300 font-black text-[11px] bg-slate-200">${formatNumber(totalPeriodsAllSchool)}</td>
-            </tr>
-          </tfoot>
-        </table>
+      const tableTfootHtml = `
+        <tfoot>
+          <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400">
+            <td colspan="7" class="py-1.5 px-3 text-center uppercase tracking-wider text-[10px]">
+              TỔNG CỘNG TOÀN TRƯỜNG
+            </td>
+            <td class="py-1.5 px-0.5 border border-slate-300 font-black text-[10px] text-center">${formatNumber(totalPeriodsPerWeekSchool)}</td>
+            <td class="py-1.5 px-0.5 border border-slate-300 text-slate-400 font-normal italic text-center">--</td>
+            <td class="py-1.5 px-0.5 border border-slate-300 font-black text-[10px] bg-slate-200 text-center">${formatNumber(totalPeriodsAllSchool)}</td>
+          </tr>
+        </tfoot>
+      `;
 
-        <div class="mt-4 pt-1">
-          <div class="grid grid-cols-2 gap-4 text-center mt-3 text-xs">
+      const signatureHtml = `
+        <div class="mt-4 pt-1" style="page-break-inside: avoid;">
+          <div class="grid grid-cols-2 gap-4 text-center mt-2 text-xs">
             <div>
               <p class="italic text-[11px] text-slate-600">Ngày ...... tháng ...... năm ${todayYear}</p>
               <p class="font-bold uppercase text-slate-800 mt-1">Phó hiệu trưởng</p>
@@ -16361,16 +16385,107 @@ function initialSetup() {
             <div>
               <p class="italic text-[11px] text-slate-600">Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}</p>
               <p class="font-bold uppercase text-slate-800 mt-1">Người lập biểu</p>
-              <p class="italic text-[11px] text-slate-500 mb-14">(Ký và ghi rõ họ tên)</p>
+              <p class="italic text-[11px] text-slate-500 mb-12">(Ký và ghi rõ họ tên)</p>
               <p class="font-bold text-slate-900">${escapeHtml(currentUser.tenGv || '')}</p>
             </div>
           </div>
         </div>
       `;
 
+      let fullDocHtml = "";
+
+      pages.forEach((pageInfo) => {
+        const pageRows = summaryRows.slice(pageInfo.start, pageInfo.end);
+        let rowsHtml = "";
+
+        pageRows.forEach((r, localIdx) => {
+          const globalIdx = pageInfo.start + localIdx + 1;
+
+          let hsNames = "";
+          let hsKts = "";
+          let hsLevels = "";
+
+          if (Array.isArray(r.students) && r.students.length > 0) {
+            hsNames = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.tenHs || '--')}</div>`).join('');
+            hsKts = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.dangKhuyetTat || s.loaiHoaNhap || '--')}</div>`).join('');
+            hsLevels = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.mucDo || 'Nhẹ')}</div>`).join('');
+          } else {
+            const details = getRowStudentDetails(r);
+            hsNames = details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(name)}</div>`).join('');
+            hsKts = details.disabilities.map((d, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(d)}</div>`).join('');
+            hsLevels = details.levels.map((lvl, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(lvl || 'Nhẹ')}</div>`).join('');
+          }
+
+          const isNewClassBorder = r.isClassFirstRow && localIdx > 0 ? "border-t-2 border-slate-500 " : "";
+
+          rowsHtml += `
+            <tr class="${isNewClassBorder}border-b border-slate-300 text-center text-[9px] leading-tight" style="page-break-inside: avoid;">
+              <td class="py-1 px-0.5 border border-slate-300 font-bold align-middle">${globalIdx}</td>
+              <td class="py-1 px-1 border border-slate-300 text-left font-bold text-slate-800 align-middle truncate">${escapeHtml(r.teacherName || '--')}</td>
+              <td class="py-1 px-0.5 border border-slate-300 align-middle truncate">${escapeHtml(r.monGv || '--')}</td>
+              <td class="py-1 px-0.5 border border-slate-300 font-black text-indigo-950 align-middle bg-slate-50">${escapeHtml(r.lop || '--')}</td>
+              <td class="py-1 px-1 border border-slate-300 text-left leading-tight align-middle">${hsNames}</td>
+              <td class="py-1 px-1 border border-slate-300 text-left text-[8.5px] leading-tight align-middle">${hsKts}</td>
+              <td class="py-1 px-0.5 border border-slate-300 align-middle leading-tight">${hsLevels}</td>
+              <td class="py-1 px-0.5 border border-slate-300 font-bold align-middle">${formatNumber(r.tietTuan)}</td>
+              <td class="py-1 px-0.5 border border-slate-300 align-middle">${formatNumber(r.soTuan)}</td>
+              <td class="py-1 px-0.5 border border-slate-300 font-black bg-slate-50 align-middle">${formatNumber(r.tongTiet)}</td>
+            </tr>
+          `;
+        });
+
+        if (summaryRows.length === 0) {
+          rowsHtml = `<tr><td colspan="10" class="py-4 text-center text-slate-400 italic">Không có dữ liệu tiết dạy hòa nhập trong kỳ này</td></tr>`;
+        }
+
+        const pageHeaderHtml = pageInfo.isFirst ? `
+          <div class="mb-2">
+            <div class="text-left">
+              <div class="inline-block text-center">
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+                <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
+              </div>
+            </div>
+
+            <div class="text-center mt-1">
+              <h1 class="text-sm sm:text-base font-black uppercase text-slate-900 leading-tight">
+                BẢNG TỔNG HỢP SỐ TIẾT DẠY HỌC SINH KHUYẾT TẬT HỌC HÒA NHẬP TOÀN TRƯỜNG
+              </h1>
+              <p class="text-xs font-bold text-indigo-800 mt-0.5">${semLabel}</p>
+            </div>
+          </div>
+        ` : `
+          <div class="mb-2 flex items-center justify-between border-b border-slate-300 pb-1 text-[10px]">
+            <span class="font-bold uppercase text-slate-700">TRƯỜNG THCS AN NHƠN</span>
+            <span class="font-black text-indigo-900 uppercase">BẢNG TỔNG HỢP SỐ TIẾT DẠY HÒA NHẬP TOÀN TRƯỜNG (${semLabel}) - Tiếp theo</span>
+          </div>
+        `;
+
+        fullDocHtml += `
+          <div class="pdf-page-portrait ${pageInfo.isLast ? 'pdf-last-page' : ''}" style="background: #ffffff; padding: 4px 2px; margin-bottom: ${pageInfo.isLast ? '0' : '20px'}; box-sizing: border-box; page-break-inside: avoid; page-break-after: ${pageInfo.isLast ? 'avoid' : 'always'};">
+            ${pageHeaderHtml}
+
+            <table class="w-full border-collapse border border-slate-400 text-center text-[9.5px] mb-2" style="table-layout: fixed; width: 100%;">
+              ${tableTheadHtml}
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+              ${pageInfo.isLast ? tableTfootHtml : ''}
+            </table>
+
+            ${pageInfo.isLast ? signatureHtml : ''}
+
+            <div style="margin-top: 6px; text-align: right; font-size: 8.5px; color: #64748b; font-style: italic;">
+              Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+            </div>
+          </div>
+        `;
+      });
+
+      paper.innerHTML = fullDocHtml;
       modal.classList.remove('hidden');
     }
-    // Xuất PDF Thống kê danh sách giáo viên dạy hòa nhập toàn trường (Khổ ngang A4)
     function exportHoaNhapTeachersStatusPdf() {
       let list = adminTeachersList || [];
       if (isRoleBgh(currentUser.quyen)) {
