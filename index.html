@@ -48,12 +48,15 @@
       #print-modal-content,
       #print-modal-content *,
       #school-print-modal-content,
-      #school-print-modal-content * {
+      #school-print-modal-content *,
+      #teachers-status-print-modal-content,
+      #teachers-status-print-modal-content * {
         visibility: visible;
       }
 
       #print-modal-content,
-      #school-print-modal-content {
+      #school-print-modal-content,
+      #teachers-status-print-modal-content {
         position: absolute;
         left: 0;
         top: 0;
@@ -4091,7 +4094,7 @@ function initialSetup() {
 
       </div>
 
-      <!-- Footer Modal: Chế độ chỉ xem & Nút Đóng -->
+      <!-- Footer Modal: Chế độ chỉ xem, Xuất Phiếu PDF & Nút Đóng -->
       <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 text-xs text-slate-500 font-semibold">
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 font-bold select-none">
@@ -4104,6 +4107,12 @@ function initialSetup() {
         </div>
 
         <div class="flex items-center gap-2">
+          <button type="button" onclick="previewTeacherReportFromAdmin()" id="btn-admin-modal-export-pdf"
+            class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 active:scale-95"
+            title="Xem và xuất phiếu kê khai PDF cho giáo viên này">
+            <i class="fa-solid fa-file-pdf"></i>
+            <span>Xuất Phiếu PDF</span>
+          </button>
           <button type="button" onclick="closeAdminTeacherEditModal()"
             class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 active:scale-95">
             <i class="fa-solid fa-xmark"></i>
@@ -4119,7 +4128,7 @@ function initialSetup() {
        6. MODAL XUẤT VÀ IN BÁO CÁO PDF CÁ NHÂN (HỌC KỲ)
        ======================================================== -->
   <div id="pdf-modal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-2 sm:p-4 hidden">
+    class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-2 sm:p-4 hidden">
     <div
       class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[95vh] flex flex-col border border-emerald-100 overflow-hidden animate-fade-in">
       <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -4129,9 +4138,15 @@ function initialSetup() {
         </h3>
         <div class="flex items-center gap-2">
           <button onclick="downloadPdfNow()"
-            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm">
+            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm active:scale-95">
             <i class="fa-solid fa-download"></i>
             <span>Tải Tệp PDF</span>
+          </button>
+          <button onclick="printTeacherReportDirect()"
+            class="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm active:scale-95"
+            title="In trực tiếp phiếu này ra máy in">
+            <i class="fa-solid fa-print"></i>
+            <span>In Phiếu</span>
           </button>
           <button onclick="closePdfModal()"
             class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-xs">
@@ -12366,19 +12381,26 @@ function initialSetup() {
        L. XUẤT BÁO CÁO PDF CÁ NHÂN (HỌC KỲ)
        ======================================================= */
     let isPreviewingSemesterReport = false;
+    let currentPdfExportTeacher = null;
+    let currentPdfExportSemId = null;
 
-    async function previewSemesterReport() {
+    async function previewSemesterReport(targetTeacher = null, targetSemId = null) {
       if (isPreviewingSemesterReport) return;
       isPreviewingSemesterReport = true;
 
-      const semObj = SEMESTER_CONFIG[activeSemesterId];
+      const activeTeacher = targetTeacher || currentUser;
+      const semId = targetSemId || (targetTeacher ? adminModalActiveSem : activeSemesterId);
+      const semObj = SEMESTER_CONFIG[semId];
       if (!semObj) {
         isPreviewingSemesterReport = false;
         return;
       }
 
+      currentPdfExportTeacher = activeTeacher;
+      currentPdfExportSemId = semId;
+
       // Kích hoạt hiệu ứng đang xử lý trên nút Xem / Xuất Phiếu PDF
-      const previewButtons = document.querySelectorAll('.btn-preview-pdf-action, #btn-preview-pdf-locked, #btn-preview-pdf-synced, [onclick*="previewSemesterReport"]');
+      const previewButtons = document.querySelectorAll('.btn-preview-pdf-action, #btn-preview-pdf-locked, #btn-preview-pdf-synced, #btn-admin-modal-export-pdf, [onclick*="previewSemesterReport"]');
       previewButtons.forEach(btn => {
         btn.disabled = true;
         btn.classList.add('cursor-wait', 'opacity-85');
@@ -12401,195 +12423,257 @@ function initialSetup() {
         const todayMonth = String(printDate.getMonth() + 1).padStart(2, '0');
         const todayYear = printDate.getFullYear();
 
-      // 1. Nếu adminTeachersList chưa có, thử tải nhanh từ Google Sheet DATA
-      if ((!adminTeachersList || adminTeachersList.length === 0) && GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE")) {
-        try {
-          const res = await callGasBackend({ action: "getAdminData", taiKhoan: currentUser.taiKhoan });
-          if (res && res.success && Array.isArray(res.list)) {
-            adminTeachersList = res.list.map(t => {
-              t.taiKhoan = normalizeUsername(t.taiKhoan);
-              return t;
-            });
+        // 1. Nếu adminTeachersList chưa có, thử tải nhanh từ Google Sheet DATA
+        if ((!adminTeachersList || adminTeachersList.length === 0) && GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE")) {
+          try {
+            const res = await callGasBackend({ action: "getAdminData", taiKhoan: currentUser.taiKhoan });
+            if (res && res.success && Array.isArray(res.list)) {
+              adminTeachersList = res.list.map(t => {
+                t.taiKhoan = normalizeUsername(t.taiKhoan);
+                return t;
+              });
+            }
+          } catch (e) {
+            console.warn("Không thể tải danh sách GV trước khi xuất PDF:", e);
           }
-        } catch (e) {
-          console.warn("Không thể tải danh sách GV trước khi xuất PDF:", e);
         }
-      }
 
-      // 2. Luôn ưu tiên lấy Ngày sinh & Tên giáo viên mới nhất từ Sheet DATA (thông qua adminTeachersList)
-      let teacherDisplayName = currentUser.tenGv;
-      let teacherDisplayDob = currentUser.ngaySinh || "Chưa cập nhật";
-
-      if (Array.isArray(adminTeachersList) && adminTeachersList.length > 0 && currentUser && currentUser.taiKhoan) {
-        const me = adminTeachersList.find(t => isUsernameEqual(t.taiKhoan, currentUser.taiKhoan));
-        if (me) {
-          if (me.tenGv) {
-            teacherDisplayName = me.tenGv;
-            currentUser.tenGv = me.tenGv;
+        // 2. Xác định Store dữ liệu của giáo viên đang xuất
+        let activeStore = {};
+        if (targetTeacher) {
+          if (targetTeacher._store) {
+            activeStore = targetTeacher._store;
+          } else if (targetTeacher.dataJson) {
+            try {
+              activeStore = typeof targetTeacher.dataJson === 'string' ? JSON.parse(targetTeacher.dataJson) : targetTeacher.dataJson;
+            } catch (e) {
+              activeStore = {};
+            }
           }
-          if (me.ngaySinh) {
-            teacherDisplayDob = me.ngaySinh;
-            currentUser.ngaySinh = me.ngaySinh;
-          }
-          if (me.quyen) currentUser.quyen = me.quyen;
-          localStorage.setItem(LOCAL_USER_STORAGE_KEY, JSON.stringify(currentUser));
+        } else {
+          activeStore = dataStore || {};
+        }
 
-          // Đồng bộ lại tiêu đề giao diện
-          const nameEl = document.getElementById('display-teacher-name');
-          if (nameEl) nameEl.textContent = currentUser.tenGv;
-          const dobSpan = document.getElementById('display-teacher-dob');
-          if (dobSpan) {
-            if (currentUser.ngaySinh) {
-              dobSpan.textContent = `(NS: ${currentUser.ngaySinh})`;
-              dobSpan.classList.remove('hidden');
-            } else {
-              dobSpan.textContent = '';
-              dobSpan.classList.add('hidden');
+        // 3. Luôn ưu tiên lấy Ngày sinh & Tên giáo viên mới nhất từ Sheet DATA (thông qua adminTeachersList)
+        let teacherDisplayName = activeTeacher.tenGv || "Giáo viên";
+        let teacherDisplayDob = activeTeacher.ngaySinh || "Chưa cập nhật";
+        let teacherSubject = (activeStore && activeStore.subject) ? activeStore.subject : (activeTeacher.subject || activeTeacher.monGv || "Toán");
+
+        if (Array.isArray(adminTeachersList) && adminTeachersList.length > 0 && activeTeacher && activeTeacher.taiKhoan) {
+          const matched = adminTeachersList.find(t => isUsernameEqual(t.taiKhoan, activeTeacher.taiKhoan));
+          if (matched) {
+            if (matched.tenGv) teacherDisplayName = matched.tenGv;
+            if (matched.ngaySinh) teacherDisplayDob = matched.ngaySinh;
+            if (matched.monGv && !activeStore.subject) teacherSubject = matched.monGv;
+            if (activeTeacher === currentUser) {
+              currentUser.tenGv = matched.tenGv;
+              currentUser.ngaySinh = matched.ngaySinh;
+              if (matched.quyen) currentUser.quyen = matched.quyen;
+              localStorage.setItem(LOCAL_USER_STORAGE_KEY, JSON.stringify(currentUser));
+
+              // Đồng bộ lại tiêu đề giao diện
+              const nameEl = document.getElementById('display-teacher-name');
+              if (nameEl) nameEl.textContent = currentUser.tenGv;
+              const dobSpan = document.getElementById('display-teacher-dob');
+              if (dobSpan) {
+                if (currentUser.ngaySinh) {
+                  dobSpan.textContent = `(NS: ${currentUser.ngaySinh})`;
+                  dobSpan.classList.remove('hidden');
+                } else {
+                  dobSpan.textContent = '';
+                  dobSpan.classList.add('hidden');
+                }
+              }
             }
           }
         }
-      }
 
-      const currentQuota = (dataStore && dataStore.quota !== undefined && !isNaN(Number(dataStore.quota)))
-        ? Number(dataStore.quota)
-        : 19;
+        const currentQuota = (activeStore && activeStore.quota !== undefined && !isNaN(Number(activeStore.quota)))
+          ? Number(activeStore.quota)
+          : 19;
 
-      document.getElementById('pdf-modal-title').textContent = `Báo Cáo Thống Kê Tiết Vượt - ${semObj.name}`;
+        // 4. Lấy danh sách lớp mặc định của giáo viên
+        let defaultTeacherClasses = [];
+        if (activeTeacher === currentUser && Array.isArray(currentTeacherSelectedClasses) && currentTeacherSelectedClasses.length > 0) {
+          defaultTeacherClasses = currentTeacherSelectedClasses;
+        } else {
+          const cached = localStorage.getItem(`teacher_classes_${activeTeacher.taiKhoan}`);
+          if (cached) {
+            defaultTeacherClasses = parseTeacherLopDay(cached);
+          } else if (activeTeacher.lopDay) {
+            defaultTeacherClasses = parseTeacherLopDay(activeTeacher.lopDay);
+          }
+        }
+        const sortedDefaultClasses = [...defaultTeacherClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        const displayDefaultClassesStr = sortedDefaultClasses.length > 0 ? sortedDefaultClasses.join(", ") : "Chưa cập nhật";
 
-      let total1 = 0, totalDuty = 0, total2 = 0, total3 = 0, total4 = 0, total5 = 0, total6 = 0, totalQuotaSem = 0;
-      let rowsHtml = "";
+        document.getElementById('pdf-modal-title').textContent = `Báo Cáo Thống Kê Tiết Vượt - ${semObj.name}`;
 
-      const showBdHsg = columnConfig.showBdHsg;
-      const showDayTs10 = columnConfig.showDayTs10;
+        // 5. CƠ CHẾ THÔNG MINH TIẾT KIỆM KHÔNG GIAN TRANG IN:
+        // Cột 3 (Dạy TS10/B2), Cột 4 (BD HSG), Cột 5 (Nghỉ dạy):
+        // Chỉ hiện cột đó nếu giáo viên CÓ DỮ LIỆU (> 0) ở ít nhất 1 tuần trong học kỳ.
+        // Nếu tất cả các tuần đều không có số liệu (bằng 0 hoặc trống), tự động ẩn đi để nhường toàn bộ không gian cho cột "Lớp dạy".
+        const hasCol3Data = (columnConfig.showDayTs10 !== false) && semObj.weeks.some(w => {
+          const d = (activeStore[semObj.id] && activeStore[semObj.id][w.id]) || {};
+          return Number(d.ts10 || 0) > 0;
+        });
 
-      semObj.weeks.forEach((w, idx) => {
-        const d = (dataStore[semObj.id] && dataStore[semObj.id][w.id])
-          ? dataStore[semObj.id][w.id]
-          : { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        const hasCol4Data = (columnConfig.showBdHsg !== false) && semObj.weeks.some(w => {
+          const d = (activeStore[semObj.id] && activeStore[semObj.id][w.id]) || {};
+          return Number(d.bdhsg || 0) > 0;
+        });
 
-        const dutyVal = Number(d.duty || 0);
-        const bdhsgVal = showBdHsg ? Number(d.bdhsg || 0) : 0;
-        const ts10Val = showDayTs10 ? Number(d.ts10 || 0) : 0;
-        const actual = Number(d.assigned || 0) + dutyVal - Number(d.leave || 0) + bdhsgVal + ts10Val;
-        const overtime = actual - currentQuota;
+        const hasCol5Data = semObj.weeks.some(w => {
+          const d = (activeStore[semObj.id] && activeStore[semObj.id][w.id]) || {};
+          return Number(d.leave || 0) > 0;
+        });
 
-        totalQuotaSem += currentQuota;
-        total1 += Number(d.assigned || 0);
-        totalDuty += dutyVal;
-        total2 += Number(d.leave || 0);
-        total3 += bdhsgVal;
-        total4 += ts10Val;
-        total5 += actual;
-        total6 += overtime;
+        let total1 = 0, totalDuty = 0, total2 = 0, total3 = 0, total4 = 0, total5 = 0, total6 = 0, totalQuotaSem = 0;
+        let rowsHtml = "";
 
-        rowsHtml += `
-          <tr class="border-b border-slate-300 text-center">
-            <td class="py-1 px-1 border border-slate-300 font-bold">${w.label}</td>
-            <td class="py-1 px-1 border border-slate-300 font-bold text-slate-700 bg-slate-50/50">${currentQuota}</td>
-            <td class="py-1 px-1 border border-slate-300">${formatNumber(d.assigned)}</td>
-            <td class="py-1 px-1 border border-slate-300">${formatNumber(d.duty)}</td>
-            ${showDayTs10 ? '<td class="py-1 px-1 border border-slate-300">' + formatNumber(d.ts10) + '</td>' : ''}
-            ${showBdHsg ? '<td class="py-1 px-1 border border-slate-300 text-emerald-800 font-semibold">' + formatNumber(d.bdhsg) + '</td>' : ''}
-            <td class="py-1 px-1 border border-slate-300 text-rose-600">${formatNumber(d.leave)}</td>
-            <td class="py-1 px-1 border border-slate-300 font-bold">${formatNumber(actual)}</td>
-            <td class="py-1 px-1 border border-slate-300 font-black ${overtime >= 0 ? 'text-teal-800 bg-teal-50/40' : 'text-rose-600'}">
-              ${(overtime > 0 ? '+' : '') + formatNumber(overtime)}
-            </td>
-          </tr>
-        `;
-      });
+        semObj.weeks.forEach((w) => {
+          const d = (activeStore[semObj.id] && activeStore[semObj.id][w.id])
+            ? activeStore[semObj.id][w.id]
+            : { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
 
-      const template = `
-        <div class="mb-2">
-          <!-- ĐƠN VỊ CHỦ QUẢN & TRƯỜNG Ở GÓC TRÁI -->
-          <div class="text-left">
-            <div class="inline-block text-center">
-              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-800 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
-              <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
+          const dutyVal = Number(d.duty || 0);
+          const bdhsgVal = Number(d.bdhsg || 0);
+          const ts10Val = Number(d.ts10 || 0);
+          const leaveVal = Number(d.leave || 0);
+          const assignedVal = Number(d.assigned || 0);
+
+          const actual = assignedVal + dutyVal - leaveVal + (columnConfig.showBdHsg ? bdhsgVal : 0) + (columnConfig.showDayTs10 ? ts10Val : 0);
+          const overtime = actual - currentQuota;
+
+          totalQuotaSem += currentQuota;
+          total1 += assignedVal;
+          totalDuty += dutyVal;
+          total2 += leaveVal;
+          total3 += bdhsgVal;
+          total4 += ts10Val;
+          total5 += actual;
+          total6 += overtime;
+
+          // Lấy danh sách lớp dạy của từng tuần: ưu tiên lớp riêng tuần đó (nếu đã chỉnh sửa), ngược lại lấy lớp mặc định
+          const hasCustomClasses = (d.classes !== undefined && d.classes !== null && String(d.classes).trim() !== "");
+          const rawWeekClasses = hasCustomClasses
+            ? parseTeacherLopDay(d.classes)
+            : defaultTeacherClasses;
+          const sortedWeekClasses = [...rawWeekClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+          const weekClassesText = sortedWeekClasses.length > 0 ? sortedWeekClasses.join(", ") : "--";
+
+          rowsHtml += `
+            <tr class="border-b border-slate-300 text-center">
+              <td class="py-1 px-1 border border-slate-300 font-bold text-slate-800 whitespace-nowrap">${w.label}</td>
+              <td class="py-1 px-1.5 border border-slate-300 font-medium text-slate-800 text-[9.5px] leading-tight text-center break-words">
+                ${escapeHtml(weekClassesText)}
+              </td>
+              <td class="py-1 px-1 border border-slate-300 font-bold text-slate-700 bg-slate-50/50">${currentQuota}</td>
+              <td class="py-1 px-1 border border-slate-300 font-semibold">${formatNumber(assignedVal)}</td>
+              <td class="py-1 px-1 border border-slate-300">${formatNumber(dutyVal)}</td>
+              ${hasCol3Data ? '<td class="py-1 px-1 border border-slate-300 font-semibold">' + formatNumber(ts10Val) + '</td>' : ''}
+              ${hasCol4Data ? '<td class="py-1 px-1 border border-slate-300 text-emerald-800 font-bold">' + formatNumber(bdhsgVal) + '</td>' : ''}
+              ${hasCol5Data ? '<td class="py-1 px-1 border border-slate-300 text-rose-600 font-semibold">' + formatNumber(leaveVal) + '</td>' : ''}
+              <td class="py-1 px-1 border border-slate-300 font-bold">${formatNumber(actual)}</td>
+              <td class="py-1 px-1 border border-slate-300 font-black ${overtime >= 0 ? 'text-teal-800 bg-teal-50/40' : 'text-rose-600'}">
+                ${(overtime > 0 ? '+' : '') + formatNumber(overtime)}
+              </td>
+            </tr>
+          `;
+        });
+
+        const template = `
+          <div class="mb-2">
+            <!-- ĐƠN VỊ CHỦ QUẢN & TRƯỜNG Ở GÓC TRÁI -->
+            <div class="text-left">
+              <div class="inline-block text-center">
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-800 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+                <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
+              </div>
+            </div>
+
+            <!-- TIÊU ĐỀ PHIẾU CĂN GIỮA -->
+            <div class="text-center mt-1">
+              <h1 class="text-base sm:text-lg font-black uppercase text-slate-900 leading-tight">PHIẾU XÁC NHẬN SỐ TIẾT DẠY VƯỢT ĐỊNH MỨC</h1>
+              <p class="text-xs font-bold text-emerald-800 mt-0.5">BẢNG TỔNG HỢP ${semObj.name.toUpperCase()} (${semObj.totalWeeks} TUẦN THỰC HỌC)</p>
             </div>
           </div>
 
-          <!-- TIÊU ĐỀ PHIẾU CĂN GIỮA -->
-          <div class="text-center mt-1">
-            <h1 class="text-base sm:text-lg font-black uppercase text-slate-900 leading-tight">PHIẾU XÁC NHẬN SỐ TIẾT DẠY VƯỢT ĐỊNH MỨC</h1>
-            <p class="text-xs font-bold text-emerald-800 mt-0.5">BẢNG TỔNG HỢP ${semObj.name.toUpperCase()} (${semObj.totalWeeks} TUẦN THỰC HỌC)</p>
+          <div class="mb-2 bg-slate-50 py-1.5 px-3 rounded-lg border border-slate-200 text-xs">
+            <div class="grid grid-cols-2 gap-x-4 gap-y-0.5">
+              <p><strong>Họ và tên giáo viên:</strong> ${teacherDisplayName}</p>
+              <p><strong>Ngày sinh:</strong> ${teacherDisplayDob}</p>
+              <p><strong>Môn giảng dạy:</strong> ${teacherSubject}</p>
+              <p><strong>Lớp giảng dạy:</strong> ${displayDefaultClassesStr}</p>
+              <p><strong>Định mức quy chuẩn:</strong> ${currentQuota} tiết / tuần</p>
+            </div>
           </div>
-        </div>
 
-        <div class="mb-2 bg-slate-50 py-1.5 px-3 rounded-lg border border-slate-200 text-xs">
-          <div class="grid grid-cols-2 gap-x-4 gap-y-0.5">
-            <p><strong>Họ và tên giáo viên:</strong> ${teacherDisplayName}</p>
-            <p><strong>Ngày sinh:</strong> ${teacherDisplayDob}</p>
-            <p><strong>Môn giảng dạy:</strong> ${currentUser.subject || "Toán"}</p>
-            <p><strong>Lớp giảng dạy:</strong> ${getTeacherSelectedClassesString() || "Chưa cập nhật"}</p>
-            <p><strong>Định mức quy chuẩn:</strong> ${currentQuota} tiết / tuần</p>
+          <table class="w-full border-collapse border border-slate-400 text-center text-[10.5px] mb-2.5">
+            <thead>
+              <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
+                <th class="py-1 px-1 border border-slate-300 w-12 min-w-[44px]">Tuần học</th>
+                <th class="py-1 px-1.5 border border-slate-300 text-center font-bold text-slate-800">Lớp dạy</th>
+                <th class="py-1 px-1 border border-slate-300 bg-slate-50 w-16 min-w-[52px]">Tiết định mức</th>
+                <th class="py-1 px-1 border border-slate-300 w-12 min-w-[46px]">(1) Tiết dạy</th>
+                <th class="py-1 px-1 border border-slate-300 w-12 min-w-[46px]">(2) Kiêm nhiệm</th>
+                ${hasCol3Data ? '<th class="py-1 px-1 border border-slate-300 w-12 min-w-[46px]">(3) Dạy TS10/ B2</th>' : ''}
+                ${hasCol4Data ? '<th class="py-1 px-1 border border-slate-300 w-12 min-w-[46px]">(4) BD HSG</th>' : ''}
+                ${hasCol5Data ? '<th class="py-1 px-1 border border-slate-300 w-12 min-w-[46px]">(5) Nghỉ dạy (tiết)</th>' : ''}
+                <th class="py-1 px-1 border border-slate-300 bg-emerald-50 w-12 min-w-[46px]">(6) Thực dạy</th>
+                <th class="py-1 px-1 border border-slate-300 bg-teal-50 w-12 min-w-[46px]">(7) Tiết vượt</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+            <tfoot>
+              <tr class="bg-emerald-50/80 font-black text-slate-900 border-t-2 border-slate-400">
+                <td colspan="2" class="py-1.5 px-2 border border-slate-300 font-black uppercase text-center">TỔNG CỘNG</td>
+                <td class="py-1.5 px-1 border border-slate-300 font-black text-slate-800">${formatNumber(totalQuotaSem)}</td>
+                <td class="py-1.5 px-1 border border-slate-300">${formatNumber(total1)}</td>
+                <td class="py-1.5 px-1 border border-slate-300">${formatNumber(totalDuty)}</td>
+                ${hasCol3Data ? '<td class="py-1.5 px-1 border border-slate-300 font-black">' + formatNumber(total4) + '</td>' : ''}
+                ${hasCol4Data ? '<td class="py-1.5 px-1 border border-slate-300 font-black">' + formatNumber(total3) + '</td>' : ''}
+                ${hasCol5Data ? '<td class="py-1.5 px-1 border border-slate-300 text-rose-600 font-black">' + formatNumber(total2) + '</td>' : ''}
+                <td class="py-1.5 px-1 border border-slate-300 font-black">${formatNumber(total5)}</td>
+                <td class="py-1.5 px-1 border border-slate-300 font-black text-emerald-950 bg-emerald-100">
+                  ${(total6 > 0 ? '+' : '') + formatNumber(total6)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <!-- PHẦN XÁC NHẬN CUỐI TỜ KHAI THEO MẪU -->
+          <div class="mt-3.5 pt-1 text-left text-xs leading-relaxed text-slate-900 border-t border-slate-200">
+            <p class="font-bold italic text-slate-900 text-xs">Xác nhận:</p>
+            <p class="mt-0.5 text-xs text-slate-800">Giáo viên: <b class="font-bold text-slate-950">${teacherDisplayName}</b></p>
+            <p class="mt-0.5 text-xs text-slate-800">đã dạy vượt số tiết tiêu chuẩn: <b class="font-bold text-slate-950">${formatNumber(Math.max(0, total6))}</b> tiết.</p>
           </div>
-        </div>
 
-        <table class="w-full border-collapse border border-slate-400 text-center text-[11px] mb-2.5">
-          <thead>
-            <tr class="bg-slate-100 font-bold">
-              <th class="py-1 px-1 border border-slate-300">Tuần học</th>
-              <th class="py-1 px-1 border border-slate-300 bg-slate-50">Tiết định mức</th>
-              <th class="py-1 px-1 border border-slate-300">(1) Tiết dạy</th>
-              <th class="py-1 px-1 border border-slate-300">(2) Kiêm nhiệm</th>
-              ${showDayTs10 ? '<th class="py-1 px-1 border border-slate-300">(3) Dạy TS10/ B2</th>' : ''}
-              ${showBdHsg ? '<th class="py-1 px-1 border border-slate-300">(4) BD HSG</th>' : ''}
-              <th class="py-1 px-1 border border-slate-300">(5) Nghỉ dạy (tiết)</th>
-              <th class="py-1 px-1 border border-slate-300 bg-emerald-50">(6) Thực dạy</th>
-              <th class="py-1 px-1 border border-slate-300 bg-teal-50">(7) Tiết vượt</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-          <tfoot>
-            <tr class="bg-emerald-50/80 font-black text-slate-900 border-t-2 border-slate-400">
-              <td class="py-1.5 px-2 border border-slate-300 font-black uppercase text-left">TỔNG CỘNG</td>
-              <td class="py-1.5 px-1 border border-slate-300 font-black text-slate-800">${formatNumber(totalQuotaSem)}</td>
-              <td class="py-1.5 px-1 border border-slate-300">${formatNumber(total1)}</td>
-              <td class="py-1.5 px-1 border border-slate-300">${formatNumber(totalDuty)}</td>
-              ${showDayTs10 ? '<td class="py-1.5 px-1 border border-slate-300">' + formatNumber(total4) + '</td>' : ''}
-              ${showBdHsg ? '<td class="py-1.5 px-1 border border-slate-300">' + formatNumber(total3) + '</td>' : ''}
-              <td class="py-1.5 px-1 border border-slate-300 text-rose-600">${formatNumber(total2)}</td>
-              <td class="py-1.5 px-1 border border-slate-300 font-black">${formatNumber(total5)}</td>
-              <td class="py-1.5 px-1 border border-slate-300 font-black text-emerald-950 bg-emerald-100">
-                ${(total6 > 0 ? '+' : '') + formatNumber(total6)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-
-        <!-- PHẦN XÁC NHẬN CUỐI TỜ KHAI THEO MẪU -->
-        <div class="mt-3.5 pt-1 text-left text-xs leading-relaxed text-slate-900 border-t border-slate-200">
-          <p class="font-bold italic text-slate-900 text-xs">Xác nhận:</p>
-          <p class="mt-0.5 text-xs text-slate-800">Giáo viên: <b class="font-bold text-slate-950">${teacherDisplayName}</b></p>
-          <p class="mt-0.5 text-xs text-slate-800">đã dạy vượt số tiết tiêu chuẩn: <b class="font-bold text-slate-950">${formatNumber(Math.max(0, total6))}</b> tiết.</p>
-        </div>
-
-        <!-- PHẦN CHỮ KÝ: PHÓ HIỆU TRƯỞNG (TRÁI) & GIÁO VIÊN (PHẢI) -->
-        <div class="mt-4 grid grid-cols-2 text-center text-xs">
-          <div>
-            <p class="italic text-slate-700">Ngày ...... tháng ...... năm ${todayYear}</p>
-            <p class="font-bold text-slate-900 mt-1">Phó hiệu trưởng</p>
-            <p class="font-bold text-slate-900">Duyệt</p>
-            <div class="h-14"></div>
+          <!-- PHẦN CHỮ KÝ: PHÓ HIỆU TRƯỞNG (TRÁI) & GIÁO VIÊN (PHẢI) -->
+          <div class="mt-4 grid grid-cols-2 text-center text-xs">
+            <div>
+              <p class="italic text-slate-700">Ngày ...... tháng ...... năm ${todayYear}</p>
+              <p class="font-bold text-slate-900 mt-1">Phó hiệu trưởng</p>
+              <p class="font-bold text-slate-900">Duyệt</p>
+              <div class="h-12"></div>
+            </div>
+            <div>
+              <p class="italic text-slate-700">Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}</p>
+              <p class="font-bold text-slate-900 mt-1">Giáo viên</p>
+              <div class="h-12"></div>
+              <p class="font-bold text-slate-950 text-xs sm:text-sm">${teacherDisplayName}</p>
+            </div>
           </div>
-          <div>
-            <p class="italic text-slate-700">Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}</p>
-            <p class="font-bold text-slate-900 mt-1">Giáo viên</p>
-            <div class="h-14"></div>
-            <p class="font-bold text-slate-950 text-xs sm:text-sm">${teacherDisplayName}</p>
-          </div>
-        </div>
-      `;
+        `;
 
-      document.getElementById('print-modal-content').innerHTML = template;
-      document.getElementById('pdf-modal').classList.remove('hidden');
+        document.getElementById('print-modal-content').innerHTML = template;
+        document.getElementById('pdf-modal').classList.remove('hidden');
       } finally {
         isPreviewingSemesterReport = false;
-        const previewButtons = document.querySelectorAll('.btn-preview-pdf-action, #btn-preview-pdf-locked, #btn-preview-pdf-synced, [onclick*="previewSemesterReport"]');
+        const previewButtons = document.querySelectorAll('.btn-preview-pdf-action, #btn-preview-pdf-locked, #btn-preview-pdf-synced, #btn-admin-modal-export-pdf, [onclick*="previewSemesterReport"]');
         previewButtons.forEach(btn => {
           btn.disabled = false;
           btn.classList.remove('cursor-wait', 'opacity-85');
@@ -12604,6 +12688,18 @@ function initialSetup() {
           }
         });
       }
+    }
+
+    function previewTeacherReportFromAdmin() {
+      if (!currentAdminEditingTeacher) {
+        showToast("Không tìm thấy dữ liệu giáo viên đang xem!", "error");
+        return;
+      }
+      previewSemesterReport(currentAdminEditingTeacher, adminModalActiveSem);
+    }
+
+    function printTeacherReportDirect() {
+      window.print();
     }
 
     function closePdfModal() {
@@ -12623,7 +12719,9 @@ function initialSetup() {
 
       try {
         const element = document.getElementById('print-modal-content');
-        const filename = `TietVuot-${activeSemesterId.toUpperCase()}-${sanitizeName(currentUser.tenGv)}.pdf`;
+        const activeSem = currentPdfExportSemId || activeSemesterId;
+        const targetTeacher = currentPdfExportTeacher || currentUser;
+        const filename = `TietVuot-${activeSem.toUpperCase()}-${sanitizeName(targetTeacher.tenGv)}.pdf`;
         const opt = {
           margin: [5, 6, 5, 6],
           filename: filename,
