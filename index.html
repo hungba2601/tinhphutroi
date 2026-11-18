@@ -768,7 +768,13 @@
           <table class="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr class="bg-slate-100/90 text-slate-700 font-bold text-center border-b">
-                <th class="py-3 px-3 text-left min-w-[130px]">Tuần học</th>
+                <th class="py-3 px-3 text-left min-w-[125px]">Tuần học</th>
+                <th class="py-2.5 px-2 min-w-[95px] text-center bg-slate-50/80 font-bold text-slate-800">
+                  <div class="flex flex-col items-center justify-center">
+                    <span>Tiết định mức</span>
+                    <span class="text-[10px] text-slate-500 font-normal">(Cố định 19)</span>
+                  </div>
+                </th>
                 <th class="py-2 px-2 min-w-[145px] text-center">
                   <div class="flex flex-col items-center justify-center gap-1">
                     <span class="text-xs font-bold text-slate-800">(1) Tiết dạy</span>
@@ -786,11 +792,28 @@
                     </div>
                   </div>
                 </th>
-                <th class="col-day-ts10 py-3 px-2 min-w-[105px]" id="th-col-dayts10">(2) Dạy TS10/ B2</th>
-                <th class="col-bd-hsg py-3 px-2 min-w-[100px]" id="th-col-bdhsg">(3) BD HSG</th>
-                <th class="py-3 px-2 min-w-[100px]">(4) Nghỉ dạy (tiết)</th>
-                <th class="py-3 px-2 min-w-[95px] bg-emerald-50/60 text-emerald-900">(5) Thực dạy</th>
-                <th class="py-3 px-2 min-w-[95px] bg-teal-50/60 text-teal-900">(6) Tiết vượt</th>
+                <th class="py-2 px-2 min-w-[145px] text-center">
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="text-xs font-bold text-slate-800">(2) Kiêm nhiệm</span>
+                    <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="number" id="quick-fill-duty-input" min="0" step="0.5" placeholder="0"
+                        title="Nhập số tiết kiêm nhiệm để điền nhanh cho tất cả các tuần"
+                        class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillDutyWeeks(this.value);}">
+                      <button type="button" id="btn-quick-fill-duty-all" onclick="quickFillDutyWeeks(document.getElementById('quick-fill-duty-input').value)"
+                        title="Điền nhanh số tiết kiêm nhiệm cho tất cả các tuần trong học kỳ"
+                        class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5">
+                        <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
+                        <span>Điền all</span>
+                      </button>
+                    </div>
+                  </div>
+                </th>
+                <th class="col-day-ts10 py-3 px-2 min-w-[105px]" id="th-col-dayts10">(3) Dạy TS10/ B2</th>
+                <th class="col-bd-hsg py-3 px-2 min-w-[100px]" id="th-col-bdhsg">(4) BD HSG</th>
+                <th class="py-3 px-2 min-w-[100px]">(5) Nghỉ dạy (tiết)</th>
+                <th class="py-3 px-2 min-w-[95px] bg-emerald-50/60 text-emerald-900">(6) Thực dạy</th>
+                <th class="py-3 px-2 min-w-[95px] bg-teal-50/60 text-teal-900">(7) Tiết vượt</th>
               </tr>
             </thead>
             <tbody id="weeks-table-body" class="divide-y divide-slate-100 font-medium">
@@ -802,7 +825,9 @@
                   id="foot-sem-title">
                   TỔNG CỘNG HỌC KỲ 1
                 </td>
+                <td id="foot-quota" class="py-3 px-2 text-slate-700 font-black bg-slate-100/80">342</td>
                 <td id="foot-t1" class="py-3 px-2 text-slate-800 font-bold">0</td>
+                <td id="foot-duty" class="py-3 px-2 text-slate-800 font-bold">0</td>
                 <td id="foot-t4" class="col-day-ts10 py-3 px-2 text-slate-800 font-bold">0</td>
                 <td id="foot-t3" class="col-bd-hsg py-3 px-2 text-slate-800 font-bold">0</td>
                 <td id="foot-t2" class="py-3 px-2 text-rose-600 font-bold">0</td>
@@ -1382,18 +1407,22 @@
                 <thead>
                   <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
                     <th class="py-3 px-3 text-left w-36">Tuần học</th>
+                    <th class="py-3 px-2 bg-slate-50 font-bold text-slate-800">Tiết định mức</th>
                     <th class="py-3 px-2">(1) Tiết dạy</th>
-                    <th id="preview-col-dayts10-th" class="col-preview-dayts10 py-3 px-2 bg-indigo-50/70 text-indigo-900 border-x border-indigo-200/50">(2) Dạy TS10/ B2</th>
-                    <th id="preview-col-bdhsg-th" class="col-preview-bdhsg py-3 px-2 bg-amber-50/70 text-amber-900 border-x border-amber-200/50">(3) BD HSG</th>
-                    <th class="py-3 px-2">(4) Nghỉ dạy</th>
-                    <th class="py-3 px-2 bg-emerald-50 text-emerald-900">(5) Thực dạy</th>
-                    <th class="py-3 px-2 bg-teal-50 text-teal-900">(6) Tiết vượt</th>
+                    <th class="py-3 px-2">(2) Kiêm nhiệm</th>
+                    <th id="preview-col-dayts10-th" class="col-preview-dayts10 py-3 px-2 bg-indigo-50/70 text-indigo-900 border-x border-indigo-200/50">(3) Dạy TS10/ B2</th>
+                    <th id="preview-col-bdhsg-th" class="col-preview-bdhsg py-3 px-2 bg-amber-50/70 text-amber-900 border-x border-amber-200/50">(4) BD HSG</th>
+                    <th class="py-3 px-2">(5) Nghỉ dạy</th>
+                    <th class="py-3 px-2 bg-emerald-50 text-emerald-900">(6) Thực dạy</th>
+                    <th class="py-3 px-2 bg-teal-50 text-teal-900">(7) Tiết vượt</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 font-medium text-slate-700">
                   <tr class="bg-white">
                     <td class="py-2.5 px-3 text-left font-bold text-slate-800">Tuần 1 (Tuần 1 HK1)</td>
+                    <td class="py-2.5 px-2 font-bold text-slate-700 bg-slate-50/50">19</td>
                     <td class="py-2.5 px-2">21</td>
+                    <td class="py-2.5 px-2">0</td>
                     <td id="preview-col-dayts10-td1" class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">0</td>
                     <td id="preview-col-bdhsg-td1" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">2</td>
                     <td class="py-2.5 px-2 text-rose-600">0</td>
@@ -1402,7 +1431,9 @@
                   </tr>
                   <tr class="bg-slate-50/60">
                     <td class="py-2.5 px-3 text-left font-bold text-slate-800">Tuần 2 (Tuần 2 HK1)</td>
+                    <td class="py-2.5 px-2 font-bold text-slate-700 bg-slate-50/50">19</td>
                     <td class="py-2.5 px-2">19</td>
+                    <td class="py-2.5 px-2">0</td>
                     <td id="preview-col-dayts10-td2" class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">2</td>
                     <td id="preview-col-bdhsg-td2" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">0</td>
                     <td class="py-2.5 px-2 text-rose-600">1</td>
@@ -3717,6 +3748,12 @@ function initialSetup() {
               <thead>
                 <tr class="bg-slate-100 text-slate-700 font-extrabold text-center border-b">
                   <th class="py-2.5 px-3 text-left min-w-[120px]">Tuần học</th>
+                  <th class="py-2 px-2 min-w-[90px] text-center bg-slate-50 font-bold text-slate-800">
+                    <div class="flex flex-col items-center justify-center">
+                      <span>Tiết định mức</span>
+                      <span class="text-[9.5px] text-slate-500 font-normal">(Cố định 19)</span>
+                    </div>
+                  </th>
                   <th class="py-2 px-2 min-w-[145px] text-center">
                     <div class="flex flex-col items-center justify-center gap-1">
                       <span class="text-xs font-bold text-slate-800">(1) Tiết dạy</span>
@@ -3734,11 +3771,28 @@ function initialSetup() {
                       </div>
                     </div>
                   </th>
-                  <th class="col-admin-day-ts10 py-2.5 px-2 min-w-[105px]" id="admin-modal-th-dayts10">(2) Dạy TS10/ B2</th>
-                  <th class="col-admin-bd-hsg py-2.5 px-2 min-w-[95px]" id="admin-modal-th-bdhsg">(3) BD HSG</th>
-                  <th class="py-2.5 px-2 min-w-[95px]">(4) Nghỉ dạy (tiết)</th>
-                  <th class="py-2.5 px-2 min-w-[90px] bg-emerald-50 text-emerald-900">(5) Thực dạy</th>
-                  <th class="py-2.5 px-2 min-w-[90px] bg-teal-50 text-teal-900">(6) Tiết vượt</th>
+                  <th class="py-2 px-2 min-w-[145px] text-center">
+                    <div class="flex flex-col items-center justify-center gap-1">
+                      <span class="text-xs font-bold text-slate-800">(2) Kiêm nhiệm</span>
+                      <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
+                        <input type="number" id="admin-quick-fill-duty-input" min="0" step="0.5" placeholder="0"
+                          title="Nhập số tiết kiêm nhiệm để điền nhanh cho tất cả các tuần của giáo viên này"
+                          class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                          onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillAdminTeacherDutyWeeks(this.value);}">
+                        <button type="button" onclick="quickFillAdminTeacherDutyWeeks(document.getElementById('admin-quick-fill-duty-input').value)"
+                          title="Điền nhanh số tiết kiêm nhiệm cho tất cả các tuần"
+                          class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[10.5px] font-bold transition flex items-center gap-0.5">
+                          <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
+                          <span>Điền all</span>
+                        </button>
+                      </div>
+                    </div>
+                  </th>
+                  <th class="col-admin-day-ts10 py-2.5 px-2 min-w-[105px]" id="admin-modal-th-dayts10">(3) Dạy TS10/ B2</th>
+                  <th class="col-admin-bd-hsg py-2.5 px-2 min-w-[95px]" id="admin-modal-th-bdhsg">(4) BD HSG</th>
+                  <th class="py-2.5 px-2 min-w-[95px]">(5) Nghỉ dạy (tiết)</th>
+                  <th class="py-2.5 px-2 min-w-[90px] bg-emerald-50 text-emerald-900">(6) Thực dạy</th>
+                  <th class="py-2.5 px-2 min-w-[90px] bg-teal-50 text-teal-900">(7) Tiết vượt</th>
                 </tr>
               </thead>
               <tbody id="admin-modal-weeks-tbody" class="divide-y divide-slate-100 font-medium">
@@ -3749,7 +3803,9 @@ function initialSetup() {
                   <td class="py-3 px-3 text-left uppercase text-emerald-950 font-black" id="admin-modal-foot-title">
                     TỔNG CỘNG HỌC KỲ
                   </td>
+                  <td id="admin-modal-foot-quota" class="py-3 px-2 text-slate-700 font-black bg-slate-100">342</td>
                   <td id="admin-modal-foot-t1" class="py-3 px-2 text-slate-800 font-bold">0</td>
+                  <td id="admin-modal-foot-duty" class="py-3 px-2 text-slate-800 font-bold">0</td>
                   <td id="admin-modal-foot-t4" class="col-admin-day-ts10 py-3 px-2 text-slate-800 font-bold">0</td>
                   <td id="admin-modal-foot-t3" class="col-admin-bd-hsg py-3 px-2 text-slate-800 font-bold">0</td>
                   <td id="admin-modal-foot-t2" class="py-3 px-2 text-rose-600 font-bold">0</td>
@@ -5390,17 +5446,18 @@ function initialSetup() {
           const d = parsed.hk1[w.id];
           if (d) {
             const assigned = Number(d.assigned || 0);
+            const duty = Number(d.duty || 0);
             const leave = Number(d.leave || 0);
             const rawBdhsg = Number(d.bdhsg || 0);
             const rawTs10 = Number(d.ts10 || 0);
             const bdhsg = countBdHsg ? rawBdhsg : 0;
             const ts10 = countDayTs10 ? rawTs10 : 0;
-            if (assigned > 0 || leave > 0 || (countBdHsg && rawBdhsg > 0) || (countDayTs10 && rawTs10 > 0)) {
+            if (assigned > 0 || duty > 0 || leave > 0 || (countBdHsg && rawBdhsg > 0) || (countDayTs10 && rawTs10 > 0)) {
               hasDeclared = true;
               hasDeclaredHk1 = true;
             }
 
-            const actual = assigned - leave + bdhsg + ts10;
+            const actual = assigned + duty - leave + bdhsg + ts10;
             const ov = actual - quota;
             hk1Actual += actual;
             hk1Overtime += ov;
@@ -5414,17 +5471,18 @@ function initialSetup() {
           const d = parsed.hk2[w.id];
           if (d) {
             const assigned = Number(d.assigned || 0);
+            const duty = Number(d.duty || 0);
             const leave = Number(d.leave || 0);
             const rawBdhsg = Number(d.bdhsg || 0);
             const rawTs10 = Number(d.ts10 || 0);
             const bdhsg = countBdHsg ? rawBdhsg : 0;
             const ts10 = countDayTs10 ? rawTs10 : 0;
-            if (assigned > 0 || leave > 0 || (countBdHsg && rawBdhsg > 0) || (countDayTs10 && rawTs10 > 0)) {
+            if (assigned > 0 || duty > 0 || leave > 0 || (countBdHsg && rawBdhsg > 0) || (countDayTs10 && rawTs10 > 0)) {
               hasDeclared = true;
               hasDeclaredHk2 = true;
             }
 
-            const actual = assigned - leave + bdhsg + ts10;
+            const actual = assigned + duty - leave + bdhsg + ts10;
             const ov = actual - quota;
             hk2Actual += actual;
             hk2Overtime += ov;
@@ -9077,20 +9135,23 @@ function initialSetup() {
 
       document.getElementById('admin-modal-foot-title').textContent = `TỔNG CỘNG ${semObj.name.toUpperCase()}`;
 
-      let total1 = 0, total2 = 0, total3 = 0, total4 = 0, total5 = 0, total6 = 0;
+      let total1 = 0, totalDuty = 0, total2 = 0, total3 = 0, total4 = 0, total5 = 0, total6 = 0, totalQuotaSem = 0;
 
       const missModalSem = checkTeacherMissingWeeks(currentAdminEditingTeacher._store, semObj.id);
 
       semObj.weeks.forEach((w, index) => {
-        const rowData = storeSem[w.id] || { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        const rowData = storeSem[w.id] || { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
         const isAssignedMissing = missModalSem.hasStarted && (!rowData.assigned || Number(rowData.assigned) <= 0);
 
+        const dutyVal = Number(rowData.duty || 0);
         const bdhsgVal = columnConfig.showBdHsg ? Number(rowData.bdhsg || 0) : 0;
         const ts10Val = columnConfig.showDayTs10 ? Number(rowData.ts10 || 0) : 0;
-        const actual = Number(rowData.assigned || 0) - Number(rowData.leave || 0) + bdhsgVal + ts10Val;
+        const actual = Number(rowData.assigned || 0) + dutyVal - Number(rowData.leave || 0) + bdhsgVal + ts10Val;
         const overtime = actual - teacherQuota;
 
+        totalQuotaSem += teacherQuota;
         total1 += Number(rowData.assigned || 0);
+        totalDuty += dutyVal;
         total2 += Number(rowData.leave || 0);
         total3 += bdhsgVal;
         total4 += ts10Val;
@@ -9111,11 +9172,20 @@ function initialSetup() {
               </div>
             </div>
           </td>
+          <td class="py-2 px-1 text-center font-bold text-slate-700 bg-slate-50/70 select-none">
+            ${teacherQuota}
+          </td>
           <td class="py-1.5 px-1 text-center">
             <input type="number" min="0" step="0.5" value="${rowData.assigned || ''}" placeholder="0"
               data-field="assigned" data-week="${w.id}"
               class="w-16 text-center py-1.5 px-1 ${isAssignedMissing ? 'bg-amber-50 border-2 border-amber-400 text-amber-950 font-bold' : 'bg-white border border-slate-200 text-slate-800'} rounded-lg focus:ring-2 focus:ring-emerald-500 font-semibold text-xs"
               ${isAssignedMissing ? 'title="Thiếu cột (1) Tiết dạy (vui lòng điền > 0)"' : ''}
+              onchange="commitAdminModalInputChange(this)">
+          </td>
+          <td class="py-1.5 px-1 text-center">
+            <input type="number" min="0" step="0.5" value="${rowData.duty || ''}" placeholder="0"
+              data-field="duty" data-week="${w.id}"
+              class="w-16 text-center py-1.5 px-1 bg-white border border-slate-200 text-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 font-semibold text-xs"
               onchange="commitAdminModalInputChange(this)">
           </td>
           <td class="col-admin-day-ts10 py-1.5 px-1 text-center ${columnConfig.showDayTs10 ? '' : 'hidden'}">
@@ -9147,7 +9217,11 @@ function initialSetup() {
       });
 
       // Footer
+      const adminFootQuota = document.getElementById('admin-modal-foot-quota');
+      if (adminFootQuota) adminFootQuota.textContent = formatNumber(totalQuotaSem);
       document.getElementById('admin-modal-foot-t1').textContent = formatNumber(total1);
+      const adminFootDuty = document.getElementById('admin-modal-foot-duty');
+      if (adminFootDuty) adminFootDuty.textContent = formatNumber(totalDuty);
       document.getElementById('admin-modal-foot-t4').textContent = formatNumber(total4);
       document.getElementById('admin-modal-foot-t3').textContent = formatNumber(total3);
       document.getElementById('admin-modal-foot-t2').textContent = formatNumber(total2);
@@ -9165,7 +9239,7 @@ function initialSetup() {
 
       if (!currentAdminEditingTeacher._store[semId]) currentAdminEditingTeacher._store[semId] = {};
       if (!currentAdminEditingTeacher._store[semId][weekId]) {
-        currentAdminEditingTeacher._store[semId][weekId] = { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        currentAdminEditingTeacher._store[semId][weekId] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
       }
 
       currentAdminEditingTeacher._store[semId][weekId][field] = val;
@@ -9198,13 +9272,44 @@ function initialSetup() {
 
       semObj.weeks.forEach(w => {
         if (!currentAdminEditingTeacher._store[semObj.id][w.id]) {
-          currentAdminEditingTeacher._store[semObj.id][w.id] = { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
+          currentAdminEditingTeacher._store[semObj.id][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
         }
         currentAdminEditingTeacher._store[semObj.id][w.id].assigned = num;
       });
 
       renderAdminModalWeeksTable();
       showToast(`Đã điền nhanh ${num} tiết dạy theo PC cho toàn bộ ${semObj.totalWeeks} tuần (${currentAdminEditingTeacher.tenGv})!`, "success");
+    }
+
+    function quickFillAdminTeacherDutyWeeks(val) {
+      if (!currentAdminEditingTeacher || !currentAdminEditingTeacher._store) return;
+      const semObj = SEMESTER_CONFIG[adminModalActiveSem];
+      if (!semObj) return;
+
+      let num = (val !== undefined && val !== null && String(val).trim() !== "")
+        ? parseFloat(val)
+        : 0;
+
+      if (isNaN(num) || num < 0) {
+        num = 0;
+      }
+
+      const adminQuickFillDutyInput = document.getElementById('admin-quick-fill-duty-input');
+      if (adminQuickFillDutyInput) adminQuickFillDutyInput.value = num;
+
+      if (!currentAdminEditingTeacher._store[semObj.id]) {
+        currentAdminEditingTeacher._store[semObj.id] = {};
+      }
+
+      semObj.weeks.forEach(w => {
+        if (!currentAdminEditingTeacher._store[semObj.id][w.id]) {
+          currentAdminEditingTeacher._store[semObj.id][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        }
+        currentAdminEditingTeacher._store[semObj.id][w.id].duty = num;
+      });
+
+      renderAdminModalWeeksTable();
+      showToast(`Đã điền nhanh ${num} tiết kiêm nhiệm cho toàn bộ ${semObj.totalWeeks} tuần (${currentAdminEditingTeacher.tenGv})!`, "success");
     }
 
     async function adminSaveCurrentTeacherData() {
@@ -10490,6 +10595,21 @@ function initialSetup() {
         }
       }
 
+      const quickFillDutyInput = document.getElementById('quick-fill-duty-input');
+      if (quickFillDutyInput && document.activeElement !== quickFillDutyInput) {
+        quickFillDutyInput.disabled = isLocked;
+      }
+
+      const btnQuickFillDutyAll = document.getElementById('btn-quick-fill-duty-all');
+      if (btnQuickFillDutyAll) {
+        btnQuickFillDutyAll.disabled = isLocked;
+        if (isLocked) {
+          btnQuickFillDutyAll.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          btnQuickFillDutyAll.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      }
+
       const btnSave = document.getElementById('btn-save-sheet');
       const btnIcon = document.getElementById('btn-save-icon');
       const btnText = document.getElementById('btn-save-text');
@@ -10513,27 +10633,32 @@ function initialSetup() {
       tbody.innerHTML = "";
 
       let totalAssigned = 0;
+      let totalDuty = 0;
       let totalLeave = 0;
       let totalBdhsg = 0;
       let totalTs10 = 0;
       let totalActual = 0;
       let totalOvertime = 0;
+      let totalQuotaSem = 0;
 
       const missCurrent = checkTeacherMissingWeeks(dataStore, activeSemesterId);
 
       semObj.weeks.forEach((w, index) => {
         const rowData = (dataStore[semObj.id] && dataStore[semObj.id][w.id])
           ? dataStore[semObj.id][w.id]
-          : { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
+          : { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
 
         const isAssignedMissing = missCurrent.hasStarted && (!rowData.assigned || Number(rowData.assigned) <= 0);
 
+        const dutyVal = Number(rowData.duty || 0);
         const bdhsgVal = columnConfig.showBdHsg ? Number(rowData.bdhsg || 0) : 0;
         const ts10Val = columnConfig.showDayTs10 ? Number(rowData.ts10 || 0) : 0;
-        const actualTeach = Number(rowData.assigned || 0) - Number(rowData.leave || 0) + bdhsgVal + ts10Val;
+        const actualTeach = Number(rowData.assigned || 0) + dutyVal - Number(rowData.leave || 0) + bdhsgVal + ts10Val;
         const overtime = actualTeach - currentQuota;
 
+        totalQuotaSem += currentQuota;
         totalAssigned += Number(rowData.assigned || 0);
+        totalDuty += dutyVal;
         totalLeave += Number(rowData.leave || 0);
         totalBdhsg += bdhsgVal;
         totalTs10 += ts10Val;
@@ -10565,12 +10690,22 @@ function initialSetup() {
               </div>
             </div>
           </td>
+          <td class="py-2.5 px-2 text-center">
+            <span class="inline-block py-1 px-2.5 bg-slate-100 text-slate-700 font-extrabold rounded-lg text-xs sm:text-sm border border-slate-200 select-none">${currentQuota}</span>
+          </td>
           <td class="py-2 px-1 text-center">
             <input type="number" min="0" step="0.5" value="${rowData.assigned || ''}" placeholder="0"
               ${disabledAttr}
               data-field="assigned" data-sem="${semObj.id}" data-week="${w.id}"
               class="${isAssignedMissing ? 'grid-input w-16 sm:w-20 text-center py-1.5 px-1 bg-amber-50 border-2 border-amber-400 text-amber-950 rounded-lg focus:ring-2 focus:ring-amber-500 font-bold text-xs sm:text-sm shadow-2xs' : inputClassDefault}"
               ${isAssignedMissing ? 'title="Thiếu cột (1) Tiết dạy (vui lòng điền > 0)"' : ''}
+              onchange="commitInputChange(this)" onkeydown="handleInputKeydown(event, this)">
+          </td>
+          <td class="py-2 px-1 text-center">
+            <input type="number" min="0" step="0.5" value="${rowData.duty || ''}" placeholder="0"
+              ${disabledAttr}
+              data-field="duty" data-sem="${semObj.id}" data-week="${w.id}"
+              class="${inputClassDefault}"
               onchange="commitInputChange(this)" onkeydown="handleInputKeydown(event, this)">
           </td>
           <td class="col-day-ts10 py-2 px-1 text-center ${columnConfig.showDayTs10 ? '' : 'hidden'}">
@@ -10605,7 +10740,11 @@ function initialSetup() {
       });
 
       // Footer
+      const footQuota = document.getElementById('foot-quota');
+      if (footQuota) footQuota.textContent = formatNumber(totalQuotaSem);
       document.getElementById('foot-t1').textContent = formatNumber(totalAssigned);
+      const footDuty = document.getElementById('foot-duty');
+      if (footDuty) footDuty.textContent = formatNumber(totalDuty);
       document.getElementById('foot-t4').textContent = formatNumber(totalTs10);
       document.getElementById('foot-t3').textContent = formatNumber(totalBdhsg);
       document.getElementById('foot-t2').textContent = formatNumber(totalLeave);
@@ -10627,7 +10766,7 @@ function initialSetup() {
 
       if (!dataStore[semId]) dataStore[semId] = {};
       if (!dataStore[semId][weekId]) {
-        dataStore[semId][weekId] = { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        dataStore[semId][weekId] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
       }
       dataStore[semId][weekId][field] = val;
 
@@ -10663,7 +10802,7 @@ function initialSetup() {
 
       semObj.weeks.forEach(w => {
         if (!dataStore[semObj.id][w.id]) {
-          dataStore[semObj.id][w.id] = { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
+          dataStore[semObj.id][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
         }
         dataStore[semObj.id][w.id].assigned = num;
       });
@@ -10671,6 +10810,40 @@ function initialSetup() {
       renderCurrentSemesterTable();
       triggerAutoSave();
       showToast(`Đã điền nhanh ${num} tiết dạy theo PC cho tất cả các tuần! Hãy nhấn "Lưu Lên Google Sheet" để lưu lại.`, "info");
+    }
+
+    function quickFillDutyWeeks(val) {
+      const semObj = SEMESTER_CONFIG[activeSemesterId];
+      if (!semObj) return;
+
+      if (isSemesterLocked(semObj.id)) {
+        showToast("Học kỳ này đã hoàn tất kê khai và đã khóa sổ. Vui lòng liên hệ Admin nếu cần mở khóa làm lại!", "warning");
+        return;
+      }
+
+      let num = (val !== undefined && val !== null && String(val).trim() !== "")
+        ? parseFloat(val)
+        : 0;
+
+      if (isNaN(num) || num < 0) {
+        num = 0;
+      }
+
+      const quickFillDutyInput = document.getElementById('quick-fill-duty-input');
+      if (quickFillDutyInput) quickFillDutyInput.value = num;
+
+      if (!dataStore[semObj.id]) dataStore[semObj.id] = {};
+
+      semObj.weeks.forEach(w => {
+        if (!dataStore[semObj.id][w.id]) {
+          dataStore[semObj.id][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        }
+        dataStore[semObj.id][w.id].duty = num;
+      });
+
+      renderCurrentSemesterTable();
+      triggerAutoSave();
+      showToast(`Đã điền nhanh ${num} tiết kiêm nhiệm cho tất cả các tuần! Hãy nhấn "Lưu Lên Google Sheet" để lưu lại.`, "info");
     }
 
     function handleInputKeydown(e, currentInput) {
@@ -10963,7 +11136,7 @@ function initialSetup() {
 
       document.getElementById('pdf-modal-title').textContent = `Báo Cáo Thống Kê Tiết Vượt - ${semObj.name}`;
 
-      let total1 = 0, total2 = 0, total3 = 0, total4 = 0, total5 = 0, total6 = 0;
+      let total1 = 0, totalDuty = 0, total2 = 0, total3 = 0, total4 = 0, total5 = 0, total6 = 0, totalQuotaSem = 0;
       let rowsHtml = "";
 
       const showBdHsg = columnConfig.showBdHsg;
@@ -10972,14 +11145,17 @@ function initialSetup() {
       semObj.weeks.forEach((w, idx) => {
         const d = (dataStore[semObj.id] && dataStore[semObj.id][w.id])
           ? dataStore[semObj.id][w.id]
-          : { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
+          : { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
 
+        const dutyVal = Number(d.duty || 0);
         const bdhsgVal = showBdHsg ? Number(d.bdhsg || 0) : 0;
         const ts10Val = showDayTs10 ? Number(d.ts10 || 0) : 0;
-        const actual = Number(d.assigned || 0) - Number(d.leave || 0) + bdhsgVal + ts10Val;
+        const actual = Number(d.assigned || 0) + dutyVal - Number(d.leave || 0) + bdhsgVal + ts10Val;
         const overtime = actual - currentQuota;
 
+        totalQuotaSem += currentQuota;
         total1 += Number(d.assigned || 0);
+        totalDuty += dutyVal;
         total2 += Number(d.leave || 0);
         total3 += bdhsgVal;
         total4 += ts10Val;
@@ -10989,7 +11165,9 @@ function initialSetup() {
         rowsHtml += `
           <tr class="border-b border-slate-300 text-center">
             <td class="py-1 px-1 border border-slate-300 font-bold">${w.label}</td>
+            <td class="py-1 px-1 border border-slate-300 font-bold text-slate-700 bg-slate-50/50">${currentQuota}</td>
             <td class="py-1 px-1 border border-slate-300">${formatNumber(d.assigned)}</td>
+            <td class="py-1 px-1 border border-slate-300">${formatNumber(d.duty)}</td>
             ${showDayTs10 ? '<td class="py-1 px-1 border border-slate-300">' + formatNumber(d.ts10) + '</td>' : ''}
             ${showBdHsg ? '<td class="py-1 px-1 border border-slate-300 text-emerald-800 font-semibold">' + formatNumber(d.bdhsg) + '</td>' : ''}
             <td class="py-1 px-1 border border-slate-300 text-rose-600">${formatNumber(d.leave)}</td>
@@ -11023,12 +11201,14 @@ function initialSetup() {
           <thead>
             <tr class="bg-slate-100 font-bold">
               <th class="py-1 px-1 border border-slate-300">Tuần học</th>
+              <th class="py-1 px-1 border border-slate-300 bg-slate-50">Tiết định mức</th>
               <th class="py-1 px-1 border border-slate-300">(1) Tiết dạy</th>
-              ${showDayTs10 ? '<th class="py-1 px-1 border border-slate-300">(2) Dạy TS10/ B2</th>' : ''}
-              ${showBdHsg ? '<th class="py-1 px-1 border border-slate-300">(3) BD HSG</th>' : ''}
-              <th class="py-1 px-1 border border-slate-300">(4) Nghỉ dạy (tiết)</th>
-              <th class="py-1 px-1 border border-slate-300 bg-emerald-50">(5) Thực dạy</th>
-              <th class="py-1 px-1 border border-slate-300 bg-teal-50">(6) Tiết vượt</th>
+              <th class="py-1 px-1 border border-slate-300">(2) Kiêm nhiệm</th>
+              ${showDayTs10 ? '<th class="py-1 px-1 border border-slate-300">(3) Dạy TS10/ B2</th>' : ''}
+              ${showBdHsg ? '<th class="py-1 px-1 border border-slate-300">(4) BD HSG</th>' : ''}
+              <th class="py-1 px-1 border border-slate-300">(5) Nghỉ dạy (tiết)</th>
+              <th class="py-1 px-1 border border-slate-300 bg-emerald-50">(6) Thực dạy</th>
+              <th class="py-1 px-1 border border-slate-300 bg-teal-50">(7) Tiết vượt</th>
             </tr>
           </thead>
           <tbody>
@@ -11037,7 +11217,9 @@ function initialSetup() {
           <tfoot>
             <tr class="bg-emerald-50/80 font-black text-slate-900 border-t-2 border-slate-400">
               <td class="py-1.5 px-2 border border-slate-300 font-black uppercase text-left">TỔNG CỘNG</td>
+              <td class="py-1.5 px-1 border border-slate-300 font-black text-slate-800">${formatNumber(totalQuotaSem)}</td>
               <td class="py-1.5 px-1 border border-slate-300">${formatNumber(total1)}</td>
+              <td class="py-1.5 px-1 border border-slate-300">${formatNumber(totalDuty)}</td>
               ${showDayTs10 ? '<td class="py-1.5 px-1 border border-slate-300">' + formatNumber(total4) + '</td>' : ''}
               ${showBdHsg ? '<td class="py-1.5 px-1 border border-slate-300">' + formatNumber(total3) + '</td>' : ''}
               <td class="py-1.5 px-1 border border-slate-300 text-rose-600">${formatNumber(total2)}</td>
