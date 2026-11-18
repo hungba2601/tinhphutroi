@@ -9977,10 +9977,12 @@ function initialSetup() {
                   class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-600 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
                   <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
-                <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
+                ${isSuperAdmin(currentUser.quyen) ? `
+                  <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : ''}
               </div>
             </td>
           `;
