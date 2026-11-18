@@ -11983,12 +11983,21 @@ function initialSetup() {
       });
 
       const template = `
-        <div class="text-center mb-2">
-          <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-          <p class="font-bold text-[11px] uppercase tracking-wider text-slate-800 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
-          <div class="w-20 h-[1px] bg-slate-400 mx-auto my-1"></div>
-          <h1 class="text-base sm:text-lg font-black uppercase mt-1 text-slate-900 leading-tight">PHIẾU XÁC NHẬN SỐ TIẾT DẠY VƯỢT ĐỊNH MỨC</h1>
-          <p class="text-xs font-bold text-emerald-800 mt-0.5">BẢNG TỔNG HỢP ${semObj.name.toUpperCase()} (${semObj.totalWeeks} TUẦN THỰC HỌC)</p>
+        <div class="mb-2">
+          <!-- ĐƠN VỊ CHỦ QUẢN & TRƯỜNG Ở GÓC TRÁI -->
+          <div class="text-left">
+            <div class="inline-block text-center">
+              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
+              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-800 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+              <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
+            </div>
+          </div>
+
+          <!-- TIÊU ĐỀ PHIẾU CĂN GIỮA -->
+          <div class="text-center mt-1">
+            <h1 class="text-base sm:text-lg font-black uppercase text-slate-900 leading-tight">PHIẾU XÁC NHẬN SỐ TIẾT DẠY VƯỢT ĐỊNH MỨC</h1>
+            <p class="text-xs font-bold text-emerald-800 mt-0.5">BẢNG TỔNG HỢP ${semObj.name.toUpperCase()} (${semObj.totalWeeks} TUẦN THỰC HỌC)</p>
+          </div>
         </div>
 
         <div class="mb-2 bg-slate-50 py-1.5 px-3 rounded-lg border border-slate-200 text-xs">
