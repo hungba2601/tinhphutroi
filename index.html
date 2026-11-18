@@ -16273,38 +16273,34 @@ function initialSetup() {
     // Thuật toán chia trang thông minh cho Báo cáo Tổng hợp Tiết dạy Hòa nhập Toàn trường
     function paginateHoaNhapSummaryPdf(totalRows) {
       const pages = [];
-      // Nếu <= 18 dòng: vừa khít trọn vẹn trên đúng 1 trang A4 gồm Tiêu đề + Bảng + Tổng cộng + Chữ ký
-      if (totalRows <= 18) {
+      const P1_MAX_WITH_SIG = 20; // Tối đa có thể chứa trên Trang 1 cùng chữ ký
+      const P1_MAX_NO_SIG = 25;   // Tối đa Trang 1 khi chạy hết trang (không có chữ ký)
+      const P_OTHER_MAX = 27;     // Tối đa trang giữa (chạy hết trang)
+      const P_LAST_MAX = 23;      // Tối đa trang cuối có chữ ký
+
+      // 1. Nếu toàn bộ dữ liệu vừa vặn trên đúng 1 trang cùng khối chữ ký
+      if (totalRows <= P1_MAX_WITH_SIG) {
         return [{ pageNum: 1, start: 0, end: totalRows, isFirst: true, isLast: true }];
       }
 
-      // Từ 19 đến 36 dòng: chia đều làm 2 trang để cả 2 trang đều đầy đặn và cân đối
-      if (totalRows <= 36) {
-        const half = Math.ceil(totalRows / 2);
-        pages.push({ pageNum: 1, start: 0, end: half, isFirst: true, isLast: false });
-        pages.push({ pageNum: 2, start: half, end: totalRows, isFirst: false, isLast: true });
-        return pages;
-      }
-
-      // Khi > 36 dòng:
-      // Trang 1 lấy 22 dòng
-      const p1Take = 22;
+      // 2. Khi vượt quá 1 trang: Cho chạy hết đầy trang 1 (tối đa 25 dòng), chừa lại ít nhất 1 dòng cho trang sau cùng chữ ký
+      let p1Take = Math.min(totalRows - 1, P1_MAX_NO_SIG);
       pages.push({ pageNum: 1, start: 0, end: p1Take, isFirst: true, isLast: false });
+
       let cur = p1Take;
       let p = 2;
 
       while (cur < totalRows) {
         const rem = totalRows - cur;
-        if (rem <= 20) {
+        // Nếu phần còn lại vừa vặn trang cuối (có chữ ký: tối đa 23 dòng)
+        if (rem <= P_LAST_MAX) {
           pages.push({ pageNum: p++, start: cur, end: totalRows, isFirst: false, isLast: true });
           cur = totalRows;
-        } else if (rem <= 40) {
-          const take = Math.ceil(rem / 2);
+        } else {
+          // Trang giữa: tiếp tục chạy hết trang (tối đa 27 dòng)
+          let take = Math.min(rem - 1, P_OTHER_MAX);
           pages.push({ pageNum: p++, start: cur, end: cur + take, isFirst: false, isLast: false });
           cur += take;
-        } else {
-          pages.push({ pageNum: p++, start: cur, end: cur + 24, isFirst: false, isLast: false });
-          cur += 24;
         }
       }
 
