@@ -4553,6 +4553,104 @@ function initialSetup() {
   </div>
 
   <!-- ========================================================
+       MODAL: CHỈNH SỬA LỚP DẠY CHO TỪNG TUẦN (ICON CÂY VIẾT)
+       ======================================================== -->
+  <div id="modal-edit-week-classes"
+    class="fixed inset-0 z-[97] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
+    <div
+      class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-emerald-100 p-5 sm:p-6 relative overflow-hidden animate-fade-in flex flex-col max-h-[92vh]">
+      
+      <!-- Nút đóng X góc trên -->
+      <button type="button" onclick="closeEditWeekClassesModal()"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Header modal -->
+      <div class="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg shrink-0 shadow-xs">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </div>
+        <div>
+          <h3 id="edit-week-classes-title" class="font-black text-base sm:text-lg text-slate-800 leading-snug">
+            Chỉnh Sửa Lớp Dạy - Tuần 1
+          </h3>
+          <p id="edit-week-classes-desc" class="text-xs text-slate-500 font-medium mt-0.5">
+            Tùy chỉnh danh sách lớp Thầy/Cô giảng dạy riêng cho tuần này
+          </p>
+        </div>
+      </div>
+
+      <!-- Live summary lớp đã chọn trong tuần -->
+      <div class="mb-3 p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-150 flex items-center justify-between flex-wrap gap-2 text-xs">
+        <div id="week-classes-selected-summary" class="flex items-center gap-1.5 flex-wrap">
+          <!-- Render từ JS -->
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="selectAllWeekClasses(true)"
+            class="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 underline">
+            Chọn tất cả
+          </button>
+          <span class="text-slate-300">|</span>
+          <button type="button" onclick="selectAllWeekClasses(false)"
+            class="text-[11px] font-bold text-slate-500 hover:text-slate-700 underline">
+            Bỏ chọn
+          </button>
+          <span class="text-slate-300">|</span>
+          <button type="button" onclick="resetWeekClassesToDefaultInModal()"
+            class="text-[11px] font-bold text-teal-700 hover:text-teal-800 underline"
+            title="Lấy lại danh sách lớp mặc định của giáo viên">
+            Lấy lớp mặc định
+          </button>
+        </div>
+      </div>
+
+      <!-- Danh sách lớp theo từng Khối (cuộn được) -->
+      <div id="week-classes-checklist-container"
+        class="overflow-y-auto max-h-[46vh] custom-scrollbar pr-1 space-y-3">
+        <!-- Render từ JS: khối 6, 7, 8, 9 -->
+      </div>
+
+      <!-- Ô nhập bổ sung thêm lớp ngoài danh sách -->
+      <div class="mt-3 pt-2.5 border-t border-slate-100">
+        <label class="block text-[11px] font-bold text-slate-600 mb-1">
+          <i class="fa-solid fa-plus-circle text-emerald-600 mr-1"></i>Nhập bổ sung lớp khác nếu chưa có ở trên (ngăn cách bằng dấu phẩy):
+        </label>
+        <input type="text" id="week-custom-classes-input"
+          placeholder="Ví dụ: 8A10, 9A11..."
+          oninput="updateWeekSelectedClassesPreview()"
+          class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 transition">
+      </div>
+
+      <!-- Footer các nút hành động -->
+      <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+        <button type="button" onclick="resetThisWeekClassesToDefault()"
+          class="w-full sm:w-auto px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5"
+          title="Xóa cấu hình riêng của tuần này để dùng lớp mặc định của giáo viên">
+          <i class="fa-solid fa-rotate-left text-slate-500"></i>
+          <span>Khôi phục mặc định</span>
+        </button>
+
+        <div class="w-full sm:w-auto flex items-center justify-end gap-2">
+          <button type="button" onclick="saveWeekClasses(true)"
+            class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow-md shadow-teal-600/30 transition flex items-center justify-center gap-1.5 active:scale-95"
+            title="Áp dụng danh sách lớp này cho TẤT CẢ các tuần trong học kỳ">
+            <i class="fa-solid fa-arrows-split-up-and-left"></i>
+            <span>Áp dụng tất cả tuần</span>
+          </button>
+          <button type="button" onclick="saveWeekClasses(false)"
+            class="flex-1 sm:flex-initial px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-1.5 active:scale-95"
+            title="Chỉ lưu lớp cho riêng tuần này">
+            <i class="fa-solid fa-check"></i>
+            <span>Lưu tuần này</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================
        9. LOGIC JAVASCRIPT HỆ THỐNG
        ======================================================== -->
   <script>
@@ -4988,37 +5086,463 @@ function initialSetup() {
       // Tự động đồng bộ số liệu vào cột "Lớp dạy" trên bảng tuần nếu bảng đang hiển thị
       const weeksTbody = document.getElementById('weeks-table-body');
       if (weeksTbody && weeksTbody.children.length > 0) {
-        const cellHtml = getTeacherClassesCellHtml();
-        const rows = weeksTbody.querySelectorAll('tr');
-        rows.forEach(r => {
-          const classCell = r.children[1];
-          if (classCell) classCell.innerHTML = cellHtml;
-        });
+        const semObj = SEMESTER_CONFIG[activeSemesterId];
+        if (semObj && semObj.weeks) {
+          const rows = weeksTbody.querySelectorAll('tr');
+          rows.forEach((r, idx) => {
+            const w = semObj.weeks[idx];
+            const classCell = r.children[1];
+            if (classCell && w) {
+              classCell.innerHTML = getTeacherClassesCellHtml(w.id, w.label);
+            }
+          });
+        }
         const footClasses = document.getElementById('foot-classes');
-        if (footClasses) {
-          footClasses.textContent = currentTeacherSelectedClasses.length > 0 ? `${currentTeacherSelectedClasses.length} lớp` : '--';
+        if (footClasses && semObj && semObj.weeks) {
+          const distinctClasses = new Set();
+          semObj.weeks.forEach(w => {
+            const wData = (dataStore[activeSemesterId] && dataStore[activeSemesterId][w.id]) ? dataStore[activeSemesterId][w.id] : null;
+            const wCls = (wData && wData.classes !== undefined && wData.classes !== null && String(wData.classes).trim() !== "")
+              ? parseTeacherLopDay(wData.classes)
+              : currentTeacherSelectedClasses;
+            (wCls || []).forEach(c => distinctClasses.add(c));
+          });
+          footClasses.textContent = distinctClasses.size > 0 ? `${distinctClasses.size} lớp` : '--';
         }
       }
     }
 
-    function getTeacherClassesCellHtml() {
-      if (!currentTeacherSelectedClasses || currentTeacherSelectedClasses.length === 0) {
-        return `<span class="text-xs text-slate-400 italic">--</span>`;
-      }
-      const sorted = [...currentTeacherSelectedClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      const classText = sorted.join(", ");
-      return `<div class="text-xs font-semibold text-slate-800 max-w-[280px] mx-auto text-center leading-snug py-0.5" title="${escapeHtml(classText)}">${escapeHtml(classText)}</div>`;
-    }
+    let currentEditingWeekId = null;
+    let currentEditingWeekLabel = "";
+    let isEditingWeekInAdminModal = false;
 
-    function getTeacherClassesCellHtmlForAdmin(teacher) {
-      const lopDayStr = teacher ? (teacher.lopDay || "") : "";
-      const classes = parseTeacherLopDay(lopDayStr);
-      if (!classes || classes.length === 0) {
-        return `<span class="text-xs text-slate-400 italic">--</span>`;
-      }
+    function getTeacherClassesCellHtml(weekId, weekLabel) {
+      const isLocked = isSemesterLocked(activeSemesterId);
+      const weekData = (dataStore && dataStore[activeSemesterId] && dataStore[activeSemesterId][weekId])
+        ? dataStore[activeSemesterId][weekId]
+        : null;
+
+      const hasCustom = (weekData && weekData.classes !== undefined && weekData.classes !== null && String(weekData.classes).trim() !== "");
+      const classes = hasCustom
+        ? parseTeacherLopDay(weekData.classes)
+        : (currentTeacherSelectedClasses || []);
+
       const sorted = [...classes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       const classText = sorted.join(", ");
-      return `<div class="text-xs font-semibold text-slate-800 max-w-[280px] mx-auto text-center leading-snug py-0.5" title="${escapeHtml(classText)}">${escapeHtml(classText)}</div>`;
+
+      const safeWeekId = escapeHtml(weekId || '');
+      const safeWeekLabel = escapeHtml(weekLabel || weekId || '');
+      const safeJsLabel = (weekLabel || weekId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+      const displayContent = classText
+        ? `<span class="text-xs font-semibold ${hasCustom ? 'text-emerald-950 font-bold' : 'text-slate-800'}">${escapeHtml(classText)}</span>`
+        : `<span class="text-xs text-slate-400 italic">--</span>`;
+
+      const editBtn = !isLocked ? `
+        <button type="button" onclick="openEditWeekClassesModal('${safeWeekId}', '${safeJsLabel}', false)"
+          title="${hasCustom ? 'Chỉnh sửa lớp dạy ' + safeWeekLabel + ' (đang dùng lớp riêng)' : 'Chỉnh sửa lớp dạy ' + safeWeekLabel}"
+          class="w-6 h-6 rounded-md ${hasCustom ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs' : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200'} transition shadow-2xs active:scale-95 shrink-0 flex items-center justify-center">
+          <i class="fa-solid fa-pen text-[10px]"></i>
+        </button>
+      ` : '';
+
+      return `
+        <div class="inline-flex items-center justify-center gap-1.5 py-0.5 px-1 max-w-[280px]">
+          <div class="text-center leading-snug break-words" title="${escapeHtml(classText || 'Chưa chọn lớp')}">
+            ${displayContent}
+          </div>
+          ${editBtn}
+        </div>
+      `;
+    }
+
+    function getTeacherClassesCellHtmlForAdmin(teacher, weekId, weekLabel) {
+      const store = teacher ? teacher._store : null;
+      const semId = adminModalActiveSem;
+      const weekData = (store && store[semId] && store[semId][weekId]) ? store[semId][weekId] : null;
+      const teacherClasses = parseTeacherLopDay(teacher ? teacher.lopDay : "");
+      const hasCustom = (weekData && weekData.classes !== undefined && weekData.classes !== null && String(weekData.classes).trim() !== "");
+      const classes = hasCustom ? parseTeacherLopDay(weekData.classes) : teacherClasses;
+
+      const sorted = [...classes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      const classText = sorted.join(", ");
+
+      const safeWeekId = escapeHtml(weekId || '');
+      const safeWeekLabel = escapeHtml(weekLabel || weekId || '');
+      const safeJsLabel = (weekLabel || weekId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+      const displayContent = classText
+        ? `<span class="text-xs font-semibold ${hasCustom ? 'text-emerald-950 font-bold' : 'text-slate-800'}">${escapeHtml(classText)}</span>`
+        : `<span class="text-xs text-slate-400 italic">--</span>`;
+
+      return `
+        <div class="inline-flex items-center justify-center gap-1.5 py-0.5 px-1 max-w-[280px]">
+          <div class="text-center leading-snug break-words" title="${escapeHtml(classText || 'Chưa chọn lớp')}">
+            ${displayContent}
+          </div>
+          <button type="button" onclick="openEditWeekClassesModal('${safeWeekId}', '${safeJsLabel}', true)"
+            title="${hasCustom ? 'Chỉnh sửa lớp dạy ' + safeWeekLabel + ' (đang dùng lớp riêng)' : 'Chỉnh sửa lớp dạy ' + safeWeekLabel}"
+            class="w-6 h-6 rounded-md ${hasCustom ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs' : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200'} transition shadow-2xs active:scale-95 shrink-0 flex items-center justify-center">
+            <i class="fa-solid fa-pen text-[10px]"></i>
+          </button>
+        </div>
+      `;
+    }
+
+    function openEditWeekClassesModal(weekId, weekLabel, isAdmin = false) {
+      currentEditingWeekId = weekId;
+      currentEditingWeekLabel = weekLabel || weekId;
+      isEditingWeekInAdminModal = !!isAdmin;
+
+      const titleEl = document.getElementById('edit-week-classes-title');
+      if (titleEl) titleEl.textContent = `Chỉnh Sửa Lớp Dạy - ${currentEditingWeekLabel}`;
+
+      const descEl = document.getElementById('edit-week-classes-desc');
+      if (descEl) {
+        descEl.textContent = isEditingWeekInAdminModal
+          ? `Tùy chỉnh danh sách lớp dạy của GV ${currentAdminEditingTeacher ? currentAdminEditingTeacher.tenGv : ''} cho ${currentEditingWeekLabel}`
+          : `Tùy chỉnh danh sách lớp Thầy/Cô giảng dạy riêng cho ${currentEditingWeekLabel}`;
+      }
+
+      let weekClasses = [];
+      if (isEditingWeekInAdminModal) {
+        const teacher = currentAdminEditingTeacher;
+        const store = teacher ? teacher._store : null;
+        const semId = adminModalActiveSem;
+        if (store && store[semId] && store[semId][weekId] && store[semId][weekId].classes !== undefined && store[semId][weekId].classes !== null && String(store[semId][weekId].classes).trim() !== "") {
+          weekClasses = parseTeacherLopDay(store[semId][weekId].classes);
+        } else {
+          weekClasses = parseTeacherLopDay(teacher ? teacher.lopDay : "");
+        }
+      } else {
+        if (dataStore && dataStore[activeSemesterId] && dataStore[activeSemesterId][weekId] && dataStore[activeSemesterId][weekId].classes !== undefined && dataStore[activeSemesterId][weekId].classes !== null && String(dataStore[activeSemesterId][weekId].classes).trim() !== "") {
+          weekClasses = parseTeacherLopDay(dataStore[activeSemesterId][weekId].classes);
+        } else {
+          weekClasses = [...currentTeacherSelectedClasses];
+        }
+      }
+
+      const customInp = document.getElementById('week-custom-classes-input');
+      if (customInp) customInp.value = "";
+
+      renderWeekClassesChecklist(weekClasses);
+
+      const modal = document.getElementById('modal-edit-week-classes');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeEditWeekClassesModal() {
+      const modal = document.getElementById('modal-edit-week-classes');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renderWeekClassesChecklist(currentClasses = []) {
+      const container = document.getElementById('week-classes-checklist-container');
+      if (!container) return;
+
+      const currentSet = new Set((currentClasses || []).map(c => String(c).trim()).filter(Boolean));
+
+      // Tập hợp các khối 6, 7, 8, 9
+      const grades = ['6', '7', '8', '9'];
+      const gradeMap = { '6': [], '7': [], '8': [], '9': [], 'other': [] };
+
+      grades.forEach(g => {
+        const list = getSchoolGradeClasses(g);
+        (list || []).forEach(c => {
+          const cls = String(c).trim();
+          if (cls && !gradeMap[g].includes(cls)) gradeMap[g].push(cls);
+        });
+      });
+
+      // Bổ sung các lớp đang chọn trong tuần hoặc lớp mặc định của giáo viên nếu chưa có trong cấu hình trường
+      const defaultClasses = isEditingWeekInAdminModal
+        ? parseTeacherLopDay(currentAdminEditingTeacher ? currentAdminEditingTeacher.lopDay : "")
+        : currentTeacherSelectedClasses;
+
+      const extraClasses = new Set([
+        ...(currentClasses || []),
+        ...(defaultClasses || [])
+      ]);
+
+      extraClasses.forEach(c => {
+        const cls = String(c).trim();
+        if (!cls) return;
+        let placed = false;
+        for (const g of grades) {
+          if (cls.startsWith(g)) {
+            if (!gradeMap[g].includes(cls)) gradeMap[g].push(cls);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          if (!gradeMap.other.includes(cls)) gradeMap.other.push(cls);
+        }
+      });
+
+      // Sắp xếp các lớp trong từng khối
+      grades.forEach(g => {
+        gradeMap[g].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      });
+      gradeMap.other.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      let html = "";
+      let totalRendered = 0;
+
+      grades.forEach(g => {
+        const list = gradeMap[g];
+        if (list.length === 0) return;
+        totalRendered += list.length;
+        const checkedCount = list.filter(c => currentSet.has(c)).length;
+
+        html += `
+          <div class="bg-slate-50/90 rounded-2xl p-3 border border-slate-200">
+            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200/80">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                  ${g}
+                </span>
+                <span class="font-extrabold text-xs text-slate-800">Khối ${g}</span>
+                <span class="text-[10px] text-slate-500 font-semibold">(${checkedCount}/${list.length} lớp đã chọn)</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-[11px]">
+                <button type="button" onclick="toggleSelectGradeInWeekModal('${g}', true)" class="text-emerald-700 hover:text-emerald-800 font-bold hover:underline">Chọn hết</button>
+                <span class="text-slate-300">|</span>
+                <button type="button" onclick="toggleSelectGradeInWeekModal('${g}', false)" class="text-slate-500 hover:text-slate-700 font-semibold hover:underline">Bỏ chọn</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2" data-grade-container="${g}">
+              ${list.map(cls => {
+                const isChecked = currentSet.has(cls);
+                return `
+                  <label class="week-class-card flex items-center gap-1.5 p-2 rounded-xl border cursor-pointer select-none transition text-xs ${isChecked ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}">
+                    <input type="checkbox" name="week-class-cb" value="${escapeHtml(cls)}" data-grade="${g}" ${isChecked ? 'checked' : ''}
+                      onchange="onWeekClassCheckboxChange(this)"
+                      class="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                    <span class="truncate">${escapeHtml(cls)}</span>
+                  </label>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        `;
+      });
+
+      if (gradeMap.other.length > 0) {
+        const list = gradeMap.other;
+        totalRendered += list.length;
+        html += `
+          <div class="bg-slate-50/90 rounded-2xl p-3 border border-slate-200">
+            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200/80">
+              <span class="font-extrabold text-xs text-slate-800">Lớp khác</span>
+              <div class="flex items-center gap-1.5 text-[11px]">
+                <button type="button" onclick="toggleSelectGradeInWeekModal('other', true)" class="text-emerald-700 hover:text-emerald-800 font-bold hover:underline">Chọn hết</button>
+                <span class="text-slate-300">|</span>
+                <button type="button" onclick="toggleSelectGradeInWeekModal('other', false)" class="text-slate-500 hover:text-slate-700 font-semibold hover:underline">Bỏ chọn</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2" data-grade-container="other">
+              ${list.map(cls => {
+                const isChecked = currentSet.has(cls);
+                return `
+                  <label class="week-class-card flex items-center gap-1.5 p-2 rounded-xl border cursor-pointer select-none transition text-xs ${isChecked ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}">
+                    <input type="checkbox" name="week-class-cb" value="${escapeHtml(cls)}" data-grade="other" ${isChecked ? 'checked' : ''}
+                      onchange="onWeekClassCheckboxChange(this)"
+                      class="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                    <span class="truncate">${escapeHtml(cls)}</span>
+                  </label>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      if (totalRendered === 0) {
+        html = `<p class="text-center text-xs text-slate-400 py-6">Chưa có danh sách lớp trường trong hệ thống. Thầy/Cô có thể nhập trực tiếp các tên lớp vào ô bên dưới.</p>`;
+      }
+
+      container.innerHTML = html;
+      updateWeekSelectedClassesPreview();
+    }
+
+    function onWeekClassCheckboxChange(cb) {
+      if (!cb) return;
+      const card = cb.closest('label');
+      if (card) {
+        if (cb.checked) {
+          card.className = "week-class-card flex items-center gap-1.5 p-2 rounded-xl border cursor-pointer select-none transition text-xs bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs";
+        } else {
+          card.className = "week-class-card flex items-center gap-1.5 p-2 rounded-xl border cursor-pointer select-none transition text-xs bg-white border-slate-200 text-slate-700 hover:border-slate-300";
+        }
+      }
+      updateWeekSelectedClassesPreview();
+    }
+
+    function updateWeekSelectedClassesPreview() {
+      const cbs = document.querySelectorAll('#week-classes-checklist-container input[name="week-class-cb"]:checked');
+      const selected = [];
+      cbs.forEach(cb => {
+        const v = cb.value.trim();
+        if (v && !selected.includes(v)) selected.push(v);
+      });
+      const customInput = document.getElementById('week-custom-classes-input');
+      if (customInput && customInput.value.trim()) {
+        const extra = parseTeacherLopDay(customInput.value);
+        extra.forEach(c => {
+          if (c && !selected.includes(c)) selected.push(c);
+        });
+      }
+      selected.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      const previewEl = document.getElementById('week-classes-selected-summary');
+      if (previewEl) {
+        if (selected.length === 0) {
+          previewEl.innerHTML = `<span class="text-slate-400 italic">Chưa chọn lớp nào cho tuần này</span>`;
+        } else {
+          previewEl.innerHTML = `
+            <span class="text-slate-600 font-semibold">Đang chọn (${selected.length} lớp):</span>
+            <span class="font-extrabold text-emerald-950 bg-emerald-100/90 px-2 py-0.5 rounded-md border border-emerald-300">
+              ${escapeHtml(selected.join(", "))}
+            </span>
+          `;
+        }
+      }
+    }
+
+    function toggleSelectGradeInWeekModal(grade, isSelect) {
+      const cbs = document.querySelectorAll(`#week-classes-checklist-container input[data-grade="${grade}"]`);
+      cbs.forEach(cb => {
+        cb.checked = !!isSelect;
+        onWeekClassCheckboxChange(cb);
+      });
+    }
+
+    function selectAllWeekClasses(isSelect) {
+      const cbs = document.querySelectorAll('#week-classes-checklist-container input[name="week-class-cb"]');
+      cbs.forEach(cb => {
+        cb.checked = !!isSelect;
+        onWeekClassCheckboxChange(cb);
+      });
+    }
+
+    function resetWeekClassesToDefaultInModal() {
+      const defaultClasses = isEditingWeekInAdminModal
+        ? parseTeacherLopDay(currentAdminEditingTeacher ? currentAdminEditingTeacher.lopDay : "")
+        : currentTeacherSelectedClasses;
+      const set = new Set((defaultClasses || []).map(c => String(c).trim()).filter(Boolean));
+      const cbs = document.querySelectorAll('#week-classes-checklist-container input[name="week-class-cb"]');
+      cbs.forEach(cb => {
+        cb.checked = set.has(cb.value.trim());
+        onWeekClassCheckboxChange(cb);
+      });
+      const customInput = document.getElementById('week-custom-classes-input');
+      if (customInput) customInput.value = "";
+      updateWeekSelectedClassesPreview();
+    }
+
+    function resetThisWeekClassesToDefault() {
+      if (!currentEditingWeekId) return;
+
+      if (isEditingWeekInAdminModal) {
+        const teacher = currentAdminEditingTeacher;
+        const semId = adminModalActiveSem;
+        if (teacher && teacher._store && teacher._store[semId] && teacher._store[semId][currentEditingWeekId]) {
+          delete teacher._store[semId][currentEditingWeekId].classes;
+        }
+        renderAdminModalWeeksTable();
+        showToast(`Đã khôi phục lớp dạy của ${currentEditingWeekLabel} về mặc định!`, "info");
+      } else {
+        if (dataStore && dataStore[activeSemesterId] && dataStore[activeSemesterId][currentEditingWeekId]) {
+          delete dataStore[activeSemesterId][currentEditingWeekId].classes;
+        }
+        hasUnsavedChanges = true;
+        renderCurrentSemesterTable();
+        updateTeacherDeclarationNotice();
+        showToast(`Đã khôi phục lớp dạy của ${currentEditingWeekLabel} về mặc định!`, "info");
+      }
+
+      closeEditWeekClassesModal();
+    }
+
+    function saveWeekClasses(applyToAll = false) {
+      if (!currentEditingWeekId) return;
+
+      const cbs = document.querySelectorAll('#week-classes-checklist-container input[name="week-class-cb"]:checked');
+      const selected = [];
+      cbs.forEach(cb => {
+        const v = cb.value.trim();
+        if (v && !selected.includes(v)) selected.push(v);
+      });
+
+      const customInput = document.getElementById('week-custom-classes-input');
+      if (customInput && customInput.value.trim()) {
+        const extra = parseTeacherLopDay(customInput.value);
+        extra.forEach(c => {
+          if (c && !selected.includes(c)) selected.push(c);
+        });
+      }
+
+      selected.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      const classesStr = selected.join(", ");
+
+      if (isEditingWeekInAdminModal) {
+        const teacher = currentAdminEditingTeacher;
+        if (!teacher) return;
+        if (!teacher._store) teacher._store = {};
+        const semId = adminModalActiveSem;
+        if (!teacher._store[semId]) teacher._store[semId] = {};
+
+        if (applyToAll) {
+          const semObj = SEMESTER_CONFIG[semId];
+          if (semObj && semObj.weeks) {
+            semObj.weeks.forEach(w => {
+              if (!teacher._store[semId][w.id]) teacher._store[semId][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+              teacher._store[semId][w.id].classes = classesStr;
+            });
+          }
+          teacher.lopDay = classesStr;
+        } else {
+          if (!teacher._store[semId][currentEditingWeekId]) {
+            teacher._store[semId][currentEditingWeekId] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+          }
+          teacher._store[semId][currentEditingWeekId].classes = classesStr;
+        }
+
+        renderAdminModalWeeksTable();
+        showToast(applyToAll ? `Đã áp dụng ${selected.length} lớp cho tất cả các tuần!` : `Đã lưu ${selected.length} lớp cho ${currentEditingWeekLabel}!`, "success");
+      } else {
+        if (!dataStore[activeSemesterId]) dataStore[activeSemesterId] = {};
+
+        if (applyToAll) {
+          const semObj = SEMESTER_CONFIG[activeSemesterId];
+          if (semObj && semObj.weeks) {
+            semObj.weeks.forEach(w => {
+              if (!dataStore[activeSemesterId][w.id]) {
+                dataStore[activeSemesterId][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+              }
+              dataStore[activeSemesterId][w.id].classes = classesStr;
+            });
+          }
+          currentTeacherSelectedClasses = [...selected];
+          renderTeacherSelectedClassesChips();
+          if (currentUser && currentUser.taiKhoan) {
+            localStorage.setItem(`teacher_classes_${currentUser.taiKhoan}`, classesStr);
+          }
+        } else {
+          if (!dataStore[activeSemesterId][currentEditingWeekId]) {
+            dataStore[activeSemesterId][currentEditingWeekId] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+          }
+          dataStore[activeSemesterId][currentEditingWeekId].classes = classesStr;
+        }
+
+        hasUnsavedChanges = true;
+        renderCurrentSemesterTable();
+        updateTeacherDeclarationNotice();
+        showToast(applyToAll ? `Đã áp dụng ${selected.length} lớp cho tất cả các tuần!` : `Đã lưu ${selected.length} lớp cho ${currentEditingWeekLabel}!`, "success");
+      }
+
+      closeEditWeekClassesModal();
     }
 
     function removeTeacherClass(cls) {
@@ -9146,399 +9670,6 @@ function initialSetup() {
         if (stats.hasDeclared) submittedTeachersAll++;
 
         sumHk1QuotaTotal += (stats.quota * 18);
-        sumHk2QuotaTotal += (stats.quota * 17);
-        sumHk1Actual += stats.hk1Actual;
-        sumHk1Overtime += stats.hk1Overtime;
-        sumHk2Actual += stats.hk2Actual;
-        sumHk2Overtime += stats.hk2Overtime;
-        sumYearOvertime += stats.yearOvertime;
-      });
-
-      // Cập nhật Header & Tiêu đề bảng
-      const titleEl = document.getElementById('admin-summary-table-title');
-      const subEl = document.getElementById('admin-summary-table-sub');
-      const statSubLabel = document.getElementById('stat-submitted-label');
-      const statSubVal = document.getElementById('stat-submitted-teachers');
-      const statCard3Label = document.getElementById('stat-card3-label');
-      const statCard3Val = document.getElementById('stat-card3-val');
-      const statCard4Label = document.getElementById('stat-card4-label');
-      const statCard4Val = document.getElementById('stat-card4-val');
-
-      const totalTeachersEl = document.getElementById('stat-total-teachers');
-      if (totalTeachersEl) {
-        if (adminSummaryOvertimeFilter === 'all') {
-          totalTeachersEl.textContent = totalTeachers;
-        } else {
-          totalTeachersEl.innerHTML = `<span class="text-emerald-700">${filteredTeachers.length}</span><span class="text-xs text-slate-400 font-semibold"> / ${totalTeachers} GV</span>`;
-        }
-      }
-
-      let filterSubtitleTag = "";
-      let filterFooterTag = "";
-      if (adminSummaryOvertimeFilter === 'overtime') {
-        filterSubtitleTag = " • ĐANG LỌC: VƯỢT ĐỊNH MỨC (> 0 TIẾT)";
-        filterFooterTag = " VƯỢT ĐỊNH MỨC";
-      } else if (adminSummaryOvertimeFilter === 'no_overtime') {
-        filterSubtitleTag = " • ĐANG LỌC: KHÔNG VƯỢT ĐỊNH MỨC (≤ 0 TIẾT)";
-        filterFooterTag = " KHÔNG VƯỢT ĐỊNH MỨC";
-      }
-
-      if (adminSummarySemester === 'hk1') {
-        if (titleEl) titleEl.textContent = "Bảng Kê Tổng Hợp Số Tiết Dạy Vượt Định Mức - Học Kỳ 1";
-        if (subEl) subEl.textContent = "Định mức tính theo quy định của từng giáo viên | Học Kỳ 1 (18 tuần: Tuần 1 -> Tuần 18)" + filterSubtitleTag;
-        if (statSubLabel) statSubLabel.textContent = "Đã Kê Khai (HK1)";
-        if (statSubVal) statSubVal.textContent = `${submittedTeachersHk1} / ${filteredTeachers.length}`;
-        if (statCard3Label) statCard3Label.textContent = "Tổng Thực Dạy HK1";
-        if (statCard3Val) statCard3Val.textContent = formatNumber(sumHk1Actual) + " tiết";
-        if (statCard4Label) statCard4Label.textContent = "Tổng Vượt Tiết HK1";
-        if (statCard4Val) statCard4Val.textContent = (sumHk1Overtime > 0 ? '+' : '') + formatNumber(sumHk1Overtime) + " tiết";
-
-        // Thead HK1
-        if (thead) {
-          thead.innerHTML = `
-            <tr class="bg-slate-100 text-slate-700 font-extrabold text-center border-b">
-              <th class="py-3 px-2 text-center w-12">STT</th>
-              <th class="py-3 px-3 text-left min-w-[150px]">Tên Giáo Viên</th>
-              <th class="py-3 px-2 text-center min-w-[100px]">Ngày Sinh</th>
-              <th class="py-3 px-2 text-center min-w-[110px]">Môn</th>
-              <th class="py-3 px-2 text-center min-w-[90px]">Tài Khoản</th>
-              <th class="py-3 px-2 text-center min-w-[75px]">Tiết QĐ/Tuần</th>
-              <th class="py-3 px-2 text-center min-w-[90px] bg-slate-50">ĐM HK1 (18t)</th>
-              <th class="py-3 px-2 text-center min-w-[100px] bg-blue-50/50 text-blue-900 font-black">Thực dạy HK1</th>
-              <th class="py-3 px-2 text-center min-w-[110px] bg-emerald-100/70 text-emerald-950 font-black">Vượt HK1</th>
-              <th class="py-3 px-2 text-center min-w-[85px] w-24">Thao Tác</th>
-            </tr>
-          `;
-        }
-
-        if (filteredTeachers.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="10" class="py-10 text-center text-slate-400 font-semibold">
-                <i class="fa-solid fa-filter text-2xl mb-2 block text-slate-300"></i>
-                Không có giáo viên nào ${adminSummaryOvertimeFilter === 'overtime' ? 'vượt định mức (> 0 tiết)' : 'không vượt định mức (≤ 0 tiết)'} trong Học Kỳ 1.
-              </td>
-            </tr>
-          `;
-          if (tfoot) tfoot.innerHTML = "";
-          return;
-        }
-
-        // Tbody HK1
-        filteredTeachers.forEach((t, idx) => {
-          const stats = calculateTeacherOvertimeTotals(t.dataJson);
-          const missHk1 = checkTeacherMissingWeeks(t.dataJson, 'hk1');
-          const isMissing = missHk1.isMissing;
-          const dmHk1 = stats.quota * 18;
-          const tr = document.createElement('tr');
-          tr.className = isMissing
-            ? "bg-rose-50 hover:bg-rose-100/90 text-rose-950 font-medium border-l-4 border-l-rose-500 shadow-2xs"
-            : (idx % 2 === 0 ? "bg-white hover:bg-slate-50 transition" : "bg-slate-50/60 hover:bg-slate-100 transition");
-          tr.innerHTML = `
-            <td class="py-3 px-2 text-center font-bold ${isMissing ? 'text-rose-700' : 'text-slate-500'}">${idx + 1}</td>
-            <td class="py-3 px-3 font-bold ${isMissing ? 'text-rose-950' : 'text-slate-900'}">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span>${t.tenGv || t.taiKhoan}</span>
-                ${isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="Cột (1) Tiết dạy thiếu tại: ${missHk1.missingWeekLabels.join(', ')}">
-                    <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>Thiếu ${missHk1.missingWeeks.length} tuần
-                  </span>
-                ` : ''}
-              </div>
-            </td>
-            <td class="py-3 px-2 text-center text-xs text-slate-600 font-medium whitespace-nowrap">${t.ngaySinh || '--'}</td>
-            <td class="py-3 px-2 text-center text-xs font-semibold text-slate-700">${stats.subject}</td>
-            <td class="py-3 px-2 text-center font-mono text-xs text-slate-500">${normalizeUsername(t.taiKhoan)}</td>
-            <td class="py-3 px-2 text-center font-bold text-xs text-slate-700">${stats.quota}</td>
-            <td class="py-3 px-2 text-center font-semibold ${isMissing ? 'text-rose-900 bg-rose-100/60 font-bold' : 'text-slate-600 bg-slate-50'}">${formatNumber(dmHk1)}</td>
-            <td class="py-3 px-2 text-center font-bold ${isMissing ? 'text-rose-950 bg-rose-100/70 font-black' : 'text-blue-900 bg-blue-50/30'}">${formatNumber(stats.hk1Actual)}</td>
-            <td class="py-3 px-2 text-center font-black text-xs sm:text-sm ${isMissing ? 'text-rose-900 bg-rose-200/80 font-black' : (stats.hk1Overtime >= 0 ? 'text-emerald-950 bg-emerald-100/70' : 'text-rose-600')}">
-              ${stats.hk1Overtime > 0 ? '+' + formatNumber(stats.hk1Overtime) : formatNumber(stats.hk1Overtime)}
-            </td>
-            <td class="py-3 px-2 text-center whitespace-nowrap">
-              <div class="flex items-center justify-center gap-1.5">
-                <button onclick="openAdminTeacherEditModal('${escapeJs(t.taiKhoan)}')" title="Xem chi tiết & sửa sổ tiết"
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-600 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                </button>
-                ${isSuperAdmin(currentUser.quyen) ? `
-                  <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
-                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                ` : ''}
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        // Tfoot HK1
-        if (tfoot) {
-          tfoot.innerHTML = `
-            <tr class="bg-emerald-50 text-slate-900 font-black border-t-2 border-emerald-300 text-center">
-              <td colspan="6" class="py-3.5 px-3 text-left uppercase text-emerald-950 font-black">
-                TỔNG CỘNG HỌC KỲ 1 (${filteredTeachers.length} GIÁO VIÊN${filterFooterTag})
-              </td>
-              <td class="py-3 px-2 text-slate-700">${formatNumber(sumHk1QuotaTotal)}</td>
-              <td class="py-3 px-2 text-blue-950 font-black">${formatNumber(sumHk1Actual)}</td>
-              <td class="py-3 px-2 text-sm sm:text-base text-emerald-950 bg-emerald-200/80 font-black">
-                ${(sumHk1Overtime > 0 ? '+' : '') + formatNumber(sumHk1Overtime)} tiết
-              </td>
-              <td class="py-3 px-2"></td>
-            </tr>
-          `;
-        }
-
-      } else if (adminSummarySemester === 'hk2') {
-        if (titleEl) titleEl.textContent = "Bảng Kê Tổng Hợp Số Tiết Dạy Vượt Định Mức - Học Kỳ 2";
-        if (subEl) subEl.textContent = "Định mức tính theo quy định của từng giáo viên | Học Kỳ 2 (17 tuần: Tuần 19 -> Tuần 35)" + filterSubtitleTag;
-        if (statSubLabel) statSubLabel.textContent = "Đã Kê Khai (HK2)";
-        if (statSubVal) statSubVal.textContent = `${submittedTeachersHk2} / ${filteredTeachers.length}`;
-        if (statCard3Label) statCard3Label.textContent = "Tổng Thực Dạy HK2";
-        if (statCard3Val) statCard3Val.textContent = formatNumber(sumHk2Actual) + " tiết";
-        if (statCard4Label) statCard4Label.textContent = "Tổng Vượt Tiết HK2";
-        if (statCard4Val) statCard4Val.textContent = (sumHk2Overtime > 0 ? '+' : '') + formatNumber(sumHk2Overtime) + " tiết";
-
-        // Thead HK2
-        if (thead) {
-          thead.innerHTML = `
-            <tr class="bg-slate-100 text-slate-700 font-extrabold text-center border-b">
-              <th class="py-3 px-2 text-center w-12">STT</th>
-              <th class="py-3 px-3 text-left min-w-[150px]">Tên Giáo Viên</th>
-              <th class="py-3 px-2 text-center min-w-[100px]">Ngày Sinh</th>
-              <th class="py-3 px-2 text-center min-w-[110px]">Môn</th>
-              <th class="py-3 px-2 text-center min-w-[90px]">Tài Khoản</th>
-              <th class="py-3 px-2 text-center min-w-[75px]">Tiết QĐ/Tuần</th>
-              <th class="py-3 px-2 text-center min-w-[90px] bg-slate-50">ĐM HK2 (17t)</th>
-              <th class="py-3 px-2 text-center min-w-[100px] bg-blue-50/50 text-blue-900 font-black">Thực dạy HK2</th>
-              <th class="py-3 px-2 text-center min-w-[110px] bg-emerald-100/70 text-emerald-950 font-black">Vượt HK2</th>
-              <th class="py-3 px-2 text-center min-w-[85px] w-24">Thao Tác</th>
-            </tr>
-          `;
-        }
-
-        if (filteredTeachers.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="10" class="py-10 text-center text-slate-400 font-semibold">
-                <i class="fa-solid fa-filter text-2xl mb-2 block text-slate-300"></i>
-                Không có giáo viên nào ${adminSummaryOvertimeFilter === 'overtime' ? 'vượt định mức (> 0 tiết)' : 'không vượt định mức (≤ 0 tiết)'} trong Học Kỳ 2.
-              </td>
-            </tr>
-          `;
-          if (tfoot) tfoot.innerHTML = "";
-          return;
-        }
-
-        // Tbody HK2
-        filteredTeachers.forEach((t, idx) => {
-          const stats = calculateTeacherOvertimeTotals(t.dataJson);
-          const missHk2 = checkTeacherMissingWeeks(t.dataJson, 'hk2');
-          const isMissing = missHk2.isMissing;
-          const dmHk2 = stats.quota * 17;
-          const tr = document.createElement('tr');
-          tr.className = isMissing
-            ? "bg-rose-50 hover:bg-rose-100/90 text-rose-950 font-medium border-l-4 border-l-rose-500 shadow-2xs"
-            : (idx % 2 === 0 ? "bg-white hover:bg-slate-50 transition" : "bg-slate-50/60 hover:bg-slate-100 transition");
-          tr.innerHTML = `
-            <td class="py-3 px-2 text-center font-bold ${isMissing ? 'text-rose-700' : 'text-slate-500'}">${idx + 1}</td>
-            <td class="py-3 px-3 font-bold ${isMissing ? 'text-rose-950' : 'text-slate-900'}">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span>${t.tenGv || t.taiKhoan}</span>
-                ${isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="Cột (1) Tiết dạy thiếu tại: ${missHk2.missingWeekLabels.join(', ')}">
-                    <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>Thiếu ${missHk2.missingWeeks.length} tuần
-                  </span>
-                ` : ''}
-              </div>
-            </td>
-            <td class="py-3 px-2 text-center text-xs text-slate-600 font-medium whitespace-nowrap">${t.ngaySinh || '--'}</td>
-            <td class="py-3 px-2 text-center text-xs font-semibold text-slate-700">${stats.subject}</td>
-            <td class="py-3 px-2 text-center font-mono text-xs text-slate-500">${normalizeUsername(t.taiKhoan)}</td>
-            <td class="py-3 px-2 text-center font-bold text-xs text-slate-700">${stats.quota}</td>
-            <td class="py-3 px-2 text-center font-semibold ${isMissing ? 'text-rose-900 bg-rose-100/60 font-bold' : 'text-slate-600 bg-slate-50'}">${formatNumber(dmHk2)}</td>
-            <td class="py-3 px-2 text-center font-bold ${isMissing ? 'text-rose-950 bg-rose-100/70 font-black' : 'text-blue-900 bg-blue-50/30'}">${formatNumber(stats.hk2Actual)}</td>
-            <td class="py-3 px-2 text-center font-black text-xs sm:text-sm ${isMissing ? 'text-rose-900 bg-rose-200/80 font-black' : (stats.hk2Overtime >= 0 ? 'text-emerald-950 bg-emerald-100/70' : 'text-rose-600')}">
-              ${stats.hk2Overtime > 0 ? '+' + formatNumber(stats.hk2Overtime) : formatNumber(stats.hk2Overtime)}
-            </td>
-            <td class="py-3 px-2 text-center whitespace-nowrap">
-              <div class="flex items-center justify-center gap-1.5">
-                <button onclick="openAdminTeacherEditModal('${escapeJs(t.taiKhoan)}')" title="Xem chi tiết & sửa sổ tiết"
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-600 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                </button>
-                ${isSuperAdmin(currentUser.quyen) ? `
-                  <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
-                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                    <i class="fa-solid fa-trash-can"></i>
-                  </button>
-                ` : ''}
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        // Tfoot HK2
-        if (tfoot) {
-          tfoot.innerHTML = `
-            <tr class="bg-emerald-50 text-slate-900 font-black border-t-2 border-emerald-300 text-center">
-              <td colspan="6" class="py-3.5 px-3 text-left uppercase text-emerald-950 font-black">
-                TỔNG CỘNG HỌC KỲ 2 (${filteredTeachers.length} GIÁO VIÊN${filterFooterTag})
-              </td>
-              <td class="py-3 px-2 text-slate-700">${formatNumber(sumHk2QuotaTotal)}</td>
-              <td class="py-3 px-2 text-blue-950 font-black">${formatNumber(sumHk2Actual)}</td>
-              <td class="py-3 px-2 text-sm sm:text-base text-emerald-950 bg-emerald-200/80 font-black">
-                ${(sumHk2Overtime > 0 ? '+' : '') + formatNumber(sumHk2Overtime)} tiết
-              </td>
-              <td class="py-3 px-2"></td>
-            </tr>
-          `;
-        }
-
-      } else {
-        // 'all' - Cả Năm
-        if (titleEl) titleEl.textContent = "BẢNG KÊ TỔNG HỢP TIẾT DẠY VƯỢT ĐỊNH MỨC TOÀN TRƯỜNG - CẢ NĂM HỌC";
-        if (subEl) subEl.textContent = "Định mức tính theo quy định của từng giáo viên | HK1 (18 tuần), HK2 (17 tuần)" + filterSubtitleTag;
-        if (statSubLabel) statSubLabel.textContent = "Đã Kê Khai (Cả Năm)";
-        if (statSubVal) statSubVal.textContent = `${submittedTeachersAll} / ${filteredTeachers.length}`;
-        if (statCard3Label) statCard3Label.textContent = "Vượt Tiết HK1";
-        if (statCard3Val) statCard3Val.textContent = (sumHk1Overtime > 0 ? '+' : '') + formatNumber(sumHk1Overtime) + " tiết";
-        if (statCard4Label) statCard4Label.textContent = "Tổng Vượt Cả Năm";
-        if (statCard4Val) statCard4Val.textContent = (sumYearOvertime > 0 ? '+' : '') + formatNumber(sumYearOvertime) + " tiết";
-
-        // Thead Cả Năm
-        if (thead) {
-          thead.innerHTML = `
-            <tr class="bg-slate-100 text-slate-700 font-extrabold text-center border-b">
-              <th class="py-3 px-2 text-center w-12">STT</th>
-              <th class="py-3 px-3 text-left min-w-[150px]">Tên Giáo Viên</th>
-              <th class="py-3 px-2 text-center min-w-[100px]">Ngày Sinh</th>
-              <th class="py-3 px-2 text-center min-w-[110px]">Môn</th>
-              <th class="py-3 px-2 text-center min-w-[90px]">Tài Khoản</th>
-              <th class="py-3 px-2 text-center min-w-[75px]">Tiết QĐ</th>
-              <th class="py-3 px-2 text-center min-w-[95px] bg-slate-50">Thực dạy HK1</th>
-              <th class="py-3 px-2 text-center min-w-[95px] bg-teal-50 text-teal-900">Vượt HK1</th>
-              <th class="py-3 px-2 text-center min-w-[95px] bg-slate-50">Thực dạy HK2</th>
-              <th class="py-3 px-2 text-center min-w-[95px] bg-teal-50 text-teal-900">Vượt HK2</th>
-              <th class="py-3 px-2 text-center min-w-[110px] bg-emerald-100/70 text-emerald-950 font-black">Tổng Vượt Cả Năm</th>
-              <th class="py-3 px-2 text-center min-w-[85px] w-24">Thao Tác</th>
-            </tr>
-          `;
-        }
-
-        if (filteredTeachers.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="12" class="py-10 text-center text-slate-400 font-semibold">
-                <i class="fa-solid fa-filter text-2xl mb-2 block text-slate-300"></i>
-                Không có giáo viên nào ${adminSummaryOvertimeFilter === 'overtime' ? 'vượt định mức (> 0 tiết)' : 'không vượt định mức (≤ 0 tiết)'} trong Cả Năm.
-              </td>
-            </tr>
-          `;
-          if (tfoot) tfoot.innerHTML = "";
-          return;
-        }
-
-        // Tbody Cả Năm
-        filteredTeachers.forEach((t, idx) => {
-          const stats = calculateTeacherOvertimeTotals(t.dataJson);
-          const missHk1 = checkTeacherMissingWeeks(t.dataJson, 'hk1');
-          const missHk2 = checkTeacherMissingWeeks(t.dataJson, 'hk2');
-          const isMissing = missHk1.isMissing || missHk2.isMissing;
-          const tr = document.createElement('tr');
-          tr.className = isMissing
-            ? "bg-rose-50 hover:bg-rose-100/90 text-rose-950 font-medium border-l-4 border-l-rose-500 shadow-2xs"
-            : (idx % 2 === 0 ? "bg-white hover:bg-slate-50 transition" : "bg-slate-50/60 hover:bg-slate-100 transition");
-          tr.innerHTML = `
-            <td class="py-3 px-2 text-center font-bold ${isMissing ? 'text-rose-700' : 'text-slate-500'}">${idx + 1}</td>
-            <td class="py-3 px-3 font-bold ${isMissing ? 'text-rose-950' : 'text-slate-900'}">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span>${t.tenGv || t.taiKhoan}</span>
-                ${missHk1.isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="HK1 thiếu cột (1) Tiết dạy tại: ${missHk1.missingWeekLabels.join(', ')}">
-                    <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>HK1: Thiếu ${missHk1.missingWeeks.length}t
-                  </span>
-                ` : ''}
-                ${missHk2.isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="HK2 thiếu cột (1) Tiết dạy tại: ${missHk2.missingWeekLabels.join(', ')}">
-                    <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>HK2: Thiếu ${missHk2.missingWeeks.length}t
-                  </span>
-                ` : ''}
-              </div>
-            </td>
-            <td class="py-3 px-2 text-center text-xs text-slate-600 font-medium whitespace-nowrap">${t.ngaySinh || '--'}</td>
-            <td class="py-3 px-2 text-center text-xs font-semibold text-slate-700">${stats.subject}</td>
-            <td class="py-3 px-2 text-center font-mono text-xs text-slate-500">${normalizeUsername(t.taiKhoan)}</td>
-            <td class="py-3 px-2 text-center font-bold text-xs text-slate-700">${stats.quota}</td>
-            <td class="py-3 px-2 text-center ${missHk1.isMissing ? 'text-rose-950 bg-rose-100/60 font-bold' : 'text-slate-800'}">${formatNumber(stats.hk1Actual)}</td>
-            <td class="py-3 px-2 text-center font-bold ${missHk1.isMissing ? 'text-rose-900 bg-rose-200/60 font-black' : (stats.hk1Overtime >= 0 ? 'text-teal-800 bg-teal-50/40' : 'text-rose-500')}">
-              ${stats.hk1Overtime > 0 ? '+' + formatNumber(stats.hk1Overtime) : formatNumber(stats.hk1Overtime)}
-            </td>
-            <td class="py-3 px-2 text-center ${missHk2.isMissing ? 'text-rose-950 bg-rose-100/60 font-bold' : 'text-slate-800'}">${formatNumber(stats.hk2Actual)}</td>
-            <td class="py-3 px-2 text-center font-bold ${missHk2.isMissing ? 'text-rose-900 bg-rose-200/60 font-black' : (stats.hk2Overtime >= 0 ? 'text-teal-800 bg-teal-50/40' : 'text-rose-500')}">
-              ${stats.hk2Overtime > 0 ? '+' + formatNumber(stats.hk2Overtime) : formatNumber(stats.hk2Overtime)}
-            </td>
-            <td class="py-3 px-2 text-center font-black text-xs sm:text-sm ${isMissing ? 'text-rose-950 bg-rose-200/70 font-black' : (stats.yearOvertime >= 0 ? 'text-emerald-950 bg-emerald-100/60' : 'text-rose-600')}">
-              ${stats.yearOvertime > 0 ? '+' + formatNumber(stats.yearOvertime) : formatNumber(stats.yearOvertime)}
-            </td>
-            <td class="py-3 px-2 text-center whitespace-nowrap">
-              <div class="flex items-center justify-center gap-1.5">
-                <button onclick="openAdminTeacherEditModal('${escapeJs(t.taiKhoan)}')" title="Xem chi tiết & sửa sổ tiết"
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-600 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                </button>
-                <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        // Tfoot Cả Năm
-        if (tfoot) {
-          tfoot.innerHTML = `
-            <tr class="bg-emerald-50 text-slate-900 font-black border-t-2 border-emerald-300 text-center">
-              <td colspan="6" class="py-3.5 px-3 text-left uppercase text-emerald-950 font-black">
-                TỔNG CỘNG TOÀN TRƯỜNG CẢ NĂM (${filteredTeachers.length} GIÁO VIÊN${filterFooterTag})
-              </td>
-              <td class="py-3 px-2 text-slate-800">${formatNumber(sumHk1Actual)}</td>
-              <td class="py-3 px-2 text-teal-800">${(sumHk1Overtime > 0 ? '+' : '') + formatNumber(sumHk1Overtime)}</td>
-              <td class="py-3 px-2 text-slate-800">${formatNumber(sumHk2Actual)}</td>
-              <td class="py-3 px-2 text-teal-800">${(sumHk2Overtime > 0 ? '+' : '') + formatNumber(sumHk2Overtime)}</td>
-              <td class="py-3 px-2 text-sm sm:text-base text-emerald-950 bg-emerald-200/80 font-black">
-                ${(sumYearOvertime > 0 ? '+' : '') + formatNumber(sumYearOvertime)} tiết
-              </td>
-              <td class="py-3 px-2"></td>
-            </tr>
-          `;
-        }
-      }
-
-      // Cập nhật badge trên tab
-      const badgeOvertime = document.getElementById('badge-admin-summary-overtime');
-      if (badgeOvertime) {
-        if (adminSummarySemester === 'hk1') {
-          badgeOvertime.textContent = (sumHk1Overtime > 0 ? '+' : '') + formatNumber(sumHk1Overtime) + ' tiết (HK1)';
-        } else if (adminSummarySemester === 'hk2') {
-          badgeOvertime.textContent = (sumHk2Overtime > 0 ? '+' : '') + formatNumber(sumHk2Overtime) + ' tiết (HK2)';
-        } else {
-          badgeOvertime.textContent = (sumYearOvertime > 0 ? '+' : '') + formatNumber(sumYearOvertime) + ' tiết (Cả năm)';
-        }
-      }
-    }
-
-    /* =======================================================
-       H0. MODAL XÓA DỮ LIỆU KÊ KHAI TIẾT CHO TỪNG GIÁO VIÊN
-       ======================================================= */
-    function resetDeclarationModalButtonState() {
-      const btnConfirm = document.getElementById('btn-confirm-reset-declaration');
-      const spinner = document.getElementById('btn-reset-spinner');
-      const icon = document.getElementById('btn-reset-icon');
       const btnText = document.getElementById('btn-reset-text');
       const btnCancel = document.getElementById('btn-cancel-reset-modal');
       const btnCloseX = document.getElementById('btn-close-reset-modal');
@@ -9906,7 +10037,7 @@ function initialSetup() {
         total5 += actual;
         total6 += overtime;
 
-        const adminClassesCellHtml = getTeacherClassesCellHtmlForAdmin(currentAdminEditingTeacher);
+        const adminClassesCellHtml = getTeacherClassesCellHtmlForAdmin(currentAdminEditingTeacher, w.id, w.label);
 
         const tr = document.createElement('tr');
         tr.className = index % 2 === 0 ? "bg-white" : "bg-slate-50/70";
@@ -9972,8 +10103,16 @@ function initialSetup() {
       // Footer
       const adminFootClasses = document.getElementById('admin-modal-foot-classes');
       if (adminFootClasses && currentAdminEditingTeacher) {
-        const clsList = parseTeacherLopDay(currentAdminEditingTeacher.lopDay || '');
-        adminFootClasses.textContent = clsList.length > 0 ? `${clsList.length} lớp` : '--';
+        const distinctAdminClasses = new Set();
+        const defaultCls = parseTeacherLopDay(currentAdminEditingTeacher.lopDay || '');
+        defaultCls.forEach(c => distinctAdminClasses.add(c));
+        semObj.weeks.forEach(w => {
+          const rowData = storeSem[w.id];
+          if (rowData && rowData.classes !== undefined && rowData.classes !== null && String(rowData.classes).trim() !== "") {
+            parseTeacherLopDay(rowData.classes).forEach(c => distinctAdminClasses.add(c));
+          }
+        });
+        adminFootClasses.textContent = distinctAdminClasses.size > 0 ? `${distinctAdminClasses.size} lớp` : '--';
       }
       const adminFootQuota = document.getElementById('admin-modal-foot-quota');
       if (adminFootQuota) adminFootQuota.textContent = formatNumber(totalQuotaSem);
@@ -11434,7 +11573,7 @@ function initialSetup() {
           ? 'grid-input w-16 sm:w-20 text-center py-1.5 px-1 bg-slate-100 border border-slate-200 text-emerald-600 rounded-lg font-semibold text-xs sm:text-sm cursor-not-allowed select-none'
           : 'grid-input w-16 sm:w-20 text-center py-1.5 px-1 bg-white border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-900 text-xs sm:text-sm';
 
-        const classesCellHtml = getTeacherClassesCellHtml();
+        const classesCellHtml = getTeacherClassesCellHtml(w.id, w.label);
 
         const tr = document.createElement('tr');
         tr.className = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70';
@@ -11505,7 +11644,15 @@ function initialSetup() {
       // Footer
       const footClasses = document.getElementById('foot-classes');
       if (footClasses) {
-        footClasses.textContent = currentTeacherSelectedClasses.length > 0 ? `${currentTeacherSelectedClasses.length} lớp` : '--';
+        const distinctClasses = new Set();
+        semObj.weeks.forEach(w => {
+          const wData = (dataStore[semObj.id] && dataStore[semObj.id][w.id]) ? dataStore[semObj.id][w.id] : null;
+          const wCls = (wData && wData.classes !== undefined && wData.classes !== null && String(wData.classes).trim() !== "")
+            ? parseTeacherLopDay(wData.classes)
+            : (currentTeacherSelectedClasses || []);
+          (wCls || []).forEach(c => distinctClasses.add(c));
+        });
+        footClasses.textContent = distinctClasses.size > 0 ? `${distinctClasses.size} lớp` : '--';
       }
       const footQuota = document.getElementById('foot-quota');
       if (footQuota) footQuota.textContent = formatNumber(totalQuotaSem);
