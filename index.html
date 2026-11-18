@@ -5011,6 +5011,7 @@ function initialSetup() {
     }
 
     function getSchoolGradeClasses(grade) {
+      const gStr = String(grade);
       const currentSchoolUrl = getActiveBackendUrl();
       let school = (hubSchoolsList || []).find(s => s.url === currentSchoolUrl);
       if (!school && currentUser && currentUser.taiKhoan) {
@@ -5023,7 +5024,99 @@ function initialSetup() {
       if (!raw) {
         raw = localStorage.getItem('school_classes_active');
       }
-      return parseClassesForGrade(raw, grade);
+
+      const configured = parseClassesForGrade(raw, gStr);
+      const isDefaultFallback = configured.length === 4 && configured[0] === `${gStr}/1`;
+
+      // Nếu cấu hình trả về mẫu mặc định 4 lớp (g/1, g/2, g/3, g/4)
+      // nhưng thực tế giáo viên đang dùng danh sách lớp thật từ Sheet DATA (VD: 8A1, 8A2,...)
+      if (isDefaultFallback) {
+        const collected = new Set();
+        if (Array.isArray(adminTeachersList) && adminTeachersList.length > 0) {
+          adminTeachersList.forEach(t => {
+            const list = parseTeacherLopDay(t.lopDay || '');
+            list.forEach(c => {
+              if (c && c.startsWith(gStr)) collected.add(c);
+            });
+          });
+        }
+        if (collected.size >= 4 && ![...collected].some(c => c.includes('/'))) {
+          return [...collected].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        }
+      }
+
+      return configured;
+    }
+
+    // Kiểm tra một danh sách lớp trong khối có phải là dạy toàn bộ (full) các lớp của khối đó không
+    function isFullGradeClasses(classesInGrade, schoolGradeClasses, grade) {
+      if (!classesInGrade || classesInGrade.length === 0) return false;
+
+      // 1. Nếu cấu hình trường hoặc danh sách giáo viên toàn trường đã có danh sách lớp thật
+      if (schoolGradeClasses && schoolGradeClasses.length > 0) {
+        const isDefaultFallback = schoolGradeClasses.length === 4 && schoolGradeClasses[0] === `${grade}/1`;
+        if (!isDefaultFallback) {
+          const setInGrade = new Set(classesInGrade);
+          return schoolGradeClasses.length >= 3 &&
+                 schoolGradeClasses.every(sc => setInGrade.has(sc)) &&
+                 classesInGrade.length >= schoolGradeClasses.length;
+        }
+      }
+
+      // 2. Nếu cấu hình trường đang ở mẫu mặc định (g/1..g/4):
+      // Tự động kiểm tra tính liên tục theo chỉ số lớp (ví dụ 8A1 -> 8A12 hoặc 8/1 -> 8/10)
+      // Điều kiện: tối thiểu 4 lớp, bắt đầu từ 1, đủ tất cả các số liên tục không nhảy cóc
+      const nums = [];
+      classesInGrade.forEach(c => {
+        const m = String(c).match(/\d+$/);
+        if (m) nums.push(parseInt(m[0], 10));
+      });
+
+      if (nums.length >= 4 && nums.length === classesInGrade.length) {
+        const min = Math.min(...nums);
+        const max = Math.max(...nums);
+        const uniqueNums = new Set(nums);
+        if (min === 1 && uniqueNums.size === nums.length && (max - min + 1) === nums.length) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    // Tự động rút gọn danh sách lớp: Nếu dạy full tất cả các lớp của 1 khối thì chỉ hiển thị "Khối X"
+    function formatTeacherClassesSummary(rawClasses) {
+      const classes = parseTeacherLopDay(rawClasses);
+      if (!classes || classes.length === 0) return "";
+
+      const cleanSet = new Set(classes.map(c => String(c).trim()).filter(Boolean));
+      if (cleanSet.size === 0) return "";
+
+      const grades = ['6', '7', '8', '9'];
+      const resultParts = [];
+
+      grades.forEach(g => {
+        const classesInGrade = [...cleanSet].filter(c => c.startsWith(g));
+        if (classesInGrade.length === 0) return;
+
+        const schoolGradeClasses = getSchoolGradeClasses(g);
+        const isFullGrade = isFullGradeClasses(classesInGrade, schoolGradeClasses, g);
+
+        if (isFullGrade) {
+          resultParts.push(`Khối ${g}`);
+        } else {
+          const sortedInGrade = [...classesInGrade].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+          resultParts.push(sortedInGrade.join(", "));
+        }
+      });
+
+      const otherClasses = [...cleanSet].filter(c => !grades.some(g => c.startsWith(g)));
+      if (otherClasses.length > 0) {
+        otherClasses.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        resultParts.push(otherClasses.join(", "));
+      }
+
+      return resultParts.join(", ");
     }
 
     function renderTeacherSelectedClassesChips() {
@@ -5049,12 +5142,13 @@ function initialSetup() {
       } else {
         // Sắp xếp các lớp theo thứ tự khối và tên lớp
         const sorted = [...currentTeacherSelectedClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-        const classText = sorted.join(", ");
+        const fullClassText = sorted.join(", ");
+        const compactClassText = formatTeacherClassesSummary(currentTeacherSelectedClasses);
         container.innerHTML = `
           <div class="flex items-center gap-1.5 flex-wrap py-0.5 text-xs">
             <span class="text-slate-500 font-semibold">Đã chọn (${sorted.length} lớp):</span>
-            <span class="font-bold text-emerald-950 bg-emerald-50/90 px-2.5 py-0.5 rounded-md border border-emerald-200">
-              ${escapeHtml(classText)}
+            <span class="font-bold text-emerald-950 bg-emerald-50/90 px-2.5 py-0.5 rounded-md border border-emerald-200" title="${escapeHtml(fullClassText)}">
+              ${escapeHtml(compactClassText)}
             </span>
           </div>
         `;
@@ -5084,6 +5178,11 @@ function initialSetup() {
             (wCls || []).forEach(c => distinctClasses.add(c));
           });
           footClasses.textContent = distinctClasses.size > 0 ? `${distinctClasses.size} lớp` : '--';
+          if (distinctClasses.size > 0) {
+            footClasses.title = formatTeacherClassesSummary([...distinctClasses]);
+          } else {
+            footClasses.removeAttribute('title');
+          }
         }
       }
     }
@@ -5104,19 +5203,20 @@ function initialSetup() {
         : (currentTeacherSelectedClasses || []);
 
       const sorted = [...classes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      const classText = sorted.join(", ");
+      const fullClassText = sorted.join(", ");
+      const displayClassText = formatTeacherClassesSummary(classes);
 
       const safeWeekId = escapeHtml(weekId || '');
       const safeWeekLabel = escapeHtml(weekLabel || weekId || '');
       const safeJsLabel = (weekLabel || weekId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
-      const displayContent = classText
-        ? `<span class="text-xs font-semibold ${hasCustom ? 'text-emerald-950 font-bold' : 'text-slate-800'}">${escapeHtml(classText)}</span>`
+      const displayContent = displayClassText
+        ? `<span class="text-xs font-semibold ${hasCustom ? 'text-emerald-950 font-bold' : 'text-slate-800'}">${escapeHtml(displayClassText)}</span>`
         : `<span class="text-xs text-slate-400 italic">--</span>`;
 
       const editBtn = !isLocked ? `
         <button type="button" onclick="openEditWeekClassesModal('${safeWeekId}', '${safeJsLabel}', false)"
-          title="${hasCustom ? 'Chỉnh sửa lớp dạy ' + safeWeekLabel + ' (đang dùng lớp riêng)' : 'Chỉnh sửa lớp dạy ' + safeWeekLabel}"
+          title="${hasCustom ? 'Chỉnh sửa lớp dạy ' + safeWeekLabel + ' (đang dùng lớp riêng: ' + escapeHtml(fullClassText) + ')' : 'Chỉnh sửa lớp dạy ' + safeWeekLabel + ' (' + escapeHtml(fullClassText) + ')'}"
           class="w-6 h-6 rounded-md ${hasCustom ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs' : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200'} transition shadow-2xs active:scale-95 shrink-0 flex items-center justify-center">
           <i class="fa-solid fa-pen text-[10px]"></i>
         </button>
@@ -5124,7 +5224,7 @@ function initialSetup() {
 
       return `
         <div class="inline-flex items-center justify-center gap-1.5 py-0.5 px-1 max-w-[280px]">
-          <div class="text-center leading-snug break-words" title="${escapeHtml(classText || 'Chưa chọn lớp')}">
+          <div class="text-center leading-snug break-words" title="${escapeHtml(fullClassText || 'Chưa chọn lớp')}">
             ${displayContent}
           </div>
           ${editBtn}
@@ -5144,11 +5244,12 @@ function initialSetup() {
         return `<span class="text-xs text-slate-400 italic">--</span>`;
       }
       const sorted = [...classes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-      const classText = sorted.join(", ");
+      const fullClassText = sorted.join(", ");
+      const displayClassText = formatTeacherClassesSummary(classes);
 
       return `
-        <div class="text-xs font-semibold ${hasCustom ? 'text-emerald-950 font-bold' : 'text-slate-800'} max-w-[280px] mx-auto text-center leading-snug py-0.5" title="${escapeHtml(classText)}">
-          ${escapeHtml(classText)}
+        <div class="text-xs font-semibold ${hasCustom ? 'text-emerald-950 font-bold' : 'text-slate-800'} max-w-[280px] mx-auto text-center leading-snug py-0.5" title="${escapeHtml(fullClassText)}">
+          ${escapeHtml(displayClassText)}
         </div>
       `;
     }
@@ -10473,6 +10574,11 @@ function initialSetup() {
           }
         });
         adminFootClasses.textContent = distinctAdminClasses.size > 0 ? `${distinctAdminClasses.size} lớp` : '--';
+        if (distinctAdminClasses.size > 0) {
+          adminFootClasses.title = formatTeacherClassesSummary([...distinctAdminClasses]);
+        } else {
+          adminFootClasses.removeAttribute('title');
+        }
       }
       const adminFootQuota = document.getElementById('admin-modal-foot-quota');
       if (adminFootQuota) adminFootQuota.textContent = formatNumber(totalQuotaSem);
@@ -12013,6 +12119,11 @@ function initialSetup() {
           (wCls || []).forEach(c => distinctClasses.add(c));
         });
         footClasses.textContent = distinctClasses.size > 0 ? `${distinctClasses.size} lớp` : '--';
+        if (distinctClasses.size > 0) {
+          footClasses.title = formatTeacherClassesSummary([...distinctClasses]);
+        } else {
+          footClasses.removeAttribute('title');
+        }
       }
       const footQuota = document.getElementById('foot-quota');
       if (footQuota) footQuota.textContent = formatNumber(totalQuotaSem);
@@ -12507,7 +12618,9 @@ function initialSetup() {
           }
         }
         const sortedDefaultClasses = [...defaultTeacherClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-        const displayDefaultClassesStr = sortedDefaultClasses.length > 0 ? sortedDefaultClasses.join(", ") : "Chưa cập nhật";
+        const fullDefaultClassesStr = sortedDefaultClasses.length > 0 ? sortedDefaultClasses.join(", ") : "Chưa cập nhật";
+        const compactDefaultClassesStr = formatTeacherClassesSummary(defaultTeacherClasses);
+        const displayDefaultClassesStr = compactDefaultClassesStr || fullDefaultClassesStr;
 
         document.getElementById('pdf-modal-title').textContent = `Báo Cáo Thống Kê Tiết Vượt - ${semObj.name}`;
 
@@ -12563,12 +12676,13 @@ function initialSetup() {
             : defaultTeacherClasses;
           const sortedWeekClasses = [...rawWeekClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
           const weekClassesText = sortedWeekClasses.length > 0 ? sortedWeekClasses.join(", ") : "--";
+          const compactWeekClassesText = formatTeacherClassesSummary(rawWeekClasses) || weekClassesText;
 
           rowsHtml += `
             <tr class="border-b border-slate-300 text-center">
               <td class="py-1 px-1 border border-slate-300 font-bold text-slate-800 whitespace-nowrap">${w.label}</td>
-              <td class="py-1 px-1.5 border border-slate-300 font-medium text-slate-800 text-[9.5px] leading-tight text-center break-words">
-                ${escapeHtml(weekClassesText)}
+              <td class="py-1 px-1.5 border border-slate-300 font-medium text-slate-800 text-[9.5px] leading-tight text-center break-words" title="${escapeHtml(weekClassesText)}">
+                ${escapeHtml(compactWeekClassesText)}
               </td>
               <td class="py-1 px-1 border border-slate-300 font-bold text-slate-700 bg-slate-50/50">${currentQuota}</td>
               <td class="py-1 px-1 border border-slate-300 font-semibold">${formatNumber(assignedVal)}</td>
@@ -12607,7 +12721,7 @@ function initialSetup() {
               <p><strong>Họ và tên giáo viên:</strong> ${teacherDisplayName}</p>
               <p><strong>Ngày sinh:</strong> ${teacherDisplayDob}</p>
               <p><strong>Môn giảng dạy:</strong> ${teacherSubject}</p>
-              <p><strong>Lớp giảng dạy:</strong> ${displayDefaultClassesStr}</p>
+              <p title="${escapeHtml(fullDefaultClassesStr)}"><strong>Lớp giảng dạy:</strong> ${escapeHtml(displayDefaultClassesStr)}</p>
               <p><strong>Định mức quy chuẩn:</strong> ${currentQuota} tiết / tuần</p>
             </div>
           </div>
