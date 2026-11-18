@@ -5096,17 +5096,26 @@ function initialSetup() {
       showToast(`Đã chọn ${chosenInThisGrade.length} lớp cho Khối ${currentModalGrade}! Nhấn "Lưu Lớp Dạy" để lưu vào sheet.`, "info");
     }
 
+    let isSavingTeacherClasses = false;
+
     async function saveTeacherClassesToSheet() {
       if (!currentUser.taiKhoan) {
         showToast("Vui lòng đăng nhập trước khi lưu lớp dạy!", "warning");
         return;
       }
+      if (isSavingTeacherClasses) return; // Chống bấm nhiều lần
+      isSavingTeacherClasses = true;
+
       const btn = document.getElementById('btn-save-classes');
       const icon = document.getElementById('btn-save-classes-icon');
       const text = document.getElementById('btn-save-classes-text');
-      if (btn) btn.disabled = true;
-      if (icon) icon.className = "fa-solid fa-circle-notch fa-spin";
-      if (text) text.textContent = "Đang lưu...";
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('cursor-wait', 'opacity-80');
+        btn.classList.remove('active:scale-95');
+      }
+      if (icon) icon.className = "fa-solid fa-circle-notch fa-spin text-amber-300";
+      if (text) text.textContent = "Đang lưu lớp...";
 
       try {
         const classesStr = getTeacherSelectedClassesString();
@@ -5127,7 +5136,12 @@ function initialSetup() {
       } catch (err) {
         showToast("Lỗi khi lưu lớp dạy: " + err.message, "error");
       } finally {
-        if (btn) btn.disabled = false;
+        isSavingTeacherClasses = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('cursor-wait', 'opacity-80');
+          btn.classList.add('active:scale-95');
+        }
         if (icon) icon.className = "fa-solid fa-floppy-disk";
         if (text) text.textContent = "Lưu Lớp Dạy";
       }
@@ -11065,8 +11079,8 @@ function initialSetup() {
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0 self-end md:self-center">
-            <button type="button" onclick="saveDataToGoogleSheet(true)"
-              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition flex items-center gap-2">
+            <button type="button" onclick="saveDataToGoogleSheet(true)" id="btn-save-sheet-missing"
+              class="btn-save-sheet-action px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition flex items-center gap-2">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <span>Lưu Lên Google Sheet</span>
             </button>
@@ -11174,8 +11188,8 @@ function initialSetup() {
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0 self-end md:self-center">
-            <button type="button" onclick="saveDataToGoogleSheet(true)"
-              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition flex items-center gap-2">
+            <button type="button" onclick="saveDataToGoogleSheet(true)" id="btn-save-sheet-banner"
+              class="btn-save-sheet-action px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition flex items-center gap-2">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <span>Lưu Lên Google Sheet</span>
             </button>
@@ -11606,26 +11620,39 @@ function initialSetup() {
       }
     });
 
+    let isSavingDataToSheet = false;
+
     async function saveDataToGoogleSheet(isManual = true) {
       if (!currentUser.taiKhoan) return;
+      if (isSavingDataToSheet) return; // Chống bấm nhiều lần khi đang xử lý
 
       if (isSystemLocked && !isRoleAdmin(currentUser.quyen)) {
         showToast("Hệ thống đang khóa kê khai toàn trường bởi Ban Giám hiệu. Không thể lưu dữ liệu!", "warning");
         return;
       }
 
-      const btnSave = document.getElementById('btn-save-sheet');
-      const btnIcon = document.getElementById('btn-save-icon');
-      const btnText = document.getElementById('btn-save-text');
+      isSavingDataToSheet = true;
 
-      if (btnSave) {
-        btnSave.disabled = true;
-        btnSave.classList.remove('ring-4', 'ring-emerald-400/50', 'animate-pulse');
-      }
-      if (btnIcon) btnIcon.className = "fa-solid fa-circle-notch fa-spin";
-      if (btnText) btnText.textContent = "Đang lưu...";
+      // Cập nhật trạng thái đang quay cho TẤT CẢ các nút Lưu Google Sheet đang có trên giao diện
+      const saveButtons = document.querySelectorAll('.btn-save-sheet-action, #btn-save-sheet, #btn-save-sheet-banner, #btn-save-sheet-missing, [onclick*="saveDataToGoogleSheet"]');
+      saveButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('cursor-wait', 'opacity-80');
+        btn.classList.remove('active:scale-95');
+        const icon = btn.querySelector('i');
+        if (icon) {
+          icon.dataset.prevClass = icon.className;
+          icon.className = "fa-solid fa-circle-notch fa-spin text-amber-300";
+        }
+        const text = btn.querySelector('span');
+        if (text) {
+          text.dataset.prevText = text.textContent;
+          text.textContent = "Đang lưu dữ liệu...";
+        }
+      });
 
-      document.getElementById('sync-status-text').textContent = "Đang lưu...";
+      const syncStatusEl = document.getElementById('sync-status-text');
+      if (syncStatusEl) syncStatusEl.textContent = "Đang lưu...";
 
       try {
         const isNotConfigured = !GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE");
@@ -11714,11 +11741,23 @@ function initialSetup() {
         // Cập nhật lại giao diện để cảnh báo chưa lưu
         updateTeacherDeclarationNotice();
       } finally {
-        if (btnSave && !isSemesterLocked(activeSemesterId)) {
-          btnSave.disabled = false;
-          if (btnIcon) btnIcon.className = "fa-solid fa-cloud-arrow-up";
-          if (btnText) btnText.textContent = "Lưu Lên Google Sheet";
-        }
+        isSavingDataToSheet = false;
+        const saveButtons = document.querySelectorAll('.btn-save-sheet-action, #btn-save-sheet, #btn-save-sheet-banner, #btn-save-sheet-missing, [onclick*="saveDataToGoogleSheet"]');
+        saveButtons.forEach(btn => {
+          if (!isSemesterLocked(activeSemesterId)) {
+            btn.disabled = false;
+            btn.classList.remove('cursor-wait', 'opacity-80');
+            btn.classList.add('active:scale-95');
+          }
+          const icon = btn.querySelector('i');
+          if (icon) {
+            icon.className = icon.dataset.prevClass || "fa-solid fa-cloud-arrow-up";
+          }
+          const text = btn.querySelector('span');
+          if (text) {
+            text.textContent = text.dataset.prevText || "Lưu Lên Google Sheet";
+          }
+        });
       }
     }
 
