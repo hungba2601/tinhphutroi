@@ -771,10 +771,10 @@
                 <th class="py-3 px-3 text-left min-w-[130px]">Tuần học</th>
                 <th class="py-2 px-2 min-w-[145px] text-center">
                   <div class="flex flex-col items-center justify-center gap-1">
-                    <span class="text-xs font-bold text-slate-800">(1) Dạy theo PC</span>
+                    <span class="text-xs font-bold text-slate-800">(1) Tiết dạy</span>
                     <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
                       <input type="number" id="quick-fill-header-input" min="0" step="0.5" placeholder="19"
-                        title="Nhập số tiết phân công để điền nhanh cho tất cả các tuần"
+                        title="Nhập số tiết để điền nhanh cho tất cả các tuần"
                         class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
                         onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillAssignedWeeks(this.value);}">
                       <button type="button" id="btn-quick-fill-all" onclick="quickFillAssignedWeeks(document.getElementById('quick-fill-header-input').value)"
@@ -786,9 +786,9 @@
                     </div>
                   </div>
                 </th>
-                <th class="py-3 px-2 min-w-[100px]">(2) Nghỉ dạy (tiết)</th>
+                <th class="col-day-ts10 py-3 px-2 min-w-[105px]" id="th-col-dayts10">(2) Dạy TS10/ B2</th>
                 <th class="col-bd-hsg py-3 px-2 min-w-[100px]" id="th-col-bdhsg">(3) BD HSG</th>
-                <th class="col-day-ts10 py-3 px-2 min-w-[100px]" id="th-col-dayts10">(4) Dạy TS10</th>
+                <th class="py-3 px-2 min-w-[100px]">(4) Nghỉ dạy (tiết)</th>
                 <th class="py-3 px-2 min-w-[95px] bg-emerald-50/60 text-emerald-900">(5) Thực dạy</th>
                 <th class="py-3 px-2 min-w-[95px] bg-teal-50/60 text-teal-900">(6) Tiết vượt</th>
               </tr>
@@ -802,10 +802,10 @@
                   id="foot-sem-title">
                   TỔNG CỘNG HỌC KỲ 1
                 </td>
-                <td id="foot-t1" class="py-3 px-2 text-slate-800">0</td>
-                <td id="foot-t2" class="py-3 px-2 text-rose-600">0</td>
-                <td id="foot-t3" class="col-bd-hsg py-3 px-2 text-slate-800">0</td>
-                <td id="foot-t4" class="col-day-ts10 py-3 px-2 text-slate-800">0</td>
+                <td id="foot-t1" class="py-3 px-2 text-slate-800 font-bold">0</td>
+                <td id="foot-t4" class="col-day-ts10 py-3 px-2 text-slate-800 font-bold">0</td>
+                <td id="foot-t3" class="col-bd-hsg py-3 px-2 text-slate-800 font-bold">0</td>
+                <td id="foot-t2" class="py-3 px-2 text-rose-600 font-bold">0</td>
                 <td id="foot-t5" class="py-3 px-2 text-emerald-800 text-sm sm:text-base font-black">0</td>
                 <td id="foot-t6" class="py-3 px-2 text-emerald-950 text-sm sm:text-base font-black bg-emerald-100/70">0
                 </td>
@@ -1268,7 +1268,7 @@
                   <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">Toàn Trường</span>
                 </h3>
                 <p class="text-xs text-slate-500 mt-0.5">
-                  Tùy chỉnh Ẩn hoặc Hiện 2 cột: <strong>(3) BD HSG</strong> và <strong>(4) Dạy TS10</strong> trên bảng tính phụ trội và phiếu in cá nhân của giáo viên toàn trường.
+                  Tùy chỉnh Ẩn hoặc Hiện 2 cột: <strong>Dạy TS10/ B2</strong> và <strong>BD HSG</strong> trên bảng tính phụ trội và phiếu in cá nhân của giáo viên toàn trường.
                 </p>
               </div>
             </div>
@@ -1335,8 +1335,8 @@
                     <i class="fa-solid fa-graduation-cap"></i>
                   </div>
                   <div>
-                    <h4 class="font-extrabold text-sm sm:text-base text-slate-800">Cột (4) Dạy Tuyển Sinh 10</h4>
-                    <span class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">Ôn thi TS10</span>
+                    <h4 class="font-extrabold text-sm sm:text-base text-slate-800">Cột Dạy Tuyển Sinh 10 / Buổi 2</h4>
+                    <span class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">Dạy TS10/ B2</span>
                   </div>
                 </div>
 
@@ -1382,10 +1382,10 @@
                 <thead>
                   <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
                     <th class="py-3 px-3 text-left w-36">Tuần học</th>
-                    <th class="py-3 px-2">(1) Dạy theo PC</th>
-                    <th class="py-3 px-2">(2) Nghỉ dạy</th>
+                    <th class="py-3 px-2">(1) Tiết dạy</th>
+                    <th id="preview-col-dayts10-th" class="col-preview-dayts10 py-3 px-2 bg-indigo-50/70 text-indigo-900 border-x border-indigo-200/50">(2) Dạy TS10/ B2</th>
                     <th id="preview-col-bdhsg-th" class="col-preview-bdhsg py-3 px-2 bg-amber-50/70 text-amber-900 border-x border-amber-200/50">(3) BD HSG</th>
-                    <th id="preview-col-dayts10-th" class="col-preview-dayts10 py-3 px-2 bg-indigo-50/70 text-indigo-900 border-x border-indigo-200/50">(4) Dạy TS10</th>
+                    <th class="py-3 px-2">(4) Nghỉ dạy</th>
                     <th class="py-3 px-2 bg-emerald-50 text-emerald-900">(5) Thực dạy</th>
                     <th class="py-3 px-2 bg-teal-50 text-teal-900">(6) Tiết vượt</th>
                   </tr>
@@ -1394,18 +1394,18 @@
                   <tr class="bg-white">
                     <td class="py-2.5 px-3 text-left font-bold text-slate-800">Tuần 1 (Tuần 1 HK1)</td>
                     <td class="py-2.5 px-2">21</td>
-                    <td class="py-2.5 px-2 text-rose-600">0</td>
-                    <td id="preview-col-bdhsg-td1" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">2</td>
                     <td id="preview-col-dayts10-td1" class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">0</td>
+                    <td id="preview-col-bdhsg-td1" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">2</td>
+                    <td class="py-2.5 px-2 text-rose-600">0</td>
                     <td id="preview-col-actual-td1" class="py-2.5 px-2 font-bold text-emerald-700 bg-emerald-50/30">23</td>
                     <td id="preview-col-overtime-td1" class="py-2.5 px-2 font-black text-teal-800 bg-teal-50/40">+4</td>
                   </tr>
                   <tr class="bg-slate-50/60">
                     <td class="py-2.5 px-3 text-left font-bold text-slate-800">Tuần 2 (Tuần 2 HK1)</td>
                     <td class="py-2.5 px-2">19</td>
-                    <td class="py-2.5 px-2 text-rose-600">1</td>
-                    <td id="preview-col-bdhsg-td2" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">0</td>
                     <td id="preview-col-dayts10-td2" class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">2</td>
+                    <td id="preview-col-bdhsg-td2" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">0</td>
+                    <td class="py-2.5 px-2 text-rose-600">1</td>
                     <td id="preview-col-actual-td2" class="py-2.5 px-2 font-bold text-emerald-700 bg-emerald-50/30">20</td>
                     <td id="preview-col-overtime-td2" class="py-2.5 px-2 font-black text-teal-800 bg-teal-50/40">+1</td>
                   </tr>
@@ -3719,10 +3719,10 @@ function initialSetup() {
                   <th class="py-2.5 px-3 text-left min-w-[120px]">Tuần học</th>
                   <th class="py-2 px-2 min-w-[145px] text-center">
                     <div class="flex flex-col items-center justify-center gap-1">
-                      <span class="text-xs font-bold text-slate-800">(1) Dạy theo PC</span>
+                      <span class="text-xs font-bold text-slate-800">(1) Tiết dạy</span>
                       <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
                         <input type="number" id="admin-quick-fill-header-input" min="0" step="0.5" placeholder="19"
-                          title="Nhập số tiết phân công để điền nhanh cho tất cả các tuần của giáo viên này"
+                          title="Nhập số tiết để điền nhanh cho tất cả các tuần của giáo viên này"
                           class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
                           onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillAdminTeacherWeeks(this.value);}">
                         <button type="button" onclick="quickFillAdminTeacherWeeks(document.getElementById('admin-quick-fill-header-input').value)"
@@ -3734,9 +3734,9 @@ function initialSetup() {
                       </div>
                     </div>
                   </th>
-                  <th class="py-2.5 px-2 min-w-[95px]">(2) Nghỉ dạy (tiết)</th>
+                  <th class="col-admin-day-ts10 py-2.5 px-2 min-w-[105px]" id="admin-modal-th-dayts10">(2) Dạy TS10/ B2</th>
                   <th class="col-admin-bd-hsg py-2.5 px-2 min-w-[95px]" id="admin-modal-th-bdhsg">(3) BD HSG</th>
-                  <th class="col-admin-day-ts10 py-2.5 px-2 min-w-[95px]" id="admin-modal-th-dayts10">(4) Dạy TS10</th>
+                  <th class="py-2.5 px-2 min-w-[95px]">(4) Nghỉ dạy (tiết)</th>
                   <th class="py-2.5 px-2 min-w-[90px] bg-emerald-50 text-emerald-900">(5) Thực dạy</th>
                   <th class="py-2.5 px-2 min-w-[90px] bg-teal-50 text-teal-900">(6) Tiết vượt</th>
                 </tr>
@@ -3749,10 +3749,10 @@ function initialSetup() {
                   <td class="py-3 px-3 text-left uppercase text-emerald-950 font-black" id="admin-modal-foot-title">
                     TỔNG CỘNG HỌC KỲ
                   </td>
-                  <td id="admin-modal-foot-t1" class="py-3 px-2 text-slate-800">0</td>
-                  <td id="admin-modal-foot-t2" class="py-3 px-2 text-rose-600">0</td>
-                  <td id="admin-modal-foot-t3" class="col-admin-bd-hsg py-3 px-2 text-slate-800">0</td>
-                  <td id="admin-modal-foot-t4" class="col-admin-day-ts10 py-3 px-2 text-slate-800">0</td>
+                  <td id="admin-modal-foot-t1" class="py-3 px-2 text-slate-800 font-bold">0</td>
+                  <td id="admin-modal-foot-t4" class="col-admin-day-ts10 py-3 px-2 text-slate-800 font-bold">0</td>
+                  <td id="admin-modal-foot-t3" class="col-admin-bd-hsg py-3 px-2 text-slate-800 font-bold">0</td>
+                  <td id="admin-modal-foot-t2" class="py-3 px-2 text-rose-600 font-bold">0</td>
                   <td id="admin-modal-foot-t5" class="py-3 px-2 text-emerald-800 font-black">0</td>
                   <td id="admin-modal-foot-t6" class="py-3 px-2 text-emerald-950 bg-emerald-200/70 font-black">0</td>
                 </tr>
@@ -5675,14 +5675,14 @@ function initialSetup() {
           <td class="py-2 px-1 text-center whitespace-nowrap">
             <div class="inline-flex flex-col gap-0.5 items-center justify-center">
               ${missHk1.isMissing
-                ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK1 thiếu cột (1) Dạy theo PC tại: ${missHk1.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK1: Thiếu ${missHk1.missingWeeks.length}t</span>`
+                ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK1 thiếu cột (1) Tiết dạy tại: ${missHk1.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK1: Thiếu ${missHk1.missingWeeks.length}t</span>`
                 : (stats.hasDeclaredHk1
                     ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs" title="Tổng thực dạy HK1: ${stats.hk1Actual} tiết | Vượt định mức: ${stats.hk1Overtime} tiết"><i class="fa-solid fa-circle-check text-[9px] text-emerald-600"></i>HK1: Đã khai (${stats.hk1Overtime > 0 ? '+' : ''}${stats.hk1Overtime}t)</span>`
                     : '<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200"><i class="fa-regular fa-circle text-[8px] text-slate-400"></i>HK1: Chưa kê khai</span>'
                   )
               }
               ${missHk2.isMissing
-                ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK2 thiếu cột (1) Dạy theo PC tại: ${missHk2.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK2: Thiếu ${missHk2.missingWeeks.length}t</span>`
+                ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK2 thiếu cột (1) Tiết dạy tại: ${missHk2.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK2: Thiếu ${missHk2.missingWeeks.length}t</span>`
                 : (stats.hasDeclaredHk2
                     ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-teal-100 text-teal-950 border border-teal-300 shadow-2xs" title="Tổng thực dạy HK2: ${stats.hk2Actual} tiết | Vượt định mức: ${stats.hk2Overtime} tiết"><i class="fa-solid fa-circle-check text-[9px] text-teal-600"></i>HK2: Đã khai (${stats.hk2Overtime > 0 ? '+' : ''}${stats.hk2Overtime}t)</span>`
                     : '<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200"><i class="fa-regular fa-circle text-[8px] text-slate-400"></i>HK2: Chưa kê khai</span>'
@@ -8448,7 +8448,7 @@ function initialSetup() {
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span>${t.tenGv || t.taiKhoan}</span>
                 ${isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="Cột (1) Dạy theo PC thiếu tại: ${missHk1.missingWeekLabels.join(', ')}">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="Cột (1) Tiết dạy thiếu tại: ${missHk1.missingWeekLabels.join(', ')}">
                     <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>Thiếu ${missHk1.missingWeeks.length} tuần
                   </span>
                 ` : ''}
@@ -8553,7 +8553,7 @@ function initialSetup() {
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span>${t.tenGv || t.taiKhoan}</span>
                 ${isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="Cột (1) Dạy theo PC thiếu tại: ${missHk2.missingWeekLabels.join(', ')}">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="Cột (1) Tiết dạy thiếu tại: ${missHk2.missingWeekLabels.join(', ')}">
                     <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>Thiếu ${missHk2.missingWeeks.length} tuần
                   </span>
                 ` : ''}
@@ -8661,12 +8661,12 @@ function initialSetup() {
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span>${t.tenGv || t.taiKhoan}</span>
                 ${missHk1.isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="HK1 thiếu cột (1) Dạy theo PC tại: ${missHk1.missingWeekLabels.join(', ')}">
+                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="HK1 thiếu cột (1) Tiết dạy tại: ${missHk1.missingWeekLabels.join(', ')}">
                     <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>HK1: Thiếu ${missHk1.missingWeeks.length}t
                   </span>
                 ` : ''}
                 ${missHk2.isMissing ? `
-                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="HK2 thiếu cột (1) Dạy theo PC tại: ${missHk2.missingWeekLabels.join(', ')}">
+                  <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs" title="HK2 thiếu cột (1) Tiết dạy tại: ${missHk2.missingWeekLabels.join(', ')}">
                     <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>HK2: Thiếu ${missHk2.missingWeeks.length}t
                   </span>
                 ` : ''}
@@ -9115,13 +9115,13 @@ function initialSetup() {
             <input type="number" min="0" step="0.5" value="${rowData.assigned || ''}" placeholder="0"
               data-field="assigned" data-week="${w.id}"
               class="w-16 text-center py-1.5 px-1 ${isAssignedMissing ? 'bg-amber-50 border-2 border-amber-400 text-amber-950 font-bold' : 'bg-white border border-slate-200 text-slate-800'} rounded-lg focus:ring-2 focus:ring-emerald-500 font-semibold text-xs"
-              ${isAssignedMissing ? 'title="Thiếu cột (1) Dạy theo PC (vui lòng điền > 0)"' : ''}
+              ${isAssignedMissing ? 'title="Thiếu cột (1) Tiết dạy (vui lòng điền > 0)"' : ''}
               onchange="commitAdminModalInputChange(this)">
           </td>
-          <td class="py-1.5 px-1 text-center">
-            <input type="number" min="0" step="0.5" value="${rowData.leave || ''}" placeholder="0"
-              data-field="leave" data-week="${w.id}"
-              class="w-16 text-center py-1.5 px-1 bg-white border border-rose-200 text-rose-600 rounded-lg focus:ring-2 focus:ring-rose-500 font-semibold text-xs"
+          <td class="col-admin-day-ts10 py-1.5 px-1 text-center ${columnConfig.showDayTs10 ? '' : 'hidden'}">
+            <input type="number" min="0" step="0.5" value="${rowData.ts10 || ''}" placeholder="0"
+              data-field="ts10" data-week="${w.id}"
+              class="w-16 text-center py-1.5 px-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 text-xs"
               onchange="commitAdminModalInputChange(this)">
           </td>
           <td class="col-admin-bd-hsg py-1.5 px-1 text-center ${columnConfig.showBdHsg ? '' : 'hidden'}">
@@ -9130,10 +9130,10 @@ function initialSetup() {
               class="w-16 text-center py-1.5 px-1 bg-white border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-900 text-xs"
               onchange="commitAdminModalInputChange(this)">
           </td>
-          <td class="col-admin-day-ts10 py-1.5 px-1 text-center ${columnConfig.showDayTs10 ? '' : 'hidden'}">
-            <input type="number" min="0" step="0.5" value="${rowData.ts10 || ''}" placeholder="0"
-              data-field="ts10" data-week="${w.id}"
-              class="w-16 text-center py-1.5 px-1 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 text-xs"
+          <td class="py-1.5 px-1 text-center">
+            <input type="number" min="0" step="0.5" value="${rowData.leave || ''}" placeholder="0"
+              data-field="leave" data-week="${w.id}"
+              class="w-16 text-center py-1.5 px-1 bg-white border border-rose-200 text-rose-600 rounded-lg focus:ring-2 focus:ring-rose-500 font-semibold text-xs"
               onchange="commitAdminModalInputChange(this)">
           </td>
           <td class="py-2 px-2 text-center font-bold text-emerald-700 bg-emerald-50/30">
@@ -9148,9 +9148,9 @@ function initialSetup() {
 
       // Footer
       document.getElementById('admin-modal-foot-t1').textContent = formatNumber(total1);
-      document.getElementById('admin-modal-foot-t2').textContent = formatNumber(total2);
-      document.getElementById('admin-modal-foot-t3').textContent = formatNumber(total3);
       document.getElementById('admin-modal-foot-t4').textContent = formatNumber(total4);
+      document.getElementById('admin-modal-foot-t3').textContent = formatNumber(total3);
+      document.getElementById('admin-modal-foot-t2').textContent = formatNumber(total2);
       document.getElementById('admin-modal-foot-t5').textContent = formatNumber(total5);
       document.getElementById('admin-modal-foot-t6').textContent = (total6 > 0 ? '+' : '') + formatNumber(total6);
     }
@@ -10115,7 +10115,7 @@ function initialSetup() {
       if (badgeHk1) {
         if (missHk1.isMissing) {
           badgeHk1.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-950 border border-amber-400 flex items-center gap-1 shadow-xs animate-pulse";
-          badgeHk1.title = "HK1 thiếu cột (1) Dạy theo PC tại: " + missHk1.missingWeekLabels.join(", ");
+          badgeHk1.title = "HK1 thiếu cột (1) Tiết dạy tại: " + missHk1.missingWeekLabels.join(", ");
           badgeHk1.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i><span>Thiếu ${missHk1.missingWeeks.length} tuần</span>`;
           badgeHk1.classList.remove('hidden');
         } else if (isHk1Saved && (!hasUnsavedChanges || !isCurrentHk1)) {
@@ -10137,7 +10137,7 @@ function initialSetup() {
       if (badgeHk2) {
         if (missHk2.isMissing) {
           badgeHk2.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-950 border border-amber-400 flex items-center gap-1 shadow-xs animate-pulse";
-          badgeHk2.title = "HK2 thiếu cột (1) Dạy theo PC tại: " + missHk2.missingWeekLabels.join(", ");
+          badgeHk2.title = "HK2 thiếu cột (1) Tiết dạy tại: " + missHk2.missingWeekLabels.join(", ");
           badgeHk2.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i><span>Thiếu ${missHk2.missingWeeks.length} tuần</span>`;
           badgeHk2.classList.remove('hidden');
         } else if (isHk2Saved && (!hasUnsavedChanges || isCurrentHk1)) {
@@ -10231,11 +10231,11 @@ function initialSetup() {
                 ${isCurrentSemSaved ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white text-amber-900 border border-amber-300">Đã lưu bản nháp</span>' : ''}
               </div>
 
-              <!-- HỘP THÔNG BÁO CHI TIẾT CÁC TUẦN THIẾU THEO CỘT (1) DẠY THEO PC -->
+              <!-- HỘP THÔNG BÁO CHI TIẾT CÁC TUẦN THIẾU THEO CỘT (1) TIẾT DẠY -->
               <div class="p-3.5 bg-amber-100/90 border border-amber-300 rounded-2xl text-xs text-amber-950 space-y-1.5 shadow-2xs">
                 <p class="font-bold flex items-center gap-1.5 text-amber-900 text-xs sm:text-sm">
                   <i class="fa-solid fa-circle-exclamation text-amber-600 text-base"></i>
-                  <span>Cột (1) Dạy theo PC đang để trống hoặc bằng 0 tại các tuần:</span>
+                  <span>Cột (1) Tiết dạy đang để trống hoặc bằng 0 tại các tuần:</span>
                 </p>
                 <div class="font-black text-rose-700 bg-white/95 px-3 py-2 rounded-xl border border-amber-300 text-xs sm:text-sm tracking-wide leading-relaxed shadow-inner">
                   ${currentMiss.missingWeekLabels.join(' • ')}
@@ -10570,14 +10570,14 @@ function initialSetup() {
               ${disabledAttr}
               data-field="assigned" data-sem="${semObj.id}" data-week="${w.id}"
               class="${isAssignedMissing ? 'grid-input w-16 sm:w-20 text-center py-1.5 px-1 bg-amber-50 border-2 border-amber-400 text-amber-950 rounded-lg focus:ring-2 focus:ring-amber-500 font-bold text-xs sm:text-sm shadow-2xs' : inputClassDefault}"
-              ${isAssignedMissing ? 'title="Thiếu cột (1) Dạy theo PC (vui lòng điền > 0)"' : ''}
+              ${isAssignedMissing ? 'title="Thiếu cột (1) Tiết dạy (vui lòng điền > 0)"' : ''}
               onchange="commitInputChange(this)" onkeydown="handleInputKeydown(event, this)">
           </td>
-          <td class="py-2 px-1 text-center">
-            <input type="number" min="0" step="0.5" value="${rowData.leave || ''}" placeholder="0"
+          <td class="col-day-ts10 py-2 px-1 text-center ${columnConfig.showDayTs10 ? '' : 'hidden'}">
+            <input type="number" min="0" step="0.5" value="${rowData.ts10 || ''}" placeholder="0"
               ${disabledAttr}
-              data-field="leave" data-sem="${semObj.id}" data-week="${w.id}"
-              class="${inputClassLeave}"
+              data-field="ts10" data-sem="${semObj.id}" data-week="${w.id}"
+              class="${inputClassDefault}"
               onchange="commitInputChange(this)" onkeydown="handleInputKeydown(event, this)">
           </td>
           <td class="col-bd-hsg py-2 px-1 text-center ${columnConfig.showBdHsg ? '' : 'hidden'}">
@@ -10587,11 +10587,11 @@ function initialSetup() {
               class="${inputClassBdhsg}"
               onchange="commitInputChange(this)" onkeydown="handleInputKeydown(event, this)">
           </td>
-          <td class="col-day-ts10 py-2 px-1 text-center ${columnConfig.showDayTs10 ? '' : 'hidden'}">
-            <input type="number" min="0" step="0.5" value="${rowData.ts10 || ''}" placeholder="0"
+          <td class="py-2 px-1 text-center">
+            <input type="number" min="0" step="0.5" value="${rowData.leave || ''}" placeholder="0"
               ${disabledAttr}
-              data-field="ts10" data-sem="${semObj.id}" data-week="${w.id}"
-              class="${inputClassDefault}"
+              data-field="leave" data-sem="${semObj.id}" data-week="${w.id}"
+              class="${inputClassLeave}"
               onchange="commitInputChange(this)" onkeydown="handleInputKeydown(event, this)">
           </td>
           <td class="py-2.5 px-2 text-center font-bold text-emerald-700 bg-emerald-50/40">
@@ -10606,9 +10606,9 @@ function initialSetup() {
 
       // Footer
       document.getElementById('foot-t1').textContent = formatNumber(totalAssigned);
-      document.getElementById('foot-t2').textContent = formatNumber(totalLeave);
-      document.getElementById('foot-t3').textContent = formatNumber(totalBdhsg);
       document.getElementById('foot-t4').textContent = formatNumber(totalTs10);
+      document.getElementById('foot-t3').textContent = formatNumber(totalBdhsg);
+      document.getElementById('foot-t2').textContent = formatNumber(totalLeave);
       document.getElementById('foot-t5').textContent = formatNumber(totalActual);
       document.getElementById('foot-t6').textContent = (totalOvertime > 0 ? '+' : '') + formatNumber(totalOvertime);
 
@@ -10990,9 +10990,9 @@ function initialSetup() {
           <tr class="border-b border-slate-300 text-center">
             <td class="py-1 px-1 border border-slate-300 font-bold">${w.label}</td>
             <td class="py-1 px-1 border border-slate-300">${formatNumber(d.assigned)}</td>
-            <td class="py-1 px-1 border border-slate-300 text-rose-600">${formatNumber(d.leave)}</td>
-            ${showBdHsg ? '<td class="py-1 px-1 border border-slate-300 text-emerald-800 font-semibold">' + formatNumber(d.bdhsg) + '</td>' : ''}
             ${showDayTs10 ? '<td class="py-1 px-1 border border-slate-300">' + formatNumber(d.ts10) + '</td>' : ''}
+            ${showBdHsg ? '<td class="py-1 px-1 border border-slate-300 text-emerald-800 font-semibold">' + formatNumber(d.bdhsg) + '</td>' : ''}
+            <td class="py-1 px-1 border border-slate-300 text-rose-600">${formatNumber(d.leave)}</td>
             <td class="py-1 px-1 border border-slate-300 font-bold">${formatNumber(actual)}</td>
             <td class="py-1 px-1 border border-slate-300 font-black ${overtime >= 0 ? 'text-teal-800 bg-teal-50/40' : 'text-rose-600'}">
               ${(overtime > 0 ? '+' : '') + formatNumber(overtime)}
@@ -11023,10 +11023,10 @@ function initialSetup() {
           <thead>
             <tr class="bg-slate-100 font-bold">
               <th class="py-1 px-1 border border-slate-300">Tuần học</th>
-              <th class="py-1 px-1 border border-slate-300">(1) Dạy theo PC</th>
-              <th class="py-1 px-1 border border-slate-300">(2) Nghỉ dạy (tiết)</th>
+              <th class="py-1 px-1 border border-slate-300">(1) Tiết dạy</th>
+              ${showDayTs10 ? '<th class="py-1 px-1 border border-slate-300">(2) Dạy TS10/ B2</th>' : ''}
               ${showBdHsg ? '<th class="py-1 px-1 border border-slate-300">(3) BD HSG</th>' : ''}
-              ${showDayTs10 ? '<th class="py-1 px-1 border border-slate-300">(4) Dạy TS10</th>' : ''}
+              <th class="py-1 px-1 border border-slate-300">(4) Nghỉ dạy (tiết)</th>
               <th class="py-1 px-1 border border-slate-300 bg-emerald-50">(5) Thực dạy</th>
               <th class="py-1 px-1 border border-slate-300 bg-teal-50">(6) Tiết vượt</th>
             </tr>
@@ -11038,9 +11038,9 @@ function initialSetup() {
             <tr class="bg-emerald-50/80 font-black text-slate-900 border-t-2 border-slate-400">
               <td class="py-1.5 px-2 border border-slate-300 font-black uppercase text-left">TỔNG CỘNG</td>
               <td class="py-1.5 px-1 border border-slate-300">${formatNumber(total1)}</td>
-              <td class="py-1.5 px-1 border border-slate-300 text-rose-600">${formatNumber(total2)}</td>
-              ${showBdHsg ? '<td class="py-1.5 px-1 border border-slate-300">' + formatNumber(total3) + '</td>' : ''}
               ${showDayTs10 ? '<td class="py-1.5 px-1 border border-slate-300">' + formatNumber(total4) + '</td>' : ''}
+              ${showBdHsg ? '<td class="py-1.5 px-1 border border-slate-300">' + formatNumber(total3) + '</td>' : ''}
+              <td class="py-1.5 px-1 border border-slate-300 text-rose-600">${formatNumber(total2)}</td>
               <td class="py-1.5 px-1 border border-slate-300 font-black">${formatNumber(total5)}</td>
               <td class="py-1.5 px-1 border border-slate-300 font-black text-emerald-950 bg-emerald-100">
                 ${(total6 > 0 ? '+' : '') + formatNumber(total6)}
