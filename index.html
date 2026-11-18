@@ -13836,6 +13836,47 @@ function initialSetup() {
 
     // ⭐️ CƠ CHẾ THÔNG MINH NHẬN DIỆN LỚP DẠY & GỘP HỌC SINH HÒA NHẬP THEO LỚP ⭐️
     // "CHÚ Ý LỚP NÀO CÓ TỪ 2,3 HS HÒA NHẬP THÌ GHI CHUNG 1 DÒNG ĐỂ CHỖ NHẬP TIẾT TUẦN CHỈ CÓ 1 DÒNG ĐỂ NHẬP , K TÍNH THÀNH 2, 3 DÒNG"
+
+    // Helper trích xuất thông tin học sinh trong dòng (hỗ trợ xuống dòng cho lớp có 2-3 HS)
+    function getRowStudentDetails(r) {
+      if (r.students && Array.isArray(r.students) && r.students.length > 0) {
+        return {
+          names: r.students.map(s => s.tenHs || '--'),
+          births: r.students.map(s => s.namSinh || '--'),
+          disabilities: r.students.map(s => s.dangKhuyetTat || '--'),
+          levels: r.students.map(s => s.mucDo || 'Nhẹ')
+        };
+      }
+
+      const splitField = (field, primaryDelim, secondaryDelim) => {
+        if (!field) return ['--'];
+        const str = String(field).trim();
+        if (str.includes('\n')) {
+          return str.split('\n').map(s => s.trim()).filter(Boolean);
+        }
+        if (primaryDelim && str.includes(primaryDelim)) {
+          return str.split(primaryDelim).map(s => s.trim()).filter(Boolean);
+        }
+        if (secondaryDelim && str.includes(secondaryDelim)) {
+          return str.split(secondaryDelim).map(s => s.trim()).filter(Boolean);
+        }
+        return [str];
+      };
+
+      const names = splitField(r.tenHs, ',');
+      const births = splitField(r.namSinh, ',');
+      const disabilities = splitField(r.dangKhuyetTat, ';', ',');
+      const levels = splitField(r.mucDo, ',', ';');
+
+      const maxLen = Math.max(names.length, births.length, disabilities.length, levels.length, 1);
+      while (names.length < maxLen) names.push(names[names.length - 1] || '--');
+      while (births.length < maxLen) births.push(births[births.length - 1] || '--');
+      while (disabilities.length < maxLen) disabilities.push(disabilities[disabilities.length - 1] || '--');
+      while (levels.length < maxLen) levels.push(levels[levels.length - 1] || 'Nhẹ');
+
+      return { names, births, disabilities, levels };
+    }
+
     function syncTeacherHoaNhapRowsWithClasses(sem) {
       if (!sem) sem = hoaNhapActiveSem === 'all' ? 'hk1' : hoaNhapActiveSem;
       if (!hoaNhapDataStore[sem]) hoaNhapDataStore[sem] = [];
@@ -13893,10 +13934,18 @@ function initialSetup() {
         const studentsInClass = classGroups[lop];
         let existingRow = hoaNhapDataStore[sem].find(r => normalizeClassName(r.lop) === normalizeClassName(lop));
 
-        const tenHsText = studentsInClass.map(s => s.tenHs).join(", ");
-        const namSinhText = studentsInClass.map(s => s.namSinh || s.ngaySinh).join(", ");
-        const dangKhuyetTatText = studentsInClass.map(s => s.dangKhuyetTat || s.loaiHoaNhap).join("; ");
-        const mucDoText = studentsInClass.map(s => s.mucDo || "Nhẹ").join(", ");
+        // Ghi xuống dòng nếu lớp có từ 2-3 HS khuyết tật
+        const tenHsText = studentsInClass.map(s => s.tenHs).join("\n");
+        const namSinhText = studentsInClass.map(s => s.namSinh || s.ngaySinh).join("\n");
+        const dangKhuyetTatText = studentsInClass.map(s => s.dangKhuyetTat || s.loaiHoaNhap).join("\n");
+        const mucDoText = studentsInClass.map(s => s.mucDo || "Nhẹ").join("\n");
+
+        const studentsArray = studentsInClass.map(s => ({
+          tenHs: s.tenHs || "",
+          namSinh: s.namSinh || s.ngaySinh || "",
+          dangKhuyetTat: s.dangKhuyetTat || s.loaiHoaNhap || "",
+          mucDo: s.mucDo || "Nhẹ"
+        }));
 
         const defaultWeeks = sem === 'hk2' ? 17 : 18;
         const defaultSubject = hoaNhapDataStore.monGv || currentUser.monGv || currentUser.subject || "Tin học";
@@ -13906,6 +13955,7 @@ function initialSetup() {
           existingRow.namSinh = namSinhText;
           existingRow.dangKhuyetTat = dangKhuyetTatText;
           existingRow.mucDo = mucDoText;
+          existingRow.students = studentsArray;
           if (!existingRow.monDay) existingRow.monDay = defaultSubject;
           if (existingRow.soTuan === undefined || existingRow.soTuan === null) existingRow.soTuan = defaultWeeks;
           if (existingRow.tietTuan === undefined || existingRow.tietTuan === null) existingRow.tietTuan = 0;
@@ -13919,6 +13969,7 @@ function initialSetup() {
             namSinh: namSinhText,
             dangKhuyetTat: dangKhuyetTatText,
             mucDo: mucDoText,
+            students: studentsArray,
             monDay: defaultSubject,
             tietTuan: 0,
             soTuan: defaultWeeks,
@@ -13971,17 +14022,19 @@ function initialSetup() {
         const classMap = {};
         (hoaNhapDataStore.hk1 || []).forEach(r => {
           const key = r.lop;
-          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
+          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk1Tiet = r.tongTiet || 0;
           classMap[key].hk1TietTuan = r.tietTuan || 0;
           classMap[key].hk1Tuan = r.soTuan || 0;
+          if (r.students && !classMap[key].students) classMap[key].students = r.students;
         });
         (hoaNhapDataStore.hk2 || []).forEach(r => {
           const key = r.lop;
-          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
+          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk2Tiet = r.tongTiet || 0;
           classMap[key].hk2TietTuan = r.tietTuan || 0;
           classMap[key].hk2Tuan = r.soTuan || 0;
+          if (r.students && !classMap[key].students) classMap[key].students = r.students;
         });
         rows = Object.values(classMap);
       } else {
@@ -13990,7 +14043,6 @@ function initialSetup() {
 
       let totalPeriodsPerWeek = 0;
       let totalPeriodsSum = 0;
-      let totalStudentsCount = 0;
       const distinctClasses = new Set();
 
       if (rows.length === 0) {
@@ -14001,6 +14053,7 @@ function initialSetup() {
 
       rows.forEach((r, idx) => {
         distinctClasses.add(r.lop);
+        const details = getRowStudentDetails(r);
         const tr = document.createElement('tr');
         tr.className = idx % 2 === 0 ? "bg-white hover:bg-indigo-50/20 transition" : "bg-slate-50/70 hover:bg-indigo-50/20 transition";
 
@@ -14010,27 +14063,57 @@ function initialSetup() {
           totalPeriodsPerWeek += (r.hk1TietTuan || 0);
 
           tr.innerHTML = `
-            <td class="py-3 px-2 text-center font-bold text-slate-500 border-r border-slate-200">${idx + 1}</td>
-            <td class="py-3 px-3 font-bold text-slate-800 border-r border-slate-200 leading-snug">
-              ${escapeHtml(r.tenHs || '--')}
+            <td class="py-2.5 px-2 text-center font-bold text-slate-500 border-r border-slate-200 align-middle">${idx + 1}</td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.names.map((name, i) => `
+                  <div class="font-bold text-slate-800 leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(name)}
+                  </div>
+                `).join('')}
+              </div>
             </td>
-            <td class="py-3 px-3 text-center font-black text-indigo-950 border-r border-slate-200">${escapeHtml(r.lop || '--')}</td>
-            <td class="py-3 px-3 text-center text-slate-600 border-r border-slate-200">${escapeHtml(r.namSinh || '--')}</td>
-            <td class="py-3 px-3 text-slate-700 text-xs border-r border-slate-200 leading-snug">${escapeHtml(r.dangKhuyetTat || '--')}</td>
-            <td class="py-3 px-3 text-center border-r border-slate-200">
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(r.mucDo || 'Nhẹ')}</span>
+            <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 align-middle">${escapeHtml(r.lop || '--')}</td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.births.map((b, i) => `
+                  <div class="text-center text-slate-600 font-medium leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(b)}
+                  </div>
+                `).join('')}
+              </div>
             </td>
-            <td class="py-3 px-3 text-center font-semibold text-slate-800 border-r border-slate-200">${escapeHtml(r.monDay || 'Tin học')}</td>
-            <td class="py-3 px-3 text-center font-bold text-indigo-900 border-r border-slate-200 bg-indigo-50/30">
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.disabilities.map((d, i) => `
+                  <div class="text-slate-700 text-xs leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(d)}
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.levels.map((lvl, i) => `
+                  <div class="text-center ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      ${escapeHtml(lvl || 'Nhẹ')}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+            <td class="py-2.5 px-3 text-center font-semibold text-slate-800 border-r border-slate-200 align-middle">${escapeHtml(r.monDay || 'Tin học')}</td>
+            <td class="py-2.5 px-3 text-center font-bold text-indigo-900 border-r border-slate-200 bg-indigo-50/30 align-middle">
               HK1: ${formatNumber(r.hk1Tiet)}t | HK2: ${formatNumber(r.hk2Tiet)}t
             </td>
-            <td class="py-3 px-3 text-center text-slate-600 border-r border-slate-200">
+            <td class="py-2.5 px-3 text-center text-slate-600 border-r border-slate-200 align-middle">
               HK1: ${r.hk1Tuan || 18}t | HK2: ${r.hk2Tuan || 17}t
             </td>
-            <td class="py-3 px-3 text-center font-black text-purple-900 bg-purple-50/40 text-sm border-r border-slate-200">
+            <td class="py-2.5 px-3 text-center font-black text-purple-900 bg-purple-50/40 text-sm border-r border-slate-200 align-middle">
               ${formatNumber(totalYearPeriods)} tiết
             </td>
-            <td class="py-3 px-2 text-center text-slate-400 italic">--</td>
+            <td class="py-2.5 px-2 text-center text-slate-400 italic align-middle">--</td>
           `;
         } else {
           const tietTuanVal = parseFloat(r.tietTuan) || 0;
@@ -14042,35 +14125,65 @@ function initialSetup() {
           totalPeriodsSum += tongTiet;
 
           tr.innerHTML = `
-            <td class="py-3 px-2 text-center font-bold text-slate-500 border-r border-slate-200">${idx + 1}</td>
-            <td class="py-3 px-3 font-bold text-slate-800 border-r border-slate-200 leading-snug">
-              ${escapeHtml(r.tenHs || '--')}
+            <td class="py-2.5 px-2 text-center font-bold text-slate-500 border-r border-slate-200 align-middle">${idx + 1}</td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.names.map((name, i) => `
+                  <div class="font-bold text-slate-800 leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(name)}
+                  </div>
+                `).join('')}
+              </div>
             </td>
-            <td class="py-3 px-3 text-center font-black text-indigo-950 border-r border-slate-200">${escapeHtml(r.lop || '--')}</td>
-            <td class="py-3 px-3 text-center text-slate-600 border-r border-slate-200">${escapeHtml(r.namSinh || '--')}</td>
-            <td class="py-3 px-3 text-slate-700 text-xs border-r border-slate-200 leading-snug">${escapeHtml(r.dangKhuyetTat || '--')}</td>
-            <td class="py-3 px-3 text-center border-r border-slate-200">
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(r.mucDo || 'Nhẹ')}</span>
+            <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 align-middle">${escapeHtml(r.lop || '--')}</td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.births.map((b, i) => `
+                  <div class="text-center text-slate-600 font-medium leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(b)}
+                  </div>
+                `).join('')}
+              </div>
             </td>
-            <td class="py-3 px-2 text-center border-r border-slate-200">
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.disabilities.map((d, i) => `
+                  <div class="text-slate-700 text-xs leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(d)}
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.levels.map((lvl, i) => `
+                  <div class="text-center ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      ${escapeHtml(lvl || 'Nhẹ')}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+            <td class="py-2 px-2 text-center border-r border-slate-200 align-middle">
               <input type="text" value="${escapeHtml(r.monDay || 'Tin học')}"
                 onchange="handleHoaNhapRowChange('${hoaNhapActiveSem}', '${r.id}', 'monDay', this.value)"
                 class="w-full text-center px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:bg-white focus:ring-1 focus:ring-indigo-500">
             </td>
-            <td class="py-3 px-2 text-center border-r border-slate-200 bg-indigo-50/20">
+            <td class="py-2 px-2 text-center border-r border-slate-200 bg-indigo-50/20 align-middle">
               <input type="number" step="0.5" min="0" value="${tietTuanVal || ''}" placeholder="0"
                 oninput="handleHoaNhapRowChange('${hoaNhapActiveSem}', '${r.id}', 'tietTuan', this.value)"
                 class="w-20 mx-auto text-center px-2 py-1 bg-white border border-indigo-200 rounded-lg font-black text-indigo-950 text-sm focus:ring-2 focus:ring-indigo-500 shadow-2xs">
             </td>
-            <td class="py-3 px-2 text-center border-r border-slate-200 bg-indigo-50/20">
+            <td class="py-2 px-2 text-center border-r border-slate-200 bg-indigo-50/20 align-middle">
               <input type="number" step="1" min="0" value="${soTuanVal || (hoaNhapActiveSem === 'hk2' ? 17 : 18)}"
                 oninput="handleHoaNhapRowChange('${hoaNhapActiveSem}', '${r.id}', 'soTuan', this.value)"
                 class="w-20 mx-auto text-center px-2 py-1 bg-white border border-indigo-200 rounded-lg font-black text-indigo-950 text-sm focus:ring-2 focus:ring-indigo-500 shadow-2xs">
             </td>
-            <td class="py-3 px-3 text-center font-black text-purple-900 bg-purple-50/40 text-sm border-r border-slate-200" id="hn-cell-total-${r.id}">
+            <td class="py-2.5 px-3 text-center font-black text-purple-900 bg-purple-50/40 text-sm border-r border-slate-200 align-middle" id="hn-cell-total-${r.id}">
               ${formatNumber(tongTiet)} tiết
             </td>
-            <td class="py-3 px-2 text-center">
+            <td class="py-2 px-2 text-center align-middle">
               <button type="button" onclick="removeHoaNhapRow('${hoaNhapActiveSem}', '${r.id}')"
                 title="Xóa dòng này"
                 class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white transition flex items-center justify-center mx-auto">
@@ -14097,7 +14210,9 @@ function initialSetup() {
       // Đếm tổng số học sinh hòa nhập mà GV dạy
       let hsCount = 0;
       rows.forEach(r => {
-        if (r.tenHs) {
+        if (r.students && Array.isArray(r.students)) {
+          hsCount += r.students.length;
+        } else if (r.tenHs) {
           const names = r.tenHs.split(/[,;\n]+/).filter(Boolean);
           hsCount += names.length;
         }
@@ -14109,7 +14224,6 @@ function initialSetup() {
       if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
     }
 
-    // Xử lý thay đổi số tiết / số tuần của dòng
     function handleHoaNhapRowChange(sem, rowId, field, val) {
       if (!hoaNhapDataStore[sem]) return;
       const row = hoaNhapDataStore[sem].find(r => r.id === rowId);
@@ -14366,18 +14480,28 @@ function initialSetup() {
         totalTietTuan += tietTuan;
         totalTongTiet += tongTiet;
 
+        const details = getRowStudentDetails(r);
+
         rowsHtml += `
           <tr class="border-b border-slate-300 text-center">
-            <td class="py-1 px-1 border border-slate-300 font-bold">${idx + 1}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-800 leading-snug">${escapeHtml(r.tenHs || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300 font-bold text-slate-900">${escapeHtml(r.lop || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300">${escapeHtml(r.namSinh || '--')}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left leading-snug text-[10px]">${escapeHtml(r.dangKhuyetTat || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300">${escapeHtml(r.mucDo || 'Nhẹ')}</td>
-            <td class="py-1 px-1 border border-slate-300 font-semibold">${escapeHtml(r.monDay || 'Tin học')}</td>
-            <td class="py-1 px-1 border border-slate-300 font-bold text-slate-800">${formatNumber(tietTuan)}</td>
-            <td class="py-1 px-1 border border-slate-300">${sem === 'all' ? `HK1: ${r.hk1Tuan || 18} | HK2: ${r.hk2Tuan || 17}` : formatNumber(soTuan)}</td>
-            <td class="py-1 px-1 border border-slate-300 font-black text-slate-900 bg-slate-50">${formatNumber(tongTiet)}</td>
+            <td class="py-1.5 px-1 border border-slate-300 font-bold align-middle">${idx + 1}</td>
+            <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-800 leading-snug align-middle">
+              ${details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(name)}</div>`).join('')}
+            </td>
+            <td class="py-1.5 px-1 border border-slate-300 font-bold text-slate-900 align-middle">${escapeHtml(r.lop || '--')}</td>
+            <td class="py-1 px-1 border border-slate-300 text-center align-middle">
+              ${details.births.map((b, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(b)}</div>`).join('')}
+            </td>
+            <td class="py-1 px-2 border border-slate-300 text-left leading-snug text-[10px] align-middle">
+              ${details.disabilities.map((d, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(d)}</div>`).join('')}
+            </td>
+            <td class="py-1 px-1 border border-slate-300 text-center text-[10px] align-middle">
+              ${details.levels.map((lvl, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(lvl || 'Nhẹ')}</div>`).join('')}
+            </td>
+            <td class="py-1.5 px-1 border border-slate-300 font-semibold align-middle">${escapeHtml(r.monDay || 'Tin học')}</td>
+            <td class="py-1.5 px-1 border border-slate-300 font-bold text-slate-800 align-middle">${formatNumber(tietTuan)}</td>
+            <td class="py-1.5 px-1 border border-slate-300 align-middle">${sem === 'all' ? `HK1: ${r.hk1Tuan || 18} | HK2: ${r.hk2Tuan || 17}` : formatNumber(soTuan)}</td>
+            <td class="py-1.5 px-1 border border-slate-300 font-black text-slate-900 bg-slate-50 align-middle">${formatNumber(tongTiet)}</td>
           </tr>
         `;
       });
@@ -14928,17 +15052,19 @@ function initialSetup() {
         const classMap = {};
         (store.hk1 || []).forEach(r => {
           const key = r.lop;
-          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
+          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk1Tiet = r.tongTiet || 0;
           classMap[key].hk1TietTuan = r.tietTuan || 0;
           classMap[key].hk1Tuan = r.soTuan || 0;
+          if (r.students && !classMap[key].students) classMap[key].students = r.students;
         });
         (store.hk2 || []).forEach(r => {
           const key = r.lop;
-          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
+          if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk2Tiet = r.tongTiet || 0;
           classMap[key].hk2TietTuan = r.tietTuan || 0;
           classMap[key].hk2Tuan = r.soTuan || 0;
+          if (r.students && !classMap[key].students) classMap[key].students = r.students;
         });
         rows = Object.values(classMap);
       } else {
@@ -14961,29 +15087,65 @@ function initialSetup() {
           totalTietTuan += tietTuan;
           totalTongTiet += tongTiet;
 
+          const details = getRowStudentDetails(r);
+
           const tr = document.createElement('tr');
-          tr.className = idx % 2 === 0 ? "bg-white" : "bg-slate-50/70";
+          tr.className = idx % 2 === 0 ? "bg-white hover:bg-indigo-50/20 transition" : "bg-slate-50/70 hover:bg-indigo-50/20 transition";
 
           tr.innerHTML = `
-            <td class="py-2.5 px-2 text-center font-bold text-slate-500 border-r border-slate-200">${idx + 1}</td>
-            <td class="py-2.5 px-3 font-bold text-slate-800 border-r border-slate-200 leading-snug">${escapeHtml(r.tenHs || '--')}</td>
-            <td class="py-2.5 px-2 text-center font-black text-indigo-950 border-r border-slate-200">${escapeHtml(r.lop || '--')}</td>
-            <td class="py-2.5 px-2 text-center text-slate-600 border-r border-slate-200">${escapeHtml(r.namSinh || '--')}</td>
-            <td class="py-2.5 px-3 text-slate-700 text-xs border-r border-slate-200 leading-snug">${escapeHtml(r.dangKhuyetTat || '--')}</td>
-            <td class="py-2.5 px-2 text-center border-r border-slate-200">
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(r.mucDo || 'Nhẹ')}</span>
+            <td class="py-2.5 px-2 text-center font-bold text-slate-500 border-r border-slate-200 align-middle">${idx + 1}</td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.names.map((name, i) => `
+                  <div class="font-bold text-slate-800 leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(name)}
+                  </div>
+                `).join('')}
+              </div>
             </td>
-            <td class="py-2.5 px-2 text-center font-semibold text-slate-800 border-r border-slate-200">${escapeHtml(r.monDay || 'Tin học')}</td>
-            <td class="py-2.5 px-2 text-center font-black text-indigo-950 border-r border-slate-200 bg-indigo-50/30">${formatNumber(tietTuan)}</td>
-            <td class="py-2.5 px-2 text-center text-slate-700 border-r border-slate-200">${adminModalViewingHoaNhapSem === 'all' ? `HK1: ${r.hk1Tuan || 18} | HK2: ${r.hk2Tuan || 17}` : formatNumber(soTuan)}</td>
-            <td class="py-2.5 px-3 text-center font-black text-purple-950 bg-purple-100/40 text-sm">${formatNumber(tongTiet)} tiết</td>
+            <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 align-middle">${escapeHtml(r.lop || '--')}</td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.births.map((b, i) => `
+                  <div class="text-center text-slate-600 font-medium leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(b)}
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.disabilities.map((d, i) => `
+                  <div class="text-slate-700 text-xs leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    ${escapeHtml(d)}
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+            <td class="py-2 px-3 border-r border-slate-200 align-middle">
+              <div class="space-y-1">
+                ${details.levels.map((lvl, i) => `
+                  <div class="text-center ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                    <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      ${escapeHtml(lvl || 'Nhẹ')}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+            <td class="py-2.5 px-3 text-center font-semibold text-slate-800 border-r border-slate-200 align-middle">${escapeHtml(r.monDay || 'Tin học')}</td>
+            <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 bg-indigo-50/20 align-middle">${formatNumber(tietTuan)}</td>
+            <td class="py-2.5 px-3 text-center text-slate-700 border-r border-slate-200 align-middle">${adminModalViewingHoaNhapSem === 'all' ? `HK1: ${r.hk1Tuan || 18} | HK2: ${r.hk2Tuan || 17}` : formatNumber(soTuan)}</td>
+            <td class="py-2.5 px-3 text-center font-black text-purple-900 bg-purple-50/40 text-sm align-middle">${formatNumber(tongTiet)} tiết</td>
           `;
           tbody.appendChild(tr);
         });
       }
 
-      document.getElementById('modal-hn-admin-foot-tiet-tuan').textContent = formatNumber(totalTietTuan);
-      document.getElementById('modal-hn-admin-foot-tong-tiet').textContent = `${formatNumber(totalTongTiet)} tiết`;
+      const footTietTuan = document.getElementById('modal-hn-admin-foot-tiet-tuan');
+      if (footTietTuan) footTietTuan.textContent = formatNumber(totalTietTuan);
+      const footTongTiet = document.getElementById('modal-hn-admin-foot-tong-tiet');
+      if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalTongTiet)} tiết`;
     }
 
     function closeAdminViewTeacherHoaNhapModal() {
@@ -15031,8 +15193,10 @@ function initialSetup() {
             monGv: r.monDay || t.monGv || t.subject || "Tin học",
             lop: r.lop,
             tenHs: r.tenHs,
+            namSinh: r.namSinh,
             dangKhuyetTat: r.dangKhuyetTat,
             mucDo: r.mucDo || "Nhẹ",
+            students: r.students,
             tietTuan: tietTuan,
             soTuan: soTuan,
             tongTiet: tongTiet
@@ -15042,18 +15206,25 @@ function initialSetup() {
 
       let rowsHtml = "";
       summaryRows.forEach((r, idx) => {
+        const details = getRowStudentDetails(r);
         rowsHtml += `
           <tr class="border-b border-slate-300 text-center">
-            <td class="py-1 px-1 border border-slate-300 font-bold">${idx + 1}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-800">${escapeHtml(r.teacherName || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300">${escapeHtml(r.monGv || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300 font-bold">${escapeHtml(r.lop || '--')}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left leading-snug">${escapeHtml(r.tenHs || '--')}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left text-[10px]">${escapeHtml(r.dangKhuyetTat || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300">${escapeHtml(r.mucDo || 'Nhẹ')}</td>
-            <td class="py-1 px-1 border border-slate-300 font-bold">${formatNumber(r.tietTuan)}</td>
-            <td class="py-1 px-1 border border-slate-300">${formatNumber(r.soTuan)}</td>
-            <td class="py-1 px-1 border border-slate-300 font-black bg-slate-50">${formatNumber(r.tongTiet)}</td>
+            <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${idx + 1}</td>
+            <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-800 align-middle">${escapeHtml(r.teacherName || '--')}</td>
+            <td class="py-1 px-1 border border-slate-300 align-middle">${escapeHtml(r.monGv || '--')}</td>
+            <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${escapeHtml(r.lop || '--')}</td>
+            <td class="py-1 px-2 border border-slate-300 text-left leading-snug align-middle">
+              ${details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5' : ''}">${escapeHtml(name)}</div>`).join('')}
+            </td>
+            <td class="py-1 px-2 border border-slate-300 text-left text-[10px] align-middle">
+              ${details.disabilities.map((d, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5' : ''}">${escapeHtml(d)}</div>`).join('')}
+            </td>
+            <td class="py-1 px-1 border border-slate-300 align-middle">
+              ${details.levels.map((lvl, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5' : ''}">${escapeHtml(lvl || 'Nhẹ')}</div>`).join('')}
+            </td>
+            <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${formatNumber(r.tietTuan)}</td>
+            <td class="py-1 px-1 border border-slate-300 align-middle">${formatNumber(r.soTuan)}</td>
+            <td class="py-1 px-1 border border-slate-300 font-black bg-slate-50 align-middle">${formatNumber(r.tongTiet)}</td>
           </tr>
         `;
       });
