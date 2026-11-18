@@ -923,6 +923,26 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
     if (lopDay !== undefined && lopDay !== null) {
       const lopDayStr = Array.isArray(lopDay) ? lopDay.join(", ") : String(lopDay).trim();
       sheetDuLieu.getRange(targetRow, 4).setValue(lopDayStr);
+
+      // Đồng thời cập nhật vào Sheet DATA (Cột F: Lớp Dạy)
+      try {
+        const sheetData = ss.getSheetByName(SHEET_DATA);
+        if (sheetData) {
+          const cols = getSheetDataCols(sheetData);
+          const targetCol = (cols.colLopDay !== -1) ? (cols.colLopDay + 1) : 6;
+          sheetData.getRange(1, targetCol).setValue("Lớp Dạy").setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
+          sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
+          const dataVals = sheetData.getDataRange().getValues();
+          const dataDisp = sheetData.getDataRange().getDisplayValues();
+          for (let d = 1; d < dataVals.length; d++) {
+            const dTk = String(dataDisp[d][cols.colTk] || dataVals[d][cols.colTk] || "").trim();
+            if (isUsernameMatch(dTk, tkClean)) {
+              sheetData.getRange(d + 1, targetCol).setValue(lopDayStr);
+              break;
+            }
+          }
+        }
+      } catch (dataErr) {}
     }
     SpreadsheetApp.flush();
 
@@ -982,6 +1002,29 @@ function handleSaveClasses(taiKhoan, lopDay) {
 
   if (targetRow !== -1) {
     sheetDuLieu.getRange(targetRow, 4).setValue(lopDayStr);
+
+    // Đồng thời đồng bộ sang Sheet DATA (Cột F: Lớp Dạy)
+    try {
+      const sheetData = ss.getSheetByName(SHEET_DATA);
+      if (sheetData) {
+        const cols = getSheetDataCols(sheetData);
+        const targetCol = (cols.colLopDay !== -1) ? (cols.colLopDay + 1) : 6;
+        sheetData.getRange(1, targetCol).setValue("Lớp Dạy").setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
+        sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
+        const dataVals = sheetData.getDataRange().getValues();
+        const dataDisp = sheetData.getDataRange().getDisplayValues();
+        for (let d = 1; d < dataVals.length; d++) {
+          const dTk = String(dataDisp[d][cols.colTk] || dataVals[d][cols.colTk] || "").trim();
+          if (isUsernameMatch(dTk, tkClean)) {
+            sheetData.getRange(d + 1, targetCol).setValue(lopDayStr);
+            break;
+          }
+        }
+      }
+    } catch (dataErr) {
+      Logger.log("Lỗi đồng bộ Sheet DATA: " + dataErr);
+    }
+
     SpreadsheetApp.flush();
     return jsonResponse({
       success: true,
@@ -1575,6 +1618,18 @@ function jsonResponse(data) {
  */
 function capNhatCotMoi() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 0. NÂNG CẤP SHEET DATA: Bổ sung Cột F: LỚP DẠY
+  let sheetData = ss.getSheetByName(SHEET_DATA);
+  if (sheetData) {
+    const cols = getSheetDataCols(sheetData);
+    const targetCol = (cols.colLopDay !== -1) ? (cols.colLopDay + 1) : Math.max(6, sheetData.getLastColumn() + 1);
+    sheetData.getRange(1, targetCol).setValue("Lớp Dạy");
+    sheetData.getRange(1, targetCol).setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
+    sheetData.setColumnWidth(targetCol, 220);
+    sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
+    Logger.log("✅ Đã tạo Cột F: Lớp Dạy trên Sheet DATA!");
+  }
   
   // 1. Nâng cấp Sheet DULIEU: Thêm Cột D: LỚP DẠY
   let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
