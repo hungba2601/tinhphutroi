@@ -7313,7 +7313,7 @@ function initialSetup() {
       }
     }
 
-    function selectModule(moduleNum) {
+    async function selectModule(moduleNum) {
       currentActiveModule = moduleNum;
       sessionStorage.setItem('active_module', String(moduleNum));
 
@@ -7335,7 +7335,7 @@ function initialSetup() {
         document.getElementById('admin-portal').classList.add('hidden');
         const hnPortal = document.getElementById('hoanhap-portal');
         if (hnPortal) hnPortal.classList.remove('hidden');
-        initHoaNhapModule();
+        await initHoaNhapModule();
       }
     }
 
@@ -7776,6 +7776,11 @@ function initialSetup() {
         renderAdminTeachersTable();
         renderAdminSummaryTable();
         updateGlobalLockUI();
+
+        // Tự động cập nhật bảng Phân hệ 2 nếu đang ở Phân hệ 2
+        if (currentActiveModule === 2 || isHoaNhapAdminView) {
+          renderHoaNhapAdminView();
+        }
 
         if (isManual) {
           showToast("Đã làm mới dữ liệu từ Google Sheet thành công!", "success");
@@ -14221,7 +14226,14 @@ function initialSetup() {
         if (toggleRoleBtn) toggleRoleBtn.classList.add('hidden');
       }
 
-      // Tải danh sách HS hòa nhập từ cache hoặc cloud nếu chưa có
+      // 1. Nếu là Admin/BGH: đảm bảo danh sách giáo viên toàn trường đã nạp
+      if (isRoleAdmin(currentUser.quyen)) {
+        if (!adminTeachersList || adminTeachersList.length === 0) {
+          await loadAdminAllData(false);
+        }
+      }
+
+      // 2. Tải danh sách HS hòa nhập từ cache hoặc cloud nếu chưa có
       if (!hoaNhapStudentsList || hoaNhapStudentsList.length === 0) {
         await loadHoaNhapStudentsFromCloud(true);
       }
@@ -14232,7 +14244,7 @@ function initialSetup() {
         if (savedHnView === 'teacher') {
           showHoaNhapTeacherView();
         } else {
-          showHoaNhapAdminView();
+          await showHoaNhapAdminView();
         }
       } else {
         showHoaNhapTeacherView();
@@ -14240,11 +14252,11 @@ function initialSetup() {
     }
 
     // Chuyển đổi giữa Sổ Cá Nhân và Cổng Quản Trị
-    function toggleHoaNhapRoleView() {
+    async function toggleHoaNhapRoleView() {
       if (isHoaNhapAdminView) {
         showHoaNhapTeacherView();
       } else {
-        showHoaNhapAdminView();
+        await showHoaNhapAdminView();
       }
     }
 
@@ -14261,7 +14273,7 @@ function initialSetup() {
       loadTeacherHoaNhapData();
     }
 
-    function showHoaNhapAdminView() {
+    async function showHoaNhapAdminView() {
       isHoaNhapAdminView = true;
       sessionStorage.setItem('hoanhap_view', 'admin');
 
@@ -14270,6 +14282,16 @@ function initialSetup() {
 
       const toggleText = document.getElementById('btn-hoanhap-toggle-role-text');
       if (toggleText) toggleText.textContent = "Sổ Cá Nhân";
+
+      // Đảm bảo hoaNhapStudentsList đã có
+      if (!hoaNhapStudentsList || hoaNhapStudentsList.length === 0) {
+        await loadHoaNhapStudentsFromCloud(true);
+      }
+
+      // Đảm bảo adminTeachersList đã có
+      if (!adminTeachersList || adminTeachersList.length === 0) {
+        await loadAdminAllData(false);
+      }
 
       // Đảm bảo dữ liệu của currentUser được đồng bộ ngay vào adminTeachersList
       if (currentUser && Array.isArray(adminTeachersList)) {
@@ -15357,10 +15379,28 @@ function initialSetup() {
     }
 
     function renderHoaNhapAdminView() {
+      // Đảm bảo hoaNhapStudentsList được phục hồi từ cache nếu đang rỗng
+      if (!hoaNhapStudentsList || hoaNhapStudentsList.length === 0) {
+        const cachedHs = localStorage.getItem('school_hoanhap_students_cache');
+        if (cachedHs) {
+          try {
+            const p = JSON.parse(cachedHs);
+            if (Array.isArray(p) && p.length > 0) hoaNhapStudentsList = p;
+          } catch(e) {}
+        }
+      }
+
       // Đảm bảo adminTeachersList có dữ liệu
       if (!adminTeachersList || adminTeachersList.length === 0) {
         if (GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE")) {
-          loadAdminAllData(true);
+          loadAdminAllData(false).then(() => {
+            renderHoaNhapAdminView();
+          });
+          const tbody = document.getElementById('hn-admin-teachers-tbody');
+          if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-indigo-600 font-bold"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu giáo viên từ Google Sheet...</td></tr>`;
+          }
+          return;
         }
       }
 
@@ -15408,18 +15448,27 @@ function initialSetup() {
       }
 
       const tClasses = parseTeacherLopDay(t.lopDay || '');
-      const normMap = {};
-      tClasses.forEach(c => normMap[normalizeClassName(c)] = c);
-
-      // Tìm các lớp có HS hòa nhập
       const matchedClassesSet = new Set();
-      hoaNhapStudentsList.forEach(s => {
-        const sNorm = normalizeClassName(s.lop);
-        if (normMap[sNorm]) matchedClassesSet.add(normMap[sNorm]);
+
+      (hoaNhapStudentsList || []).forEach(s => {
+        const sLop = (s.lop || "").trim();
+        if (!sLop) return;
+        const isMatched = tClasses.some(c => {
+          if (isSameClass(c, sLop)) return true;
+          const m = String(c).trim().match(/^(?:khối|k)\s*([6-9])/i);
+          if (m) {
+            const sm = sLop.match(/^([6-9])/);
+            if (sm && m[1] === sm[1]) return true;
+          }
+          return false;
+        });
+        if (isMatched) {
+          matchedClassesSet.add(sLop);
+        }
       });
 
       const hasHnClasses = matchedClassesSet.size > 0;
-      const hnClassesList = [...matchedClassesSet];
+      const hnClassesList = Array.from(matchedClassesSet).sort(compareSchoolClasses);
 
       // Tính tổng tiết HK1 & HK2
       let hk1Total = 0;
