@@ -735,6 +735,68 @@
             </div>
 
           </div>
+
+          <!-- HÀNG 2: KHỐI & LỚP GIẢNG DẠY (KHỐI 6, 7, 8, 9) -->
+          <div class="mt-4 pt-3.5 border-t border-slate-100">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              
+              <!-- TIÊU ĐỀ & CÁC NÚT KHỐI 6, 7, 8, 9 -->
+              <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-chalkboard-user text-emerald-600"></i> Khối & Lớp Giảng Dạy:
+                  </span>
+                  <span class="text-[11px] text-slate-400 hidden sm:inline">(Tích chọn lớp)</span>
+                </div>
+
+                <!-- 4 NÚT KHỐI 6, 7, 8, 9 -->
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" onclick="openSelectGradeClassesModal('6')" id="btn-grade-6"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
+                    <span>Khối 6</span>
+                    <span id="badge-count-k6" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                  </button>
+
+                  <button type="button" onclick="openSelectGradeClassesModal('7')" id="btn-grade-7"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
+                    <span>Khối 7</span>
+                    <span id="badge-count-k7" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                  </button>
+
+                  <button type="button" onclick="openSelectGradeClassesModal('8')" id="btn-grade-8"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
+                    <span>Khối 8</span>
+                    <span id="badge-count-k8" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                  </button>
+
+                  <button type="button" onclick="openSelectGradeClassesModal('9')" id="btn-grade-9"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
+                    <span>Khối 9</span>
+                    <span id="badge-count-k9" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                  </button>
+                </div>
+
+                <!-- DANH SÁCH LỚP ĐÃ CHỌN (CHIPS) -->
+                <div id="selected-classes-chips" class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-xs text-slate-400 italic">Chưa chọn lớp nào</span>
+                </div>
+              </div>
+
+              <!-- NÚT LƯU LỚP DẠY (CỘT D) -->
+              <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="saveTeacherClassesToSheet()" id="btn-save-classes"
+                  class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-1.5">
+                  <i id="btn-save-classes-icon" class="fa-solid fa-floppy-disk"></i>
+                  <span id="btn-save-classes-text">Lưu Lớp Dạy (Cột D)</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1657,7 +1719,8 @@
             </div>
             <textarea id="raw-backend-code" readonly
               class="w-full h-80 font-mono text-xs p-3.5 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed select-all"
-              placeholder="Đang tải mã nguồn user_code.gs...">/**
+              placeholder="Đang tải mã nguồn user_code.gs...">
+/**
  * =========================================================================
  * BACKEND GOOGLE APPS SCRIPT CHO CÁC TRƯỜNG THÀNH VIÊN (user_code.gs)
  * Tác giả: Nguyễn Phi Hùng | Zalo: 0938750424
@@ -1736,7 +1799,7 @@ function setColumnConfig(showBdHsg, showDayTs10) {
 
 // Tên các trang tính theo quy định
 const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | Cột C: Ngày sinh | Cột D: Quyền | Cột E: Mật khẩu
-const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON
+const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
 const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
 
@@ -1853,7 +1916,12 @@ function doPost(e) {
         return handleLogin(payload.taiKhoan || payload.tai_khoan, payload.matKhau || payload.mat_khau);
 
       case "saveData":
-        return handleSaveData(payload.taiKhoan || payload.tai_khoan, payload.tenGv || payload.ten_gv, payload.dataJson, payload.isAdmin);
+        return handleSaveData(payload.taiKhoan || payload.tai_khoan, payload.tenGv || payload.ten_gv, payload.dataJson, payload.isAdmin, payload.lopDay || payload.classes || payload.lop_day);
+
+      case "saveClasses":
+      case "saveTeacherClasses":
+      case "saveLopDay":
+        return handleSaveClasses(payload.taiKhoan || payload.tai_khoan, payload.lopDay || payload.classes || payload.lop_day);
 
       case "resetDeclaration":
       case "clearDeclaration":
@@ -2330,23 +2398,24 @@ function syncDuLieuWithData(forceRebuild) {
   const dataValuesRaw = sheetData.getDataRange().getValues();
   const dataValuesDisplay = sheetData.getDataRange().getDisplayValues();
 
-  // 1. Đọc dữ liệu JSON hiện có trong Sheet DULIEU (nếu có) vào bộ nhớ tạm
-  const existingJsonMap = {};
+  // 1. Đọc dữ liệu JSON và LỚP DẠY hiện có trong Sheet DULIEU (nếu có) vào bộ nhớ tạm
+  const existingDataMap = {};
   const duLieuLastRow = sheetDuLieu.getLastRow();
+  const duLieuLastCol = Math.max(sheetDuLieu.getLastColumn(), 4);
   if (duLieuLastRow > 1) {
-    const duLieuValues = sheetDuLieu.getRange(1, 1, duLieuLastRow, 3).getValues();
-    const duLieuDisplay = sheetDuLieu.getRange(1, 1, duLieuLastRow, 3).getDisplayValues();
+    const duLieuValues = sheetDuLieu.getRange(1, 1, duLieuLastRow, duLieuLastCol).getValues();
+    const duLieuDisplay = sheetDuLieu.getRange(1, 1, duLieuLastRow, duLieuLastCol).getDisplayValues();
     for (let j = 1; j < duLieuValues.length; j++) {
       const rawTk = String(duLieuValues[j][0] || "").trim();
       const dispTk = String(duLieuDisplay[j][0] || "").trim();
       const normTk = normalizeUsername(dispTk || rawTk);
       const jsonContent = duLieuValues[j][2];
-      if (jsonContent) {
-        if (normTk) existingJsonMap[normTk.toLowerCase()] = jsonContent;
-        if (rawTk) existingJsonMap[rawTk.toLowerCase()] = jsonContent;
-        const stripped = normTk.replace(/^0+/, "").toLowerCase();
-        if (stripped) existingJsonMap[stripped] = jsonContent;
-      }
+      const lopDayContent = duLieuDisplay[j][3] || duLieuValues[j][3] || "";
+      const record = { json: jsonContent || "", lopDay: lopDayContent || "" };
+      if (normTk) existingDataMap[normTk.toLowerCase()] = record;
+      if (rawTk) existingDataMap[rawTk.toLowerCase()] = record;
+      const stripped = normTk.replace(/^0+/, "").toLowerCase();
+      if (stripped) existingDataMap[stripped] = record;
     }
   }
 
@@ -2360,13 +2429,13 @@ function syncDuLieuWithData(forceRebuild) {
     const normTk = normalizeUsername(rawTk);
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
 
-    // Lấy dữ liệu JSON đã kê khai trước đó (nếu có)
-    const savedJson = existingJsonMap[normTk.toLowerCase()] || 
-                      existingJsonMap[rawTk.toLowerCase()] || 
-                      existingJsonMap[normTk.replace(/^0+/, "").toLowerCase()] || "";
+    // Lấy dữ liệu JSON và Lớp dạy đã kê khai trước đó (nếu có)
+    const savedRecord = existingDataMap[normTk.toLowerCase()] || 
+                        existingDataMap[rawTk.toLowerCase()] || 
+                        existingDataMap[normTk.replace(/^0+/, "").toLowerCase()] || { json: "", lopDay: "" };
 
     const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
-    teacherRows.push([cellTk, tenGv, savedJson]);
+    teacherRows.push([cellTk, tenGv, savedRecord.json || "", savedRecord.lopDay || ""]);
   }
 
   if (teacherRows.length === 0) {
@@ -2392,14 +2461,18 @@ function syncDuLieuWithData(forceRebuild) {
 
   // 4. Ghi đè lại Sheet DULIEU theo đúng danh sách và thứ tự cố định của Sheet DATA
   sheetDuLieu.clear();
-  sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON"]);
+  sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON", "LỚP DẠY"]);
   
   // Định dạng tiêu đề
-  const headerRange = sheetDuLieu.getRange(1, 1, 1, 3);
+  const headerRange = sheetDuLieu.getRange(1, 1, 1, 4);
   headerRange.setFontWeight("bold").setBackground("#0d9488").setFontColor("#ffffff");
+  sheetDuLieu.setColumnWidth(1, 150);
+  sheetDuLieu.setColumnWidth(2, 220);
+  sheetDuLieu.setColumnWidth(3, 400);
+  sheetDuLieu.setColumnWidth(4, 250);
 
   // Ghi toàn bộ danh sách giáo viên theo đúng thứ tự
-  const dataRange = sheetDuLieu.getRange(2, 1, teacherRows.length, 3);
+  const dataRange = sheetDuLieu.getRange(2, 1, teacherRows.length, 4);
   dataRange.setValues(teacherRows);
 
   // Định dạng cột A là Văn bản (Plain Text) để luôn giữ số 0 ở đầu SĐT
@@ -2473,6 +2546,7 @@ function handleLogin(taiKhoan, matKhau) {
 
   // Lấy dữ liệu đã lưu từ Sheet DULIEU
   let teacherDataJson = null;
+  let teacherLopDay = "";
   const sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   if (sheetDuLieu) {
     const duLieuValues = sheetDuLieu.getDataRange().getValues();
@@ -2481,6 +2555,7 @@ function handleLogin(taiKhoan, matKhau) {
       const dTk = String(duLieuDisplay[j][0] || duLieuValues[j][0] || "").trim();
       if (isUsernameMatch(dTk, tkClean)) {
         teacherDataJson = duLieuValues[j][2]; // Cột C: DỮ LIỆU GV NHẬP DANG JSON
+        teacherLopDay = duLieuDisplay[j][3] || duLieuValues[j][3] || ""; // Cột D: LỚP DẠY
         break;
       }
     }
@@ -2491,6 +2566,7 @@ function handleLogin(taiKhoan, matKhau) {
     message: "Đăng nhập thành công!",
     user: foundUser,
     data: teacherDataJson,
+    lopDay: teacherLopDay || "",
     isSystemLocked: isSystemLocked(),
     columnConfig: getColumnConfig()
   });
@@ -2498,12 +2574,11 @@ function handleLogin(taiKhoan, matKhau) {
 
 /**
  * XỬ LÝ LƯU DỮ LIỆU:
- * Ghi dữ liệu JSON vào ĐÚNG DÒNG CỐ ĐỊNH của giáo viên trong Sheet DULIEU.
+ * Ghi dữ liệu JSON và LỚP DẠY vào ĐÚNG DÒNG CỐ ĐỊNH của giáo viên trong Sheet DULIEU.
  * - Sheet DULIEU luôn sắp xếp các giáo viên theo đúng thứ tự của Sheet DATA.
- * - Khi giáo viên đăng nhập kê khai, chỉ cập nhật Cột B (Tên) và Cột C (JSON) tại dòng của chính giáo viên đó.
- * - Không thêm dòng bừa bãi ở cuối, không làm xáo trộn các giáo viên khác.
+ * - Cột A: TK | Cột B: Tên GV | Cột C: JSON | Cột D: LỚP DẠY.
  */
-function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
+function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
   if (!taiKhoan) {
     return jsonResponse({ success: false, message: "Thiếu thông tin tài khoản để lưu!" });
   }
@@ -2521,8 +2596,8 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
   let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   if (!sheetDuLieu) {
     sheetDuLieu = ss.insertSheet(SHEET_DULIEU);
-    sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON"]);
-    const duLieuHeader = sheetDuLieu.getRange(1, 1, 1, 3);
+    sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON", "LỚP DẠY"]);
+    const duLieuHeader = sheetDuLieu.getRange(1, 1, 1, 4);
     duLieuHeader.setFontWeight("bold").setBackground("#0d9488").setFontColor("#ffffff");
   }
 
@@ -2564,7 +2639,13 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
     if (tenGv) {
       sheetDuLieu.getRange(targetRow, 2).setValue(tenGv);
     }
-    sheetDuLieu.getRange(targetRow, 3).setValue(jsonString);
+    if (dataJson !== undefined && dataJson !== null) {
+      sheetDuLieu.getRange(targetRow, 3).setValue(jsonString);
+    }
+    if (lopDay !== undefined && lopDay !== null) {
+      const lopDayStr = Array.isArray(lopDay) ? lopDay.join(", ") : String(lopDay).trim();
+      sheetDuLieu.getRange(targetRow, 4).setValue(lopDayStr);
+    }
     SpreadsheetApp.flush();
 
     return jsonResponse({
@@ -2578,6 +2659,62 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
   return jsonResponse({
     success: false,
     message: "Không tìm thấy tài khoản '" + normalizeUsername(taiKhoan) + "' trong danh sách giáo viên (Sheet DATA)!"
+  });
+}
+
+/**
+ * LƯU DANH SÁCH LỚP DẠY CỦA GIÁO VIÊN VÀO CỘT D (SHEET DULIEU)
+ */
+function handleSaveClasses(taiKhoan, lopDay) {
+  if (!taiKhoan) {
+    return jsonResponse({ success: false, message: "Thiếu thông tin tài khoản để lưu lớp dạy!" });
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
+  if (!sheetDuLieu) {
+    sheetDuLieu = ss.insertSheet(SHEET_DULIEU);
+    sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON", "LỚP DẠY"]);
+  }
+  const tkClean = String(taiKhoan).trim();
+  const lopDayStr = Array.isArray(lopDay) ? lopDay.join(", ") : String(lopDay || "").trim();
+
+  let values = sheetDuLieu.getDataRange().getValues();
+  let displayValues = sheetDuLieu.getDataRange().getDisplayValues();
+  let targetRow = -1;
+  for (let i = 1; i < values.length; i++) {
+    const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
+    if (isUsernameMatch(rowTk, tkClean)) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    syncDuLieuWithData(true);
+    values = sheetDuLieu.getDataRange().getValues();
+    displayValues = sheetDuLieu.getDataRange().getDisplayValues();
+    for (let i = 1; i < values.length; i++) {
+      const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
+      if (isUsernameMatch(rowTk, tkClean)) {
+        targetRow = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (targetRow !== -1) {
+    sheetDuLieu.getRange(targetRow, 4).setValue(lopDayStr);
+    SpreadsheetApp.flush();
+    return jsonResponse({
+      success: true,
+      message: 'Đã lưu lớp dạy "' + (lopDayStr || "Trống") + '" vào Cột D (Sheet DULIEU) thành công!',
+      lopDay: lopDayStr
+    });
+  }
+
+  return jsonResponse({
+    success: false,
+    message: "Không tìm thấy giáo viên trong Sheet DULIEU!"
   });
 }
 
@@ -2687,6 +2824,7 @@ function handleGetData(taiKhoan) {
   const sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   let teacherDataJson = null;
   let teacherName = userProfile ? userProfile.tenGv : "";
+  let teacherLopDay = "";
   if (sheetDuLieu) {
     const values = sheetDuLieu.getDataRange().getValues();
     const displayValues = sheetDuLieu.getDataRange().getDisplayValues();
@@ -2696,6 +2834,7 @@ function handleGetData(taiKhoan) {
       if (isUsernameMatch(rowTk, tkClean)) {
         teacherDataJson = values[i][2];
         if (!teacherName && values[i][1]) teacherName = values[i][1];
+        teacherLopDay = displayValues[i][3] || values[i][3] || "";
         break;
       }
     }
@@ -2705,6 +2844,7 @@ function handleGetData(taiKhoan) {
     success: true,
     data: teacherDataJson,
     tenGv: teacherName,
+    lopDay: teacherLopDay,
     user: userProfile,
     isSystemLocked: isSystemLocked(),
     columnConfig: getColumnConfig()
@@ -2836,7 +2976,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       const normTk = normalizeUsername(dispTk || rawTk);
       const dataObj = {
         tenGv: duLieuValues[j][1],
-        dataJson: duLieuValues[j][2]
+        dataJson: duLieuValues[j][2],
+        lopDay: duLieuDisplay[j][3] || duLieuValues[j][3] || ""
       };
       const cleanRaw = rawTk.replace(/^'+/, "").toLowerCase();
       const cleanDisp = dispTk.replace(/^'+/, "").toLowerCase();
@@ -2875,7 +3016,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       quyen: quyen,
       matKhau: matKhau,
       hasData: !!dData,
-      dataJson: dData ? dData.dataJson : null
+      dataJson: dData ? dData.dataJson : null,
+      lopDay: dData ? (dData.lopDay || "") : ""
     });
   }
 
@@ -3226,6 +3368,7 @@ function initialSetup() {
     message: "Khởi tạo thành công đầy đủ 4 Sheet: DATA, DULIEU, HOA NHAP, dulieu_hoanhap!"
   };
 }
+
 </textarea>
           </div>
         </div>
@@ -3271,6 +3414,67 @@ function initialSetup() {
                   <i class="fa-solid fa-circle-check"></i> Lưu ý: Chỉ cần cấu hình 1 lần duy nhất. Hệ thống sẽ ghi nhớ vĩnh viễn và không phải cấu hình lại, trừ khi Thầy/Cô chủ động đổi sang Backend Google Sheet khác mới cần nhập và lưu URL mới.
                 </span>
               </p>
+            </div>
+
+            <!-- KHAI BÁO DANH SÁCH KHỐI VÀ LỚP CỦA TRƯỜNG (LƯU VÀO CỘT C SHEET HUB_SERVER) -->
+            <div class="pt-3.5 border-t border-slate-100">
+              <label class="block text-xs font-bold text-slate-800 mb-1">
+                <i class="fa-solid fa-shapes text-indigo-600 mr-1"></i>
+                Khai Báo Danh Sách Khối & Lớp Của Trường (Đồng Bộ Lên Cột C - HUB_SERVER):
+              </label>
+              <p class="text-[11px] text-slate-500 mb-3">
+                Nhập danh sách các lớp cho từng khối của trường (ngăn cách bằng dấu phẩy). Dữ liệu này sẽ lưu lên cột C của Sheet HUB_SERVER để giáo viên của trường tích chọn lớp dạy.
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- Khối 6 -->
+                <div class="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-black text-indigo-900 flex items-center gap-1.5">
+                      <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Khối 6
+                    </span>
+                    <span class="text-[10px] text-indigo-500 font-semibold">VD: 6/1, 6/2</span>
+                  </div>
+                  <input type="text" id="admin-grade-classes-6" placeholder="6/1, 6/2, 6/3, 6/4"
+                    class="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 transition">
+                </div>
+
+                <!-- Khối 7 -->
+                <div class="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-black text-indigo-900 flex items-center gap-1.5">
+                      <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Khối 7
+                    </span>
+                    <span class="text-[10px] text-indigo-500 font-semibold">VD: 7/1, 7/2</span>
+                  </div>
+                  <input type="text" id="admin-grade-classes-7" placeholder="7/1, 7/2, 7/3, 7/4"
+                    class="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 transition">
+                </div>
+
+                <!-- Khối 8 -->
+                <div class="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-black text-indigo-900 flex items-center gap-1.5">
+                      <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Khối 8
+                    </span>
+                    <span class="text-[10px] text-indigo-500 font-semibold">VD: 8/1, 8/2</span>
+                  </div>
+                  <input type="text" id="admin-grade-classes-8" placeholder="8/1, 8/2, 8/3, 8/4"
+                    class="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 transition">
+                </div>
+
+                <!-- Khối 9 -->
+                <div class="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-black text-indigo-900 flex items-center gap-1.5">
+                      <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Khối 9
+                    </span>
+                    <span class="text-[10px] text-indigo-500 font-semibold">VD: 9/1, 9/2</span>
+                  </div>
+                  <input type="text" id="admin-grade-classes-9" placeholder="9/1, 9/2, 9/3, 9/4"
+                    class="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 transition">
+                </div>
+              </div>
             </div>
 
             <!-- Các nút hành động lưu / kiểm tra (Đã bỏ 2 nút theo yêu cầu) -->
@@ -3332,10 +3536,11 @@ function initialSetup() {
               <thead class="bg-slate-100 text-slate-700 font-black uppercase text-[11px] border-b">
                 <tr>
                   <th class="py-3 px-3 text-center w-12">STT</th>
-                  <th class="py-3 px-3 min-w-[200px]">Tên Trường / Đơn Vị (Cột B)</th>
-                  <th class="py-3 px-3 min-w-[120px]">Tài Khoản (Cột A)</th>
-                  <th class="py-3 px-3 min-w-[280px]">Địa Chỉ URL Web App (Cột C)</th>
-                  <th class="py-3 px-3 text-center min-w-[140px]">Ngày Cập Nhật</th>
+                  <th class="py-3 px-3 min-w-[180px]">Tên Trường / Đơn Vị (Cột B)</th>
+                  <th class="py-3 px-3 min-w-[100px]">Tài Khoản (Cột A)</th>
+                  <th class="py-3 px-3 min-w-[180px]">Khối Lớp (Cột C)</th>
+                  <th class="py-3 px-3 min-w-[260px]">Địa Chỉ URL Web App (Cột D)</th>
+                  <th class="py-3 px-3 text-center min-w-[130px]">Ngày Cập Nhật (Cột E)</th>
                   <th class="py-3 px-3 text-center w-28">Thao Tác</th>
                 </tr>
               </thead>
@@ -4178,6 +4383,76 @@ function initialSetup() {
   </div>
 
   <!-- ========================================================
+       8B. MODAL CHỌN LỚP GIẢNG DẠY THEO KHỐI (GIÁO VIÊN)
+       DỮ LIỆU LẤY TỪ HUB_SERVER CỦA TRƯỜNG
+       ======================================================== -->
+  <div id="modal-select-grade-classes"
+    class="fixed inset-0 z-[96] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
+    <div
+      class="bg-white rounded-3xl shadow-2xl max-w-lg w-full border border-emerald-100 p-6 sm:p-7 relative overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+      
+      <!-- Nút đóng X góc trên -->
+      <button type="button" onclick="closeSelectGradeClassesModal()"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Header modal -->
+      <div class="flex items-center gap-3.5 mb-4 pb-3 border-b border-slate-100">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0 shadow-xs">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <h3 id="select-grade-modal-title" class="font-black text-lg text-slate-800 leading-snug">
+            Chọn Lớp Dạy - Khối 6
+          </h3>
+          <p id="select-grade-modal-school-info" class="text-xs text-slate-500 font-medium mt-0.5">
+            Danh sách lớp đồng bộ từ cấu hình HUB_SERVER của trường
+          </p>
+        </div>
+      </div>
+
+      <!-- Thanh chọn nhanh -->
+      <div class="flex items-center justify-between gap-2 mb-3 px-1">
+        <span class="text-xs font-bold text-slate-600">
+          <i class="fa-solid fa-square-check text-emerald-600 mr-1"></i> Tích chọn các lớp Thầy/Cô giảng dạy:
+        </span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="toggleSelectAllGradeClasses(true)"
+            class="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 underline">
+            Chọn tất cả
+          </button>
+          <span class="text-slate-300">|</span>
+          <button type="button" onclick="toggleSelectAllGradeClasses(false)"
+            class="text-[11px] font-bold text-slate-500 hover:text-slate-700 underline">
+            Bỏ chọn
+          </button>
+        </div>
+      </div>
+
+      <!-- Danh sách checkbox các lớp (cuộn được) -->
+      <div id="grade-classes-checklist-container"
+        class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 overflow-y-auto max-h-64 custom-scrollbar">
+        <!-- Render từ JS -->
+      </div>
+
+      <!-- Nút hành động Footer -->
+      <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <button type="button" onclick="closeSelectGradeClassesModal()"
+          class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+          Hủy bỏ
+        </button>
+        <button type="button" onclick="confirmGradeClassesSelection()"
+          class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs shadow-md shadow-emerald-600/30 transition flex items-center gap-1.5 active:scale-95">
+          <i class="fa-solid fa-check"></i>
+          <span>Xác Nhận & Cập Nhật</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================
        9. LOGIC JAVASCRIPT HỆ THỐNG
        ======================================================== -->
   <script>
@@ -4406,6 +4681,20 @@ function initialSetup() {
         const isCurrentActive = (s.url === activeBackendUrl);
         const isMaster = (s.url === MASTER_GOOGLE_APPS_SCRIPT_URL);
 
+        let khoiLopDisplay = "--";
+        if (s.khoiLop) {
+          try {
+            const parsed = typeof s.khoiLop === 'string' ? JSON.parse(s.khoiLop) : s.khoiLop;
+            const parts = [];
+            ['6', '7', '8', '9'].forEach(g => {
+              if (parsed[g] && parsed[g].length > 0) parts.push(`K${g}: ${parsed[g].join(",")}`);
+            });
+            khoiLopDisplay = parts.length > 0 ? parts.join(" | ") : String(s.khoiLop);
+          } catch(e) {
+            khoiLopDisplay = String(s.khoiLop);
+          }
+        }
+
         rowsHtml += `
           <tr class="bg-white hover:bg-indigo-50/40 transition">
             <td class="py-2.5 px-3 text-center font-bold text-slate-500">${idx + 1}</td>
@@ -4417,6 +4706,7 @@ function initialSetup() {
               </div>
             </td>
             <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${escapeHtml(s.taiKhoan || currentAdminTk)}</td>
+            <td class="py-2.5 px-3 font-mono text-[11px] text-slate-600 max-w-[200px] truncate" title="${escapeHtml(khoiLopDisplay)}">${escapeHtml(khoiLopDisplay)}</td>
             <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500 break-all">${escapeHtml(s.url || '--')}</td>
             <td class="py-2.5 px-3 text-center text-[11px] text-slate-500 whitespace-nowrap">${escapeHtml(s.updatedAt || '--')}</td>
             <td class="py-2.5 px-3 text-center whitespace-nowrap">
@@ -4506,6 +4796,216 @@ function initialSetup() {
     let currentAdminEditingTeacher = null; // GV đang được Admin xem/sửa
     let adminModalActiveSem = "hk1";
 
+    // ========================================================
+    // QUẢN LÝ LỚP DẠY CỦA GIÁO VIÊN & ĐỒNG BỘ TỪ HUB_SERVER
+    // ========================================================
+    let currentTeacherSelectedClasses = []; // Danh sách lớp dạy đã chọn: ["6/1", "6/2", "7/1"]
+    let currentModalGrade = '6'; // Khối lớp đang mở trong modal chọn lớp
+
+    function parseTeacherLopDay(raw) {
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw.map(s => String(s).trim()).filter(Boolean);
+      if (typeof raw === 'string') {
+        return raw.split(/[,|\n;]+/).map(s => s.trim()).filter(Boolean);
+      }
+      return [];
+    }
+
+    function getTeacherSelectedClassesString() {
+      if (!Array.isArray(currentTeacherSelectedClasses)) return "";
+      return currentTeacherSelectedClasses.filter(Boolean).join(", ");
+    }
+
+    function parseClassesForGrade(raw, grade) {
+      grade = String(grade);
+      if (raw) {
+        try {
+          const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (obj && Array.isArray(obj[grade]) && obj[grade].length > 0) {
+            return obj[grade].map(s => String(s).trim()).filter(Boolean);
+          }
+          if (obj && typeof obj[grade] === 'string' && obj[grade].trim()) {
+            return obj[grade].split(/[,|\n;]+/).map(s => s.trim()).filter(Boolean);
+          }
+        } catch (e) {
+          const items = String(raw).split(/[,|\n;]+/).map(s => s.trim()).filter(Boolean);
+          const filtered = items.filter(it => it.startsWith(grade));
+          if (filtered.length > 0) return filtered;
+        }
+      }
+      return [`${grade}/1`, `${grade}/2`, `${grade}/3`, `${grade}/4`];
+    }
+
+    function getSchoolGradeClasses(grade) {
+      const currentSchoolUrl = getActiveBackendUrl();
+      let school = (hubSchoolsList || []).find(s => s.url === currentSchoolUrl);
+      if (!school && currentUser && currentUser.taiKhoan) {
+        school = (hubSchoolsList || []).find(s => isUsernameEqual(s.taiKhoan, currentUser.taiKhoan));
+      }
+      let raw = school ? school.khoiLop : null;
+      if (!raw && currentUser && currentUser.taiKhoan) {
+        raw = localStorage.getItem('school_classes_' + (currentUser.taiKhoan || '').toLowerCase());
+      }
+      if (!raw) {
+        raw = localStorage.getItem('school_classes_active');
+      }
+      return parseClassesForGrade(raw, grade);
+    }
+
+    function renderTeacherSelectedClassesChips() {
+      const container = document.getElementById('selected-classes-chips');
+      if (!container) return;
+
+      // Cập nhật số lượng trên các badge Khối 6, 7, 8, 9
+      ['6', '7', '8', '9'].forEach(g => {
+        const badge = document.getElementById(`badge-count-k${g}`);
+        if (badge) {
+          const count = currentTeacherSelectedClasses.filter(c => c.startsWith(g)).length;
+          badge.textContent = count;
+          if (count > 0) {
+            badge.className = "px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-600 text-white font-black";
+          } else {
+            badge.className = "px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold";
+          }
+        }
+      });
+
+      if (!currentTeacherSelectedClasses || currentTeacherSelectedClasses.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400 italic">Chưa chọn lớp nào</span>`;
+        return;
+      }
+
+      // Sắp xếp các lớp theo thứ tự khối và tên lớp
+      const sorted = [...currentTeacherSelectedClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      let html = "";
+      sorted.forEach(cls => {
+        html += `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 font-bold text-xs border border-emerald-200 shadow-xs">
+            <i class="fa-solid fa-chalkboard text-[10px] text-emerald-700"></i>
+            <span>${escapeHtml(cls)}</span>
+            <button type="button" onclick="removeTeacherClass('${escapeJs(cls)}')" title="Bỏ chọn lớp ${escapeJs(cls)}"
+              class="w-4 h-4 ml-0.5 rounded-full hover:bg-emerald-200 text-emerald-700 flex items-center justify-center text-[10px] transition">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </span>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function removeTeacherClass(cls) {
+      currentTeacherSelectedClasses = currentTeacherSelectedClasses.filter(c => c !== cls);
+      renderTeacherSelectedClassesChips();
+      if (currentUser && currentUser.taiKhoan) {
+        localStorage.setItem(`teacher_classes_${currentUser.taiKhoan}`, getTeacherSelectedClassesString());
+      }
+    }
+
+    function openSelectGradeClassesModal(grade) {
+      currentModalGrade = String(grade);
+      const modal = document.getElementById('modal-select-grade-classes');
+      const title = document.getElementById('select-grade-modal-title');
+      const schoolInfo = document.getElementById('select-grade-modal-school-info');
+      const container = document.getElementById('grade-classes-checklist-container');
+      if (!modal || !container) return;
+
+      if (title) title.textContent = `Chọn Lớp Dạy - Khối ${grade}`;
+
+      const currentSchoolUrl = getActiveBackendUrl();
+      let school = (hubSchoolsList || []).find(s => s.url === currentSchoolUrl);
+      if (!school && currentUser && currentUser.taiKhoan) {
+        school = (hubSchoolsList || []).find(s => isUsernameEqual(s.taiKhoan, currentUser.taiKhoan));
+      }
+      const schoolName = school ? school.tenTruong : (localStorage.getItem(SELECTED_SCHOOL_NAME_KEY) || "Trường");
+      if (schoolInfo) schoolInfo.textContent = `Danh sách lớp khối ${grade} của "${schoolName}" (từ HUB_SERVER)`;
+
+      const availableClasses = getSchoolGradeClasses(grade);
+
+      let html = "";
+      availableClasses.forEach(cls => {
+        const isChecked = currentTeacherSelectedClasses.includes(cls) ? "checked" : "";
+        html += `
+          <label class="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/40 cursor-pointer transition select-none">
+            <input type="checkbox" name="grade-class-item" value="${escapeHtml(cls)}" ${isChecked}
+              class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+            <span class="text-xs font-bold text-slate-800">${escapeHtml(cls)}</span>
+          </label>
+        `;
+      });
+
+      container.innerHTML = html || '<p class="text-xs text-slate-400 col-span-3 text-center py-4">Chưa có lớp nào được khai báo cho khối này.</p>';
+      modal.classList.remove('hidden');
+    }
+
+    function closeSelectGradeClassesModal() {
+      const modal = document.getElementById('modal-select-grade-classes');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function toggleSelectAllGradeClasses(select) {
+      const checkboxes = document.querySelectorAll('#grade-classes-checklist-container input[type="checkbox"]');
+      checkboxes.forEach(cb => { cb.checked = !!select; });
+    }
+
+    function confirmGradeClassesSelection() {
+      const checkboxes = document.querySelectorAll('#grade-classes-checklist-container input[type="checkbox"]');
+      const chosenInThisGrade = [];
+      checkboxes.forEach(cb => {
+        if (cb.checked) chosenInThisGrade.push(cb.value.trim());
+      });
+
+      // Giữ lại các lớp của các khối khác, và thay thế các lớp của khối hiện tại bằng danh sách vừa chọn
+      const otherGradeClasses = currentTeacherSelectedClasses.filter(c => !c.startsWith(currentModalGrade));
+      currentTeacherSelectedClasses = [...otherGradeClasses, ...chosenInThisGrade];
+
+      renderTeacherSelectedClassesChips();
+      closeSelectGradeClassesModal();
+
+      if (currentUser && currentUser.taiKhoan) {
+        localStorage.setItem(`teacher_classes_${currentUser.taiKhoan}`, getTeacherSelectedClassesString());
+      }
+
+      showToast(`Đã chọn ${chosenInThisGrade.length} lớp cho Khối ${currentModalGrade}! Nhấn "Lưu Lớp Dạy" để lưu vào sheet.`, "info");
+    }
+
+    async function saveTeacherClassesToSheet() {
+      if (!currentUser.taiKhoan) {
+        showToast("Vui lòng đăng nhập trước khi lưu lớp dạy!", "warning");
+        return;
+      }
+      const btn = document.getElementById('btn-save-classes');
+      const icon = document.getElementById('btn-save-classes-icon');
+      const text = document.getElementById('btn-save-classes-text');
+      if (btn) btn.disabled = true;
+      if (icon) icon.className = "fa-solid fa-circle-notch fa-spin";
+      if (text) text.textContent = "Đang lưu...";
+
+      try {
+        const classesStr = getTeacherSelectedClassesString();
+        showToast("Đang lưu danh sách lớp dạy lên Google Sheet (Cột D)...", "info");
+
+        const res = await callGasBackend({
+          action: "saveClasses",
+          taiKhoan: currentUser.taiKhoan,
+          lopDay: classesStr
+        });
+
+        if (res && res.success) {
+          showToast("Đã lưu lớp dạy thành công vào Cột D (Sheet DULIEU)!", "success");
+          localStorage.setItem(`teacher_classes_${currentUser.taiKhoan}`, classesStr);
+        } else {
+          throw new Error(res ? res.message : "Không lưu được lớp dạy");
+        }
+      } catch (err) {
+        showToast("Lỗi khi lưu lớp dạy: " + err.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.className = "fa-solid fa-floppy-disk";
+        if (text) text.textContent = "Lưu Lớp Dạy (Cột D)";
+      }
+    }
+
     function initEmptyDataStore() {
       const store = {
         subject: currentUser.subject || "Toán",
@@ -4558,6 +5058,11 @@ function initialSetup() {
         if (parsed) {
           applyParsedTeacherDataToStore(parsed, dataStore);
           hasUnsavedChanges = false;
+          const cachedClasses = localStorage.getItem(`teacher_classes_${normTk}`) || localStorage.getItem(`teacher_classes_${taiKhoan}`);
+          if (cachedClasses) {
+            currentTeacherSelectedClasses = parseTeacherLopDay(cachedClasses);
+            renderTeacherSelectedClassesChips();
+          }
           return true;
         }
       } catch (e) {
@@ -4847,6 +5352,17 @@ function initialSetup() {
           }
         }
 
+        // Phục hồi lớp dạy của giáo viên
+        if (loginResult.lopDay) {
+          currentTeacherSelectedClasses = parseTeacherLopDay(loginResult.lopDay);
+          localStorage.setItem(`teacher_classes_${currentUser.taiKhoan}`, loginResult.lopDay);
+        } else {
+          const cachedClasses = localStorage.getItem(`teacher_classes_${currentUser.taiKhoan}`);
+          if (cachedClasses) currentTeacherSelectedClasses = parseTeacherLopDay(cachedClasses);
+          else currentTeacherSelectedClasses = [];
+        }
+        renderTeacherSelectedClassesChips();
+
         // Lưu vào localStorage ngay khi đăng nhập thành công
         localStorage.setItem(`offline_data_${currentUser.taiKhoan}`, JSON.stringify(dataStore));
 
@@ -4981,6 +5497,7 @@ function initialSetup() {
 
       document.getElementById('admin-portal').classList.add('hidden');
       document.getElementById('main-app').classList.remove('hidden');
+      renderTeacherSelectedClassesChips();
 
       document.getElementById('display-teacher-name').textContent = currentUser.tenGv;
       const dobSpan = document.getElementById('display-teacher-dob');
@@ -6157,6 +6674,19 @@ function initialSetup() {
       if (input && customUrl) {
         input.value = customUrl;
       }
+
+      // Điền sẵn danh sách khối lớp nếu đã có
+      const currentAdminTk = (currentUser && currentUser.taiKhoan) ? currentUser.taiKhoan : "admin";
+      const school = (hubSchoolsList || []).find(s => isUsernameEqual(s.taiKhoan, currentAdminTk));
+      let currentKhoiLop = school ? school.khoiLop : localStorage.getItem('school_classes_' + currentAdminTk.toLowerCase());
+      if (!currentKhoiLop) currentKhoiLop = localStorage.getItem('school_classes_active');
+      ['6', '7', '8', '9'].forEach(g => {
+        const inp = document.getElementById(`admin-grade-classes-${g}`);
+        if (inp) {
+          const classes = parseClassesForGrade(currentKhoiLop, g);
+          inp.value = classes.join(", ");
+        }
+      });
     }
 
     function copyBackendCodeToClipboard() {
@@ -6378,14 +6908,30 @@ function initialSetup() {
       if (btnSave) btnSave.disabled = true;
 
       try {
+        // Đọc danh sách lớp từ 4 ô input Khối 6, 7, 8, 9
+        const k6Val = (document.getElementById('admin-grade-classes-6')?.value || "").trim() || "6/1, 6/2, 6/3, 6/4";
+        const k7Val = (document.getElementById('admin-grade-classes-7')?.value || "").trim() || "7/1, 7/2, 7/3, 7/4";
+        const k8Val = (document.getElementById('admin-grade-classes-8')?.value || "").trim() || "8/1, 8/2, 8/3, 8/4";
+        const k9Val = (document.getElementById('admin-grade-classes-9')?.value || "").trim() || "9/1, 9/2, 9/3, 9/4";
+
+        const khoiLopObj = {
+          "6": k6Val.split(/[,|\n;]+/).map(s => s.trim()).filter(Boolean),
+          "7": k7Val.split(/[,|\n;]+/).map(s => s.trim()).filter(Boolean),
+          "8": k8Val.split(/[,|\n;]+/).map(s => s.trim()).filter(Boolean),
+          "9": k9Val.split(/[,|\n;]+/).map(s => s.trim()).filter(Boolean)
+        };
+        const khoiLopStr = JSON.stringify(khoiLopObj);
+
         localStorage.setItem(BACKEND_URL_STORAGE_KEY, url);
         if (currentUser && currentUser.taiKhoan) {
           const tkKey = (currentUser.taiKhoan || "").toLowerCase();
           localStorage.setItem('backend_url_' + tkKey, url);
           localStorage.setItem('school_name_' + tkKey, schoolName);
+          localStorage.setItem('school_classes_' + tkKey, khoiLopStr);
         }
         localStorage.setItem(SELECTED_SCHOOL_STORAGE_KEY, url);
         localStorage.setItem(SELECTED_SCHOOL_NAME_KEY, schoolName);
+        localStorage.setItem('school_classes_active', khoiLopStr);
         refreshGlobalBackendUrl();
         updateBackendStatusUI();
         showToast("Đang kết nối thử tới Backend của trường...", "info");
@@ -6398,13 +6944,14 @@ function initialSetup() {
           console.warn("Ping error:", pingErr);
         }
 
-        // ⭐️ ĐỒNG BỘ VÀO SHEET HUB_SERVER TRÊN MÁY CHỦ TRUNG TÂM
+        // ⭐️ ĐỒNG BỘ VÀO SHEET HUB_SERVER TRÊN MÁY CHỦ TRUNG TÂM (CỘT C: KHỐI LỚP)
         try {
-          showToast("Đang đồng bộ thông tin trường vào HUB_SERVER trung tâm...", "info");
+          showToast("Đang đồng bộ thông tin trường và khối lớp vào HUB_SERVER trung tâm...", "info");
           const regRes = await callGasBackend({
             action: "registerHubServer",
             taiKhoan: schoolAdmin,
             tenTruong: schoolName,
+            khoiLop: khoiLopStr,
             url: url
           }, MASTER_GOOGLE_APPS_SCRIPT_URL);
 
@@ -10943,12 +11490,18 @@ function initialSetup() {
             sendStore.hk2_saved = true;
           }
 
+          const selectedClassesStr = getTeacherSelectedClassesString();
           const result = await callGasBackend({
             action: "saveData",
             taiKhoan: currentUser.taiKhoan,
             tenGv: currentUser.tenGv,
-            dataJson: JSON.stringify(sendStore)
+            dataJson: JSON.stringify(sendStore),
+            lopDay: selectedClassesStr
           });
+
+          if (currentUser && currentUser.taiKhoan) {
+            localStorage.setItem(`teacher_classes_${currentUser.taiKhoan}`, selectedClassesStr);
+          }
 
           if (!result || !result.success) {
             throw new Error(result ? result.message : "Không lưu được vào Google Sheet");
@@ -11341,6 +11894,13 @@ function initialSetup() {
         });
 
         if (res && res.success) {
+          // Cập nhật lớp dạy từ Cột D Sheet DULIEU
+          if (res.lopDay !== undefined) {
+            currentTeacherSelectedClasses = parseTeacherLopDay(res.lopDay);
+            localStorage.setItem(`teacher_classes_${currentUser.taiKhoan}`, res.lopDay);
+            renderTeacherSelectedClassesChips();
+          }
+
           // 1. Cập nhật hồ sơ người dùng nếu Sheet DATA có thay đổi
           if (res.user) {
             if (res.user.tenGv) currentUser.tenGv = res.user.tenGv;

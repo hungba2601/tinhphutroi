@@ -77,7 +77,7 @@ function setColumnConfig(showBdHsg, showDayTs10) {
 
 // Tên các trang tính theo quy định
 const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | Cột C: Ngày sinh | Cột D: Quyền | Cột E: Mật khẩu
-const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON
+const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
 const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
 
@@ -194,7 +194,12 @@ function doPost(e) {
         return handleLogin(payload.taiKhoan || payload.tai_khoan, payload.matKhau || payload.mat_khau);
 
       case "saveData":
-        return handleSaveData(payload.taiKhoan || payload.tai_khoan, payload.tenGv || payload.ten_gv, payload.dataJson, payload.isAdmin);
+        return handleSaveData(payload.taiKhoan || payload.tai_khoan, payload.tenGv || payload.ten_gv, payload.dataJson, payload.isAdmin, payload.lopDay || payload.classes || payload.lop_day);
+
+      case "saveClasses":
+      case "saveTeacherClasses":
+      case "saveLopDay":
+        return handleSaveClasses(payload.taiKhoan || payload.tai_khoan, payload.lopDay || payload.classes || payload.lop_day);
 
       case "resetDeclaration":
       case "clearDeclaration":
@@ -671,23 +676,24 @@ function syncDuLieuWithData(forceRebuild) {
   const dataValuesRaw = sheetData.getDataRange().getValues();
   const dataValuesDisplay = sheetData.getDataRange().getDisplayValues();
 
-  // 1. Đọc dữ liệu JSON hiện có trong Sheet DULIEU (nếu có) vào bộ nhớ tạm
-  const existingJsonMap = {};
+  // 1. Đọc dữ liệu JSON và LỚP DẠY hiện có trong Sheet DULIEU (nếu có) vào bộ nhớ tạm
+  const existingDataMap = {};
   const duLieuLastRow = sheetDuLieu.getLastRow();
+  const duLieuLastCol = Math.max(sheetDuLieu.getLastColumn(), 4);
   if (duLieuLastRow > 1) {
-    const duLieuValues = sheetDuLieu.getRange(1, 1, duLieuLastRow, 3).getValues();
-    const duLieuDisplay = sheetDuLieu.getRange(1, 1, duLieuLastRow, 3).getDisplayValues();
+    const duLieuValues = sheetDuLieu.getRange(1, 1, duLieuLastRow, duLieuLastCol).getValues();
+    const duLieuDisplay = sheetDuLieu.getRange(1, 1, duLieuLastRow, duLieuLastCol).getDisplayValues();
     for (let j = 1; j < duLieuValues.length; j++) {
       const rawTk = String(duLieuValues[j][0] || "").trim();
       const dispTk = String(duLieuDisplay[j][0] || "").trim();
       const normTk = normalizeUsername(dispTk || rawTk);
       const jsonContent = duLieuValues[j][2];
-      if (jsonContent) {
-        if (normTk) existingJsonMap[normTk.toLowerCase()] = jsonContent;
-        if (rawTk) existingJsonMap[rawTk.toLowerCase()] = jsonContent;
-        const stripped = normTk.replace(/^0+/, "").toLowerCase();
-        if (stripped) existingJsonMap[stripped] = jsonContent;
-      }
+      const lopDayContent = duLieuDisplay[j][3] || duLieuValues[j][3] || "";
+      const record = { json: jsonContent || "", lopDay: lopDayContent || "" };
+      if (normTk) existingDataMap[normTk.toLowerCase()] = record;
+      if (rawTk) existingDataMap[rawTk.toLowerCase()] = record;
+      const stripped = normTk.replace(/^0+/, "").toLowerCase();
+      if (stripped) existingDataMap[stripped] = record;
     }
   }
 
@@ -701,13 +707,13 @@ function syncDuLieuWithData(forceRebuild) {
     const normTk = normalizeUsername(rawTk);
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
 
-    // Lấy dữ liệu JSON đã kê khai trước đó (nếu có)
-    const savedJson = existingJsonMap[normTk.toLowerCase()] || 
-                      existingJsonMap[rawTk.toLowerCase()] || 
-                      existingJsonMap[normTk.replace(/^0+/, "").toLowerCase()] || "";
+    // Lấy dữ liệu JSON và Lớp dạy đã kê khai trước đó (nếu có)
+    const savedRecord = existingDataMap[normTk.toLowerCase()] || 
+                        existingDataMap[rawTk.toLowerCase()] || 
+                        existingDataMap[normTk.replace(/^0+/, "").toLowerCase()] || { json: "", lopDay: "" };
 
     const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
-    teacherRows.push([cellTk, tenGv, savedJson]);
+    teacherRows.push([cellTk, tenGv, savedRecord.json || "", savedRecord.lopDay || ""]);
   }
 
   if (teacherRows.length === 0) {
@@ -733,14 +739,18 @@ function syncDuLieuWithData(forceRebuild) {
 
   // 4. Ghi đè lại Sheet DULIEU theo đúng danh sách và thứ tự cố định của Sheet DATA
   sheetDuLieu.clear();
-  sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON"]);
+  sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON", "LỚP DẠY"]);
   
   // Định dạng tiêu đề
-  const headerRange = sheetDuLieu.getRange(1, 1, 1, 3);
+  const headerRange = sheetDuLieu.getRange(1, 1, 1, 4);
   headerRange.setFontWeight("bold").setBackground("#0d9488").setFontColor("#ffffff");
+  sheetDuLieu.setColumnWidth(1, 150);
+  sheetDuLieu.setColumnWidth(2, 220);
+  sheetDuLieu.setColumnWidth(3, 400);
+  sheetDuLieu.setColumnWidth(4, 250);
 
   // Ghi toàn bộ danh sách giáo viên theo đúng thứ tự
-  const dataRange = sheetDuLieu.getRange(2, 1, teacherRows.length, 3);
+  const dataRange = sheetDuLieu.getRange(2, 1, teacherRows.length, 4);
   dataRange.setValues(teacherRows);
 
   // Định dạng cột A là Văn bản (Plain Text) để luôn giữ số 0 ở đầu SĐT
@@ -814,6 +824,7 @@ function handleLogin(taiKhoan, matKhau) {
 
   // Lấy dữ liệu đã lưu từ Sheet DULIEU
   let teacherDataJson = null;
+  let teacherLopDay = "";
   const sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   if (sheetDuLieu) {
     const duLieuValues = sheetDuLieu.getDataRange().getValues();
@@ -822,6 +833,7 @@ function handleLogin(taiKhoan, matKhau) {
       const dTk = String(duLieuDisplay[j][0] || duLieuValues[j][0] || "").trim();
       if (isUsernameMatch(dTk, tkClean)) {
         teacherDataJson = duLieuValues[j][2]; // Cột C: DỮ LIỆU GV NHẬP DANG JSON
+        teacherLopDay = duLieuDisplay[j][3] || duLieuValues[j][3] || ""; // Cột D: LỚP DẠY
         break;
       }
     }
@@ -832,6 +844,7 @@ function handleLogin(taiKhoan, matKhau) {
     message: "Đăng nhập thành công!",
     user: foundUser,
     data: teacherDataJson,
+    lopDay: teacherLopDay || "",
     isSystemLocked: isSystemLocked(),
     columnConfig: getColumnConfig()
   });
@@ -839,12 +852,11 @@ function handleLogin(taiKhoan, matKhau) {
 
 /**
  * XỬ LÝ LƯU DỮ LIỆU:
- * Ghi dữ liệu JSON vào ĐÚNG DÒNG CỐ ĐỊNH của giáo viên trong Sheet DULIEU.
+ * Ghi dữ liệu JSON và LỚP DẠY vào ĐÚNG DÒNG CỐ ĐỊNH của giáo viên trong Sheet DULIEU.
  * - Sheet DULIEU luôn sắp xếp các giáo viên theo đúng thứ tự của Sheet DATA.
- * - Khi giáo viên đăng nhập kê khai, chỉ cập nhật Cột B (Tên) và Cột C (JSON) tại dòng của chính giáo viên đó.
- * - Không thêm dòng bừa bãi ở cuối, không làm xáo trộn các giáo viên khác.
+ * - Cột A: TK | Cột B: Tên GV | Cột C: JSON | Cột D: LỚP DẠY.
  */
-function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
+function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
   if (!taiKhoan) {
     return jsonResponse({ success: false, message: "Thiếu thông tin tài khoản để lưu!" });
   }
@@ -862,8 +874,8 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
   let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   if (!sheetDuLieu) {
     sheetDuLieu = ss.insertSheet(SHEET_DULIEU);
-    sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON"]);
-    const duLieuHeader = sheetDuLieu.getRange(1, 1, 1, 3);
+    sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON", "LỚP DẠY"]);
+    const duLieuHeader = sheetDuLieu.getRange(1, 1, 1, 4);
     duLieuHeader.setFontWeight("bold").setBackground("#0d9488").setFontColor("#ffffff");
   }
 
@@ -905,7 +917,13 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
     if (tenGv) {
       sheetDuLieu.getRange(targetRow, 2).setValue(tenGv);
     }
-    sheetDuLieu.getRange(targetRow, 3).setValue(jsonString);
+    if (dataJson !== undefined && dataJson !== null) {
+      sheetDuLieu.getRange(targetRow, 3).setValue(jsonString);
+    }
+    if (lopDay !== undefined && lopDay !== null) {
+      const lopDayStr = Array.isArray(lopDay) ? lopDay.join(", ") : String(lopDay).trim();
+      sheetDuLieu.getRange(targetRow, 4).setValue(lopDayStr);
+    }
     SpreadsheetApp.flush();
 
     return jsonResponse({
@@ -919,6 +937,62 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin) {
   return jsonResponse({
     success: false,
     message: "Không tìm thấy tài khoản '" + normalizeUsername(taiKhoan) + "' trong danh sách giáo viên (Sheet DATA)!"
+  });
+}
+
+/**
+ * LƯU DANH SÁCH LỚP DẠY CỦA GIÁO VIÊN VÀO CỘT D (SHEET DULIEU)
+ */
+function handleSaveClasses(taiKhoan, lopDay) {
+  if (!taiKhoan) {
+    return jsonResponse({ success: false, message: "Thiếu thông tin tài khoản để lưu lớp dạy!" });
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
+  if (!sheetDuLieu) {
+    sheetDuLieu = ss.insertSheet(SHEET_DULIEU);
+    sheetDuLieu.appendRow(["TK", "TÊN GV", "DỮ LIỆU GV NHẬP DANG JSON", "LỚP DẠY"]);
+  }
+  const tkClean = String(taiKhoan).trim();
+  const lopDayStr = Array.isArray(lopDay) ? lopDay.join(", ") : String(lopDay || "").trim();
+
+  let values = sheetDuLieu.getDataRange().getValues();
+  let displayValues = sheetDuLieu.getDataRange().getDisplayValues();
+  let targetRow = -1;
+  for (let i = 1; i < values.length; i++) {
+    const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
+    if (isUsernameMatch(rowTk, tkClean)) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    syncDuLieuWithData(true);
+    values = sheetDuLieu.getDataRange().getValues();
+    displayValues = sheetDuLieu.getDataRange().getDisplayValues();
+    for (let i = 1; i < values.length; i++) {
+      const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
+      if (isUsernameMatch(rowTk, tkClean)) {
+        targetRow = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (targetRow !== -1) {
+    sheetDuLieu.getRange(targetRow, 4).setValue(lopDayStr);
+    SpreadsheetApp.flush();
+    return jsonResponse({
+      success: true,
+      message: 'Đã lưu lớp dạy "' + (lopDayStr || "Trống") + '" vào Cột D (Sheet DULIEU) thành công!',
+      lopDay: lopDayStr
+    });
+  }
+
+  return jsonResponse({
+    success: false,
+    message: "Không tìm thấy giáo viên trong Sheet DULIEU!"
   });
 }
 
@@ -1028,6 +1102,7 @@ function handleGetData(taiKhoan) {
   const sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   let teacherDataJson = null;
   let teacherName = userProfile ? userProfile.tenGv : "";
+  let teacherLopDay = "";
   if (sheetDuLieu) {
     const values = sheetDuLieu.getDataRange().getValues();
     const displayValues = sheetDuLieu.getDataRange().getDisplayValues();
@@ -1037,6 +1112,7 @@ function handleGetData(taiKhoan) {
       if (isUsernameMatch(rowTk, tkClean)) {
         teacherDataJson = values[i][2];
         if (!teacherName && values[i][1]) teacherName = values[i][1];
+        teacherLopDay = displayValues[i][3] || values[i][3] || "";
         break;
       }
     }
@@ -1046,6 +1122,7 @@ function handleGetData(taiKhoan) {
     success: true,
     data: teacherDataJson,
     tenGv: teacherName,
+    lopDay: teacherLopDay,
     user: userProfile,
     isSystemLocked: isSystemLocked(),
     columnConfig: getColumnConfig()
@@ -1177,7 +1254,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       const normTk = normalizeUsername(dispTk || rawTk);
       const dataObj = {
         tenGv: duLieuValues[j][1],
-        dataJson: duLieuValues[j][2]
+        dataJson: duLieuValues[j][2],
+        lopDay: duLieuDisplay[j][3] || duLieuValues[j][3] || ""
       };
       const cleanRaw = rawTk.replace(/^'+/, "").toLowerCase();
       const cleanDisp = dispTk.replace(/^'+/, "").toLowerCase();
@@ -1216,7 +1294,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       quyen: quyen,
       matKhau: matKhau,
       hasData: !!dData,
-      dataJson: dData ? dData.dataJson : null
+      dataJson: dData ? dData.dataJson : null,
+      lopDay: dData ? (dData.lopDay || "") : ""
     });
   }
 
