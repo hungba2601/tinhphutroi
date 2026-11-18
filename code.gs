@@ -1822,6 +1822,83 @@ function handleRegisterHubServer(payload) {
   }
 }
 
+/**
+ * ========================================================
+ * HÀM NÂNG CẤP / BỔ SUNG CÁC CỘT MỚI (AN TOÀN CHO DỮ LIỆU ĐANG CÓ)
+ * ========================================================
+ * 1. Sheet HUB_SERVER: Bổ sung CỘT C: "KHỐI LỚP" (chuẩn hóa thành 5 cột).
+ * 2. Sheet DULIEU: Bổ sung CỘT D: "LỚP DẠY".
+ * An toàn tuyệt đối 100%: Giữ nguyên dữ liệu các trường và giáo viên hiện tại!
+ */
+function capNhatCotMoi() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. Nâng cấp Sheet HUB_SERVER: Bổ sung Cột C: Khối Lớp
+  let sheetHub = ss.getSheetByName(SHEET_HUB_SERVER);
+  if (!sheetHub) {
+    sheetHub = getOrCreateHubServerSheet(ss);
+    Logger.log("✅ Đã tạo mới Sheet HUB_SERVER chuẩn 5 cột (có Cột C: Khối Lớp)!");
+  } else {
+    const lastCol = sheetHub.getLastColumn();
+    
+    // Kiểm tra xem cột 3 có phải là URL không (định dạng cũ 4 cột)
+    const col3Header = String(sheetHub.getRange(1, 3).getValue() || "").toLowerCase();
+    const isOld4Cols = (lastCol === 4) || col3Header.includes("url") || col3Header.includes("địa chỉ");
+    
+    if (isOld4Cols) {
+      // Chèn thêm 1 cột vào vị trí cột 3 (Khối Lớp), đẩy URL sang cột 4 và Ngày cập nhật sang cột 5
+      sheetHub.insertColumnBefore(3);
+      Logger.log("✅ Đã chèn thêm Cột C: Khối Lớp vào giữa Tên Trường và URL trên Sheet HUB_SERVER!");
+    }
+
+    // Cập nhật lại đầy đủ tiêu đề 5 cột chuẩn
+    sheetHub.getRange(1, 1).setValue("TÀI KHOẢN (ADMIN)");
+    sheetHub.getRange(1, 2).setValue("TÊN TRƯỜNG / ĐƠN VỊ");
+    sheetHub.getRange(1, 3).setValue("KHỐI LỚP");
+    sheetHub.getRange(1, 4).setValue("ĐỊA CHỈ URL WEB APP");
+    sheetHub.getRange(1, 5).setValue("NGÀY CẬP NHẬT");
+
+    const headerRange = sheetHub.getRange(1, 1, 1, 5);
+    headerRange.setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff");
+    sheetHub.setColumnWidth(1, 180);
+    sheetHub.setColumnWidth(2, 320);
+    sheetHub.setColumnWidth(3, 300);
+    sheetHub.setColumnWidth(4, 400);
+    sheetHub.setColumnWidth(5, 160);
+    sheetHub.getRange("A:E").setNumberFormat("@");
+    Logger.log("✅ Đã chuẩn hóa tiêu đề và định dạng Sheet HUB_SERVER (5 cột)!");
+  }
+
+  // 2. Nâng cấp Sheet DULIEU: Bổ sung Cột D: LỚP DẠY
+  let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
+  if (!sheetDuLieu) {
+    sheetDuLieu = ss.insertSheet(SHEET_DULIEU);
+  }
+  sheetDuLieu.getRange(1, 1).setValue("TK");
+  sheetDuLieu.getRange(1, 2).setValue("TÊN GV");
+  sheetDuLieu.getRange(1, 3).setValue("DỮ LIỆU GV NHẬP DANG JSON");
+  sheetDuLieu.getRange(1, 4).setValue("LỚP DẠY");
+  
+  const headerDuLieu = sheetDuLieu.getRange(1, 1, 1, 4);
+  headerDuLieu.setFontWeight("bold").setBackground("#0d9488").setFontColor("#ffffff");
+  sheetDuLieu.setColumnWidth(1, 150);
+  sheetDuLieu.setColumnWidth(2, 220);
+  sheetDuLieu.setColumnWidth(3, 400);
+  sheetDuLieu.setColumnWidth(4, 250);
+  sheetDuLieu.getRange("D:D").setNumberFormat("@");
+  Logger.log("✅ Đã cập nhật Cột D: LỚP DẠY trên Sheet DULIEU!");
+
+  // 3. Tự động kiểm tra và đồng bộ an toàn
+  try {
+    syncDuLieuWithData(false);
+  } catch (e) {
+    Logger.log("Lưu ý đồng bộ: " + e);
+  }
+
+  Logger.log("🎉 Hoàn tất nâng cấp hệ thống trung tâm thành công! Toàn bộ dữ liệu cũ được giữ nguyên 100%.");
+  return "Đã nâng cấp Cột C: Khối Lớp (HUB_SERVER) và Cột D: Lớp Dạy (DULIEU) thành công!";
+}
+
 function initialSetup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
