@@ -269,6 +269,9 @@ function doPost(e) {
       case "getAdminData":
         return handleGetAdminSummary(payload.taiKhoan || payload.tai_khoan);
 
+      case "getAllHoaNhapData":
+        return handleGetAllHoaNhapData();
+
       case "createAccount":
       case "addAccount": {
         const callerRole = String(payload.callerRole || "").trim().toLowerCase();
@@ -611,17 +614,41 @@ function handleGetHoaNhapStudents() {
   if (lastRow <= 1) {
     return jsonResponse({ success: true, list: [] });
   }
-  const vals = sheetHN.getRange(2, 1, lastRow - 1, 4).getValues();
-  const disp = sheetHN.getRange(2, 1, lastRow - 1, 4).getDisplayValues();
+  const lastCol = Math.max(5, sheetHN.getLastColumn());
+  const header = sheetHN.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim().toLowerCase());
+
+  let colTen = 0, colNgaySinh = 1, colLop = 2, colLoai = 3, colMucDo = 4;
+  for (let c = 0; c < header.length; c++) {
+    const h = header[c];
+    if (h.includes("tên") || h.includes("họ và tên") || h.includes("học sinh")) colTen = c;
+    else if (h.includes("lớp") || h.includes("lop")) colLop = c;
+    else if (h.includes("năm sinh") || h.includes("ngày sinh") || h.includes("sinh") || h.includes("namsinh") || h.includes("ngaysinh")) colNgaySinh = c;
+    else if (h.includes("khuyết tật") || h.includes("loại") || h.includes("dạng") || h.includes("hoa nhap")) colLoai = c;
+    else if (h.includes("mức độ") || h.includes("muc do") || h.includes("mức")) colMucDo = c;
+  }
+
+  const vals = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  const disp = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
   const list = [];
   for (let i = 0; i < vals.length; i++) {
-    const tenHs = String(disp[i][0] || vals[i][0] || "").trim();
+    const tenHs = String(disp[i][colTen] || vals[i][colTen] || "").trim();
     if (!tenHs) continue;
+    const rawBirth = disp[i][colNgaySinh] || vals[i][colNgaySinh];
+    let namSinh = "";
+    if (rawBirth) {
+      const birthStr = formatBirthDate(rawBirth);
+      const yearMatch = birthStr.match(/\d{4}/);
+      namSinh = yearMatch ? yearMatch[0] : birthStr;
+    }
+    const mucDoVal = (colMucDo >= 0 && colMucDo < lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
     list.push({
       tenHs: tenHs,
-      ngaySinh: formatBirthDate(disp[i][1] || vals[i][1]),
-      lop: String(disp[i][2] || vals[i][2] || "").trim(),
-      loaiHoaNhap: String(disp[i][3] || vals[i][3] || "").trim()
+      ngaySinh: formatBirthDate(rawBirth),
+      namSinh: namSinh || String(rawBirth || "").trim(),
+      lop: String(disp[i][colLop] || vals[i][colLop] || "").trim(),
+      loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
+      dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
+      mucDo: mucDoVal || "Nhẹ"
     });
   }
   return jsonResponse({ success: true, list: list });
@@ -653,6 +680,38 @@ function handleGetHoaNhapData(taiKhoan) {
 /**
  * LƯU DỮ LIỆU KÊ KHAI TIẾT HÒA NHẬP CỦA GIÁO VIÊN VÀO ĐÚNG DÒNG CỐ ĐỊNH
  */
+
+/**
+ * LẤY TOÀN BỘ DỮ LIỆU KÊ KHAI DẠY HÒA NHẬP CỦA TẤT CẢ GIÁO VIÊN
+ */
+function handleGetAllHoaNhapData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const map = {};
+  try {
+    const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
+    if (sheetDuLieuHN && sheetDuLieuHN.getLastRow() > 1) {
+      const hnumCols = Math.max(3, sheetDuLieuHN.getLastColumn());
+      const hnVals = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getValues();
+      const hnDisp = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getDisplayValues();
+      for (let h = 0; h < hnVals.length; h++) {
+        const hRawTk = String(hnVals[h][0] || "").trim();
+        const hDispTk = String(hnDisp[h][0] || "").trim();
+        const hNormTk = normalizeUsername(hDispTk || hRawTk);
+        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
+        const cleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
+        const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
+        if (cleanRaw) map[cleanRaw] = hJsonStr;
+        if (cleanNorm) map[cleanNorm] = hJsonStr;
+        const stripped = cleanNorm.replace(/^0+/, "");
+        if (stripped) map[stripped] = hJsonStr;
+      }
+    }
+    return jsonResponse({ success: true, data: map });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi đọc dữ liệu hòa nhập: " + err.message });
+  }
+}
+
 function handleSaveHoaNhapData(taiKhoan, dataJson) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1365,6 +1424,30 @@ function handleGetAdminSummary(adminTaiKhoan) {
     }
   }
 
+  const hoaNhapMap = {};
+  try {
+    const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
+    if (sheetDuLieuHN && sheetDuLieuHN.getLastRow() > 1) {
+      const hnumCols = Math.max(3, sheetDuLieuHN.getLastColumn());
+      const hnVals = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getValues();
+      const hnDisp = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getDisplayValues();
+      for (let h = 0; h < hnVals.length; h++) {
+        const hRawTk = String(hnVals[h][0] || "").trim();
+        const hDispTk = String(hnDisp[h][0] || "").trim();
+        const hNormTk = normalizeUsername(hDispTk || hRawTk);
+        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
+        const hCleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
+        const hCleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
+        if (hCleanRaw) hoaNhapMap[hCleanRaw] = hJsonStr;
+        if (hCleanNorm) hoaNhapMap[hCleanNorm] = hJsonStr;
+        const hStripped = hCleanNorm.replace(/^0+/, "");
+        if (hStripped) hoaNhapMap[hStripped] = hJsonStr;
+      }
+    }
+  } catch (hnMapErr) {
+    Logger.log("Lỗi đọc hoaNhapMap trong handleGetAdminSummary: " + hnMapErr);
+  }
+
   // Xác định xem người gọi có phải quyền BGH hay không
   let isCallerBgh = false;
   if (adminTaiKhoan) {
@@ -1404,6 +1487,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
                   duLieuMap[cleanRawTk] || 
                   duLieuMap[cleanNormTk.replace(/^0+/, "")] || null;
 
+    const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,
@@ -1413,7 +1497,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       matKhau: matKhau,
       hasData: !!dData,
       dataJson: dData ? dData.dataJson : null,
-      lopDay: dData ? (dData.lopDay || "") : ""
+      lopDay: dData ? (dData.lopDay || "") : "",
+      dataHoaNhapJson: dDataHn || null
     });
   }
 

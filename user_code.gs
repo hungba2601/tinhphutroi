@@ -1,6 +1,6 @@
 /**
  * =========================================================================
- * BACKEND GOOGLE APPS SCRIPT CHO CÁC TRƯỜNG THÀNH VIÊN (user_code.gs)
+ * BACKEND GOOGLE APPS SCRIPT: SỔ TÍNH TIẾT DẠY VƯỢT ĐỊNH MỨC - THCS AN NHƠN
  * Tác giả: Nguyễn Phi Hùng | Zalo: 0938750424
  * =========================================================================
  * 
@@ -80,6 +80,7 @@ const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | C
 const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
 const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
+const SHEET_HUB_SERVER = "HUB_SERVER"; // Cột A: TÊN TK | Cột B: TÊN TRƯỜNG | Cột C: KHỐI LỚP | Cột D: ĐỊA CHỈ URL | Cột E: NGÀY CẬP NHẬT
 
 /**
  * Xử lý yêu cầu HTTP GET
@@ -88,6 +89,10 @@ function doGet(e) {
   try {
     const params = e && e.parameter ? e.parameter : {};
     const action = params.action || "ping";
+
+    if (action === "getHubServers" || action === "getHubSchools" || action === "listSchools") {
+      return handleGetHubServers();
+    }
 
     if (action === "ping") {
       let sheetName = "";
@@ -168,6 +173,16 @@ function doPost(e) {
     const action = payload.action;
 
     switch (action) {
+      case "getHubServers":
+      case "getHubSchools":
+      case "listSchools":
+        return handleGetHubServers();
+
+      case "registerHubServer":
+      case "saveHubServer":
+      case "registerSchool":
+        return handleRegisterHubServer(payload);
+
       case "ping": {
         let sheetName = "";
         let sheetsCount = 0;
@@ -253,6 +268,9 @@ function doPost(e) {
       case "getAdminSummary":
       case "getAdminData":
         return handleGetAdminSummary(payload.taiKhoan || payload.tai_khoan);
+
+      case "getAllHoaNhapData":
+        return handleGetAllHoaNhapData();
 
       case "createAccount":
       case "addAccount": {
@@ -596,17 +614,41 @@ function handleGetHoaNhapStudents() {
   if (lastRow <= 1) {
     return jsonResponse({ success: true, list: [] });
   }
-  const vals = sheetHN.getRange(2, 1, lastRow - 1, 4).getValues();
-  const disp = sheetHN.getRange(2, 1, lastRow - 1, 4).getDisplayValues();
+  const lastCol = Math.max(5, sheetHN.getLastColumn());
+  const header = sheetHN.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim().toLowerCase());
+
+  let colTen = 0, colNgaySinh = 1, colLop = 2, colLoai = 3, colMucDo = 4;
+  for (let c = 0; c < header.length; c++) {
+    const h = header[c];
+    if (h.includes("tên") || h.includes("họ và tên") || h.includes("học sinh")) colTen = c;
+    else if (h.includes("lớp") || h.includes("lop")) colLop = c;
+    else if (h.includes("năm sinh") || h.includes("ngày sinh") || h.includes("sinh") || h.includes("namsinh") || h.includes("ngaysinh")) colNgaySinh = c;
+    else if (h.includes("khuyết tật") || h.includes("loại") || h.includes("dạng") || h.includes("hoa nhap")) colLoai = c;
+    else if (h.includes("mức độ") || h.includes("muc do") || h.includes("mức")) colMucDo = c;
+  }
+
+  const vals = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  const disp = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
   const list = [];
   for (let i = 0; i < vals.length; i++) {
-    const tenHs = String(disp[i][0] || vals[i][0] || "").trim();
+    const tenHs = String(disp[i][colTen] || vals[i][colTen] || "").trim();
     if (!tenHs) continue;
+    const rawBirth = disp[i][colNgaySinh] || vals[i][colNgaySinh];
+    let namSinh = "";
+    if (rawBirth) {
+      const birthStr = formatBirthDate(rawBirth);
+      const yearMatch = birthStr.match(/\d{4}/);
+      namSinh = yearMatch ? yearMatch[0] : birthStr;
+    }
+    const mucDoVal = (colMucDo >= 0 && colMucDo < lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
     list.push({
       tenHs: tenHs,
-      ngaySinh: formatBirthDate(disp[i][1] || vals[i][1]),
-      lop: String(disp[i][2] || vals[i][2] || "").trim(),
-      loaiHoaNhap: String(disp[i][3] || vals[i][3] || "").trim()
+      ngaySinh: formatBirthDate(rawBirth),
+      namSinh: namSinh || String(rawBirth || "").trim(),
+      lop: String(disp[i][colLop] || vals[i][colLop] || "").trim(),
+      loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
+      dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
+      mucDo: mucDoVal || "Nhẹ"
     });
   }
   return jsonResponse({ success: true, list: list });
@@ -638,6 +680,38 @@ function handleGetHoaNhapData(taiKhoan) {
 /**
  * LƯU DỮ LIỆU KÊ KHAI TIẾT HÒA NHẬP CỦA GIÁO VIÊN VÀO ĐÚNG DÒNG CỐ ĐỊNH
  */
+
+/**
+ * LẤY TOÀN BỘ DỮ LIỆU KÊ KHAI DẠY HÒA NHẬP CỦA TẤT CẢ GIÁO VIÊN
+ */
+function handleGetAllHoaNhapData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const map = {};
+  try {
+    const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
+    if (sheetDuLieuHN && sheetDuLieuHN.getLastRow() > 1) {
+      const hnumCols = Math.max(3, sheetDuLieuHN.getLastColumn());
+      const hnVals = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getValues();
+      const hnDisp = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getDisplayValues();
+      for (let h = 0; h < hnVals.length; h++) {
+        const hRawTk = String(hnVals[h][0] || "").trim();
+        const hDispTk = String(hnDisp[h][0] || "").trim();
+        const hNormTk = normalizeUsername(hDispTk || hRawTk);
+        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
+        const cleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
+        const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
+        if (cleanRaw) map[cleanRaw] = hJsonStr;
+        if (cleanNorm) map[cleanNorm] = hJsonStr;
+        const stripped = cleanNorm.replace(/^0+/, "");
+        if (stripped) map[stripped] = hJsonStr;
+      }
+    }
+    return jsonResponse({ success: true, data: map });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi đọc dữ liệu hòa nhập: " + err.message });
+  }
+}
+
 function handleSaveHoaNhapData(taiKhoan, dataJson) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -834,7 +908,6 @@ function handleLogin(taiKhoan, matKhau) {
 
   // Lấy dữ liệu đã lưu từ Sheet DULIEU
   let teacherDataJson = null;
-  let teacherLopDay = "";
   const sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   if (sheetDuLieu) {
     const duLieuValues = sheetDuLieu.getDataRange().getValues();
@@ -843,9 +916,38 @@ function handleLogin(taiKhoan, matKhau) {
       const dTk = String(duLieuDisplay[j][0] || duLieuValues[j][0] || "").trim();
       if (isUsernameMatch(dTk, tkClean)) {
         teacherDataJson = duLieuValues[j][2]; // Cột C: DỮ LIỆU GV NHẬP DANG JSON
-        teacherLopDay = duLieuDisplay[j][3] || duLieuValues[j][3] || ""; // Cột D: LỚP DẠY
         break;
       }
+    }
+  }
+
+  // Nếu là tài khoản quản trị (Admin), tra cứu trong Sheet HUB_SERVER để biết URL và Tên trường của Admin này
+  let matchedSchool = null;
+  if (isSuperAdmin(foundUser.quyen)) {
+    try {
+      const sheetHub = ss.getSheetByName(SHEET_HUB_SERVER);
+      if (sheetHub) {
+        const hubLastRow = sheetHub.getLastRow();
+        if (hubLastRow >= 2) {
+          const hubValues = sheetHub.getRange(2, 1, hubLastRow - 1, 4).getValues();
+          const hubDisplay = sheetHub.getRange(2, 1, hubLastRow - 1, 4).getDisplayValues();
+          for (let k = 0; k < hubValues.length; k++) {
+            const hTk = String(hubDisplay[k][0] || hubValues[k][0] || "").trim();
+            const hName = String(hubDisplay[k][1] || hubValues[k][1] || "").trim();
+            const hUrl = String(hubDisplay[k][2] || hubValues[k][2] || "").trim();
+            if (isUsernameMatch(hTk, tkClean)) {
+              matchedSchool = {
+                taiKhoan: hTk,
+                tenTruong: hName,
+                url: hUrl
+              };
+              break;
+            }
+          }
+        }
+      }
+    } catch (hubErr) {
+      Logger.log("Lỗi tra cứu HUB_SERVER khi đăng nhập admin: " + hubErr);
     }
   }
 
@@ -854,17 +956,18 @@ function handleLogin(taiKhoan, matKhau) {
     message: "Đăng nhập thành công!",
     user: foundUser,
     data: teacherDataJson,
-    lopDay: teacherLopDay || "",
     isSystemLocked: isSystemLocked(),
-    columnConfig: getColumnConfig()
+    columnConfig: getColumnConfig(),
+    matchedSchool: matchedSchool
   });
 }
 
 /**
  * XỬ LÝ LƯU DỮ LIỆU:
- * Ghi dữ liệu JSON và LỚP DẠY vào ĐÚNG DÒNG CỐ ĐỊNH của giáo viên trong Sheet DULIEU.
+ * Ghi dữ liệu JSON vào ĐÚNG DÒNG CỐ ĐỊNH của giáo viên trong Sheet DULIEU.
  * - Sheet DULIEU luôn sắp xếp các giáo viên theo đúng thứ tự của Sheet DATA.
- * - Cột A: TK | Cột B: Tên GV | Cột C: JSON | Cột D: LỚP DẠY.
+ * - Khi giáo viên đăng nhập kê khai, chỉ cập nhật Cột B (Tên) và Cột C (JSON) tại dòng của chính giáo viên đó.
+ * - Không thêm dòng bừa bãi ở cuối, không làm xáo trộn các giáo viên khác.
  */
 function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
   if (!taiKhoan) {
@@ -1321,6 +1424,46 @@ function handleGetAdminSummary(adminTaiKhoan) {
     }
   }
 
+  const hoaNhapMap = {};
+  try {
+    const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
+    if (sheetDuLieuHN && sheetDuLieuHN.getLastRow() > 1) {
+      const hnumCols = Math.max(3, sheetDuLieuHN.getLastColumn());
+      const hnVals = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getValues();
+      const hnDisp = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getDisplayValues();
+      for (let h = 0; h < hnVals.length; h++) {
+        const hRawTk = String(hnVals[h][0] || "").trim();
+        const hDispTk = String(hnDisp[h][0] || "").trim();
+        const hNormTk = normalizeUsername(hDispTk || hRawTk);
+        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
+        const hCleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
+        const hCleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
+        if (hCleanRaw) hoaNhapMap[hCleanRaw] = hJsonStr;
+        if (hCleanNorm) hoaNhapMap[hCleanNorm] = hJsonStr;
+        const hStripped = hCleanNorm.replace(/^0+/, "");
+        if (hStripped) hoaNhapMap[hStripped] = hJsonStr;
+      }
+    }
+  } catch (hnMapErr) {
+    Logger.log("Lỗi đọc hoaNhapMap trong handleGetAdminSummary: " + hnMapErr);
+  }
+
+  // Xác định xem người gọi có phải quyền BGH hay không
+  let isCallerBgh = false;
+  if (adminTaiKhoan) {
+    const normAdminTk = normalizeUsername(adminTaiKhoan);
+    for (let k = 1; k < dataUsersRaw.length; k++) {
+      const rRaw = dataUsersRaw[k];
+      const rDisp = dataUsersDisplay[k];
+      const tkK = String(rDisp[cols.colTk] || rRaw[cols.colTk] || "").trim();
+      if (isUsernameMatch(tkK, normAdminTk)) {
+        const callerRole = String(rRaw[cols.colQuyen] || "gv").trim().toLowerCase();
+        isCallerBgh = isRoleBgh(callerRole);
+        break;
+      }
+    }
+  }
+
   const list = [];
   for (let i = 1; i < dataUsersRaw.length; i++) {
     const rowRaw = dataUsersRaw[i];
@@ -1331,6 +1474,11 @@ function handleGetAdminSummary(adminTaiKhoan) {
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
     const ngaySinh = formatBirthDate(cols.colNgaySinh !== -1 ? (rowDisp[cols.colNgaySinh] || rowRaw[cols.colNgaySinh]) : "");
     const quyen = String(rowRaw[cols.colQuyen] || "gv").trim();
+
+    // Tài khoản quyền BGH sẽ KHÔNG nhìn thấy các tài khoản Admin
+    if (isCallerBgh && isSuperAdmin(quyen)) {
+      continue;
+    }
     const matKhau = String(rowRaw[cols.colMatKhau] !== undefined ? rowRaw[cols.colMatKhau] : "").trim();
 
     const cleanNormTk = normTk.replace(/^'+/, "").toLowerCase();
@@ -1339,6 +1487,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
                   duLieuMap[cleanRawTk] || 
                   duLieuMap[cleanNormTk.replace(/^0+/, "")] || null;
 
+    const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,
@@ -1348,7 +1497,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       matKhau: matKhau,
       hasData: !!dData,
       dataJson: dData ? dData.dataJson : null,
-      lopDay: dData ? (dData.lopDay || "") : ""
+      lopDay: dData ? (dData.lopDay || "") : "",
+      dataHoaNhapJson: dDataHn || null
     });
   }
 
@@ -1619,17 +1769,283 @@ function jsonResponse(data) {
  */
 
 /**
+ * =========================================================================
+ * QUẢN LÝ HUB_SERVER (MÁY CHỦ TRUNG TÂM KẾT NỐI NHIỀU TRƯỜNG HỌC)
+ * =========================================================================
+ */
+
+/**
+ * LẤY HOẶC TẠO SHEET HUB_SERVER:
+ * Cột A: TÊN TK (Tài khoản quản trị của trường)
+ * Cột B: TÊN TRƯỜNG / GV (Tên trường hiển thị tại ô chọn trường đăng nhập)
+ * LẤY HOẶC TẠO SHEET HUB_SERVER:
+ * Cột A: TÀI KHOẢN (Tài khoản quản trị của trường)
+ * Cột B: TÊN TRƯỜNG / ĐƠN VỊ (Tên trường hiển thị tại ô chọn trường đăng nhập)
+ * Cột C: KHỐI LỚP (Dữ liệu khối & lớp các trường khai báo)
+ * Cột D: ĐỊA CHỈ URL WEB APP (Web App URL của trường)
+ * Cột E: NGÀY CẬP NHẬT
+ */
+function getOrCreateHubServerSheet(ss) {
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_HUB_SERVER);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_HUB_SERVER);
+    sheet.appendRow(["Tài khoản", "Tên Trường / Đơn Vị", "Khối Lớp", "Địa chỉ URL Web App", "Ngày cập nhật"]);
+    const header = sheet.getRange(1, 1, 1, 5);
+    header.setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff");
+    sheet.setColumnWidth(1, 150);
+    sheet.setColumnWidth(2, 280);
+    sheet.setColumnWidth(3, 300);
+    sheet.setColumnWidth(4, 400);
+    sheet.setColumnWidth(5, 160);
+    sheet.getRange("A:E").setNumberFormat("@");
+
+    // Thêm trường trung tâm mặc định vào hàng đầu tiên
+    let activeUrl = "";
+    try {
+      activeUrl = ScriptApp.getService().getUrl() || "";
+    } catch (e) {}
+    sheet.appendRow([
+      "admin",
+      "Trường THCS An Nhơn (Hệ Thống Trung Tâm)",
+      '{"6":["6/1","6/2","6/3","6/4"],"7":["7/1","7/2","7/3","7/4"],"8":["8/1","8/2","8/3","8/4"],"9":["9/1","9/2","9/3","9/4"]}',
+      activeUrl || "https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec",
+      Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss")
+    ]);
+  } else {
+    // Nếu sheet cũ chỉ có 4 cột và cột 3 là URL -> tự động chèn thêm Cột C: Khối Lớp
+    try {
+      const lastCol = sheet.getLastColumn();
+      if (lastCol === 4) {
+        const headerVal = String(sheet.getRange(1, 3).getValue() || "").toLowerCase();
+        if (headerVal.includes("url") || headerVal.includes("địa chỉ")) {
+          sheet.insertColumnBefore(3);
+          sheet.getRange(1, 3).setValue("Khối Lớp").setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff");
+          sheet.setColumnWidth(3, 300);
+          sheet.getRange("C:C").setNumberFormat("@");
+        }
+      }
+    } catch (e) {
+      Logger.log("Lỗi nâng cấp cấu trúc HUB_SERVER: " + e);
+    }
+  }
+  return sheet;
+}
+
+/**
+ * LẤY DANH SÁCH TẤT CẢ CÁC TRƯỜNG TỪ SHEET HUB_SERVER
+ */
+function handleGetHubServers() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = getOrCreateHubServerSheet(ss);
+    const lastRow = sheet.getLastRow();
+    
+    const schools = [];
+    if (lastRow >= 2) {
+      const numCols = Math.max(sheet.getLastColumn(), 5);
+      const values = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
+      const displayValues = sheet.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
+
+      for (let i = 0; i < values.length; i++) {
+        const tk = String(displayValues[i][0] || values[i][0] || "").trim();
+        const tenTruong = String(displayValues[i][1] || values[i][1] || "").trim();
+        const col3 = String(displayValues[i][2] || values[i][2] || "").trim();
+        const col4 = String(displayValues[i][3] || values[i][3] || "").trim();
+        const col5 = String(displayValues[i][4] || values[i][4] || "").trim();
+
+        let khoiLop = "";
+        let url = "";
+        let updatedAt = "";
+
+        if (col3.startsWith("http")) {
+          // Định dạng cũ (4 cột)
+          khoiLop = "";
+          url = col3;
+          updatedAt = col4;
+        } else {
+          // Định dạng mới (5 cột: Cột C là Khối Lớp)
+          khoiLop = col3;
+          url = col4;
+          updatedAt = col5 || col4;
+        }
+
+        if (tenTruong || url) {
+          schools.push({
+            taiKhoan: tk || "admin",
+            tenTruong: tenTruong || ("Trường " + (i + 1)),
+            khoiLop: khoiLop,
+            url: url,
+            updatedAt: updatedAt
+          });
+        }
+      }
+    }
+
+    if (schools.length === 0) {
+      let activeUrl = "";
+      try {
+        activeUrl = ScriptApp.getService().getUrl() || "";
+      } catch (e) {}
+      schools.push({
+        taiKhoan: "admin",
+        tenTruong: "Trường THCS An Nhơn (Hệ Thống Trung Tâm)",
+        khoiLop: '{"6":["6/1","6/2","6/3","6/4"],"7":["7/1","7/2","7/3","7/4"],"8":["8/1","8/2","8/3","8/4"],"9":["9/1","9/2","9/3","9/4"]}',
+        url: activeUrl || "https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec",
+        updatedAt: Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss")
+      });
+    }
+
+    return jsonResponse({
+      success: true,
+      schools: schools,
+      total: schools.length
+    });
+  } catch (err) {
+    return jsonResponse({
+      success: false,
+      message: "Lỗi lấy danh sách HUB_SERVER: " + err.toString(),
+      schools: []
+    });
+  }
+}
+
+/**
+ * ĐĂNG KÝ HOẶC CẬP NHẬT TRƯỜNG VÀO SHEET HUB_SERVER
+ * Ghi dữ liệu Khối Lớp vào Cột C của sheet HUB_SERVER
+ */
+function handleRegisterHubServer(payload) {
+  try {
+    const taiKhoan = String(payload.taiKhoan || payload.tai_khoan || "admin").trim();
+    const tenTruong = String(payload.tenTruong || payload.ten_truong || payload.tenGv || "").trim();
+    const url = String(payload.url || payload.backendUrl || "").trim();
+    const khoiLop = String(payload.khoiLop || payload.khoi_lop || payload.classes || "").trim();
+
+    if (!tenTruong) {
+      return jsonResponse({ success: false, message: "Vui lòng nhập tên trường / đơn vị!" });
+    }
+    if (!url || !url.startsWith("https://script.google.com/macros/s/") || !url.endsWith("/exec")) {
+      return jsonResponse({ success: false, message: "URL Web App không đúng định dạng (phải bắt đầu bằng https://script.google.com/macros/s/ và kết thúc bằng /exec)!" });
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = getOrCreateHubServerSheet(ss);
+    const lastRow = sheet.getLastRow();
+    const timestamp = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+
+    let foundIndex = -1;
+    if (lastRow >= 2) {
+      const numCols = Math.max(sheet.getLastColumn(), 5);
+      const values = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
+      const displayValues = sheet.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
+
+      for (let i = 0; i < values.length; i++) {
+        const rowTk = String(displayValues[i][0] || values[i][0] || "").trim().toLowerCase();
+        const rowName = String(displayValues[i][1] || values[i][1] || "").trim().toLowerCase();
+        const col3 = String(displayValues[i][2] || values[i][2] || "").trim();
+        const col4 = String(displayValues[i][3] || values[i][3] || "").trim();
+        const rowUrl = col3.startsWith("http") ? col3 : col4;
+
+        if (rowUrl === url || rowName === tenTruong.toLowerCase()) {
+          foundIndex = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (foundIndex !== -1) {
+      sheet.getRange(foundIndex, 1).setValue(taiKhoan);
+      sheet.getRange(foundIndex, 2).setValue(tenTruong);
+      sheet.getRange(foundIndex, 3).setValue(khoiLop);
+      sheet.getRange(foundIndex, 4).setValue(url);
+      sheet.getRange(foundIndex, 5).setValue(timestamp);
+
+      // ⭐️ GHI ĐỒNG BỘ VÀO SHEET DATA (CỘT F: LỚP DẠY) CHO TÀI KHOẢN ADMIN ĐƠN VỊ
+      try {
+        const sheetData = ss.getSheetByName(SHEET_DATA);
+        if (sheetData) {
+          const lastCol = sheetData.getLastColumn();
+          let lopDayCol = -1;
+          if (lastCol > 0) {
+            const headerRow = sheetData.getRange(1, 1, 1, lastCol).getValues()[0];
+            for (let c = 0; c < headerRow.length; c++) {
+              const h = String(headerRow[c] || "").trim().toLowerCase();
+              if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") {
+                lopDayCol = c + 1;
+                break;
+              }
+            }
+          }
+          const targetCol = (lopDayCol > 0) ? lopDayCol : Math.max(6, lastCol + 1);
+          sheetData.getRange(1, targetCol).setValue("Lớp Dạy").setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
+          sheetData.setColumnWidth(targetCol, 220);
+          sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
+
+          let classesDisplayStr = String(payload.lopDay || "").trim();
+          if (!classesDisplayStr && khoiLop) {
+            try {
+              const parsed = JSON.parse(khoiLop);
+              const allList = [];
+              ['6', '7', '8', '9'].forEach(g => {
+                if (Array.isArray(parsed[g])) allList.push(...parsed[g]);
+              });
+              if (allList.length > 0) classesDisplayStr = allList.join(", ");
+            } catch (e) {
+              classesDisplayStr = khoiLop;
+            }
+          }
+
+          if (classesDisplayStr) {
+            const dataVals = sheetData.getDataRange().getValues();
+            const dataDisp = sheetData.getDataRange().getDisplayValues();
+            const cols = getSheetDataCols(sheetData);
+            for (let d = 1; d < dataVals.length; d++) {
+              const dTk = String(dataDisp[d][cols.colTk] || dataVals[d][cols.colTk] || "").trim();
+              const dTen = String(dataDisp[d][cols.colTenGv] || dataVals[d][cols.colTenGv] || "").trim();
+              if (isUsernameMatch(dTk, taiKhoan) || (tenTruong && dTen.toLowerCase() === tenTruong.toLowerCase())) {
+                sheetData.getRange(d + 1, targetCol).setValue(classesDisplayStr);
+                break;
+              }
+            }
+          }
+        }
+      } catch (dataErr) {
+        Logger.log("Lỗi ghi Sheet DATA trong handleRegisterHubServer: " + dataErr);
+      }
+      return jsonResponse({
+        success: true,
+        message: 'Đã cập nhật máy chủ và danh sách khối lớp cho "' + tenTruong + '" vào HUB_SERVER thành công!',
+        school: { taiKhoan, tenTruong, khoiLop, url, updatedAt: timestamp }
+      });
+    } else {
+      sheet.appendRow([taiKhoan, tenTruong, khoiLop, url, timestamp]);
+      sheet.getRange(sheet.getLastRow(), 1, 1, 5).setNumberFormat("@");
+      return jsonResponse({
+        success: true,
+        message: 'Đã đăng ký máy chủ và danh sách khối lớp cho trường "' + tenTruong + '" vào HUB_SERVER thành công!',
+        school: { taiKhoan, tenTruong, khoiLop, url, updatedAt: timestamp }
+      });
+    }
+  } catch (err) {
+    return jsonResponse({
+      success: false,
+      message: "Lỗi lưu vào HUB_SERVER: " + err.toString()
+    });
+  }
+}
+
+/**
  * ========================================================
- * HÀM NÂNG CẤP / BỔ SUNG CỘT MỚI (AN TOÀN CHO DỮ LIỆU ĐANG CÓ)
+ * HÀM NÂNG CẤP / BỔ SUNG CÁC CỘT MỚI (AN TOÀN CHO DỮ LIỆU ĐANG CÓ)
  * ========================================================
- * Chạy hàm này khi Thầy/Cô đã có sẵn danh sách giáo viên & dữ liệu trên Google Sheet:
- * - Tự động bổ sung CỘT D: "LỚP DẠY" trên Sheet DULIEU.
- * - An toàn tuyệt đối 100%: KHÔNG làm mất, không xóa hay ghi đè dữ liệu cũ.
+ * 1. Sheet HUB_SERVER: Bổ sung CỘT C: "KHỐI LỚP" (chuẩn hóa thành 5 cột).
+ * 2. Sheet DULIEU: Bổ sung CỘT D: "LỚP DẠY".
+ * An toàn tuyệt đối 100%: Giữ nguyên dữ liệu các trường và giáo viên hiện tại!
  */
 function capNhatCotMoi() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // 1. Nâng cấp Sheet DATA: Thêm Cột F: LỚP DẠY
+
+  // 1. NÂNG CẤP SHEET DATA: Bổ sung Cột F: LỚP DẠY
   let sheetData = ss.getSheetByName(SHEET_DATA);
   if (sheetData) {
     const lastCol = sheetData.getLastColumn();
@@ -1651,38 +2067,109 @@ function capNhatCotMoi() {
     const maxRows = Math.max(sheetData.getMaxRows(), sheetData.getLastRow(), 2);
     sheetData.getRange(1, targetCol, maxRows, 1).setNumberFormat("@");
     Logger.log("✅ Đã tạo Cột F: Lớp Dạy (cột " + targetCol + ") trên Sheet DATA!");
+
+    // Tự động đồng bộ các lớp từ HUB_SERVER sang Sheet DATA cho các trường
+    try {
+      const hubSheet = ss.getSheetByName(SHEET_HUB_SERVER);
+      if (hubSheet && hubSheet.getLastRow() >= 2) {
+        const hubLastRow = hubSheet.getLastRow();
+        const numCols = Math.max(hubSheet.getLastColumn(), 5);
+        const hubDisplay = hubSheet.getRange(2, 1, hubLastRow - 1, numCols).getDisplayValues();
+        const colsData = getSheetDataCols(sheetData);
+        const dataDisp = sheetData.getDataRange().getDisplayValues();
+
+        for (let h = 0; h < hubDisplay.length; h++) {
+          const hTk = String(hubDisplay[h][0] || "").trim();
+          const col3 = String(hubDisplay[h][2] || "").trim();
+          let kLop = col3.startsWith("http") ? "" : col3;
+          if (kLop) {
+            let str = kLop;
+            try {
+              const p = JSON.parse(kLop);
+              const a = [];
+              ['6', '7', '8', '9'].forEach(g => { if (Array.isArray(p[g])) a.push(...p[g]); });
+              if (a.length > 0) str = a.join(", ");
+            } catch(e) {}
+            
+            for (let d = 1; d < dataDisp.length; d++) {
+              const dTk = String(dataDisp[d][colsData.colTk] || "").trim();
+              if (isUsernameMatch(dTk, hTk)) {
+                sheetData.getRange(d + 1, targetCol).setValue(str);
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (hubSyncErr) {
+      Logger.log("Lỗi đồng bộ HUB sang DATA: " + hubSyncErr);
+    }
   }
 
-  // 2. Nâng cấp Sheet DULIEU: Thêm Cột D: LỚP DẠY
+  // 2. Nâng cấp Sheet HUB_SERVER: Bổ sung Cột C: Khối Lớp
+  let sheetHub = ss.getSheetByName(SHEET_HUB_SERVER);
+  if (!sheetHub) {
+    sheetHub = getOrCreateHubServerSheet(ss);
+    Logger.log("✅ Đã tạo mới Sheet HUB_SERVER chuẩn 5 cột (có Cột C: Khối Lớp)!");
+  } else {
+    const lastCol = sheetHub.getLastColumn();
+    
+    // Kiểm tra xem cột 3 có phải là URL không (định dạng cũ 4 cột)
+    const col3Header = String(sheetHub.getRange(1, 3).getValue() || "").toLowerCase();
+    const isOld4Cols = (lastCol === 4) || col3Header.includes("url") || col3Header.includes("địa chỉ");
+    
+    if (isOld4Cols) {
+      // Chèn thêm 1 cột vào vị trí cột 3 (Khối Lớp), đẩy URL sang cột 4 và Ngày cập nhật sang cột 5
+      sheetHub.insertColumnBefore(3);
+      Logger.log("✅ Đã chèn thêm Cột C: Khối Lớp vào giữa Tên Trường và URL trên Sheet HUB_SERVER!");
+    }
+
+    // Cập nhật lại đầy đủ tiêu đề 5 cột chuẩn
+    sheetHub.getRange(1, 1).setValue("TÀI KHOẢN (ADMIN)");
+    sheetHub.getRange(1, 2).setValue("TÊN TRƯỜNG / ĐƠN VỊ");
+    sheetHub.getRange(1, 3).setValue("KHỐI LỚP");
+    sheetHub.getRange(1, 4).setValue("ĐỊA CHỈ URL WEB APP");
+    sheetHub.getRange(1, 5).setValue("NGÀY CẬP NHẬT");
+
+    const headerRange = sheetHub.getRange(1, 1, 1, 5);
+    headerRange.setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff");
+    sheetHub.setColumnWidth(1, 180);
+    sheetHub.setColumnWidth(2, 320);
+    sheetHub.setColumnWidth(3, 300);
+    sheetHub.setColumnWidth(4, 400);
+    sheetHub.setColumnWidth(5, 160);
+    sheetHub.getRange("A:E").setNumberFormat("@");
+    Logger.log("✅ Đã chuẩn hóa tiêu đề và định dạng Sheet HUB_SERVER (5 cột)!");
+  }
+
+  // 3. Nâng cấp Sheet DULIEU: Bổ sung Cột D: LỚP DẠY
   let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   if (!sheetDuLieu) {
     sheetDuLieu = ss.insertSheet(SHEET_DULIEU);
   }
-  
   sheetDuLieu.getRange(1, 1).setValue("TK");
   sheetDuLieu.getRange(1, 2).setValue("TÊN GV");
   sheetDuLieu.getRange(1, 3).setValue("DỮ LIỆU GV NHẬP DANG JSON");
   sheetDuLieu.getRange(1, 4).setValue("LỚP DẠY");
   
-  const headerRange = sheetDuLieu.getRange(1, 1, 1, 4);
-  headerRange.setFontWeight("bold").setBackground("#0d9488").setFontColor("#ffffff");
+  const headerDuLieu = sheetDuLieu.getRange(1, 1, 1, 4);
+  headerDuLieu.setFontWeight("bold").setBackground("#0d9488").setFontColor("#ffffff");
   sheetDuLieu.setColumnWidth(1, 150);
   sheetDuLieu.setColumnWidth(2, 220);
   sheetDuLieu.setColumnWidth(3, 400);
   sheetDuLieu.setColumnWidth(4, 250);
   sheetDuLieu.getRange("D:D").setNumberFormat("@");
-  
   Logger.log("✅ Đã cập nhật Cột D: LỚP DẠY trên Sheet DULIEU!");
 
-  // 3. Tự động kiểm tra và đồng bộ an toàn
+  // 4. Tự động kiểm tra và đồng bộ an toàn
   try {
     syncDuLieuWithData(false);
   } catch (e) {
     Logger.log("Lưu ý đồng bộ: " + e);
   }
 
-  Logger.log("🎉 Hoàn tất nâng cấp cấu trúc bảng tính thành công! Toàn bộ dữ liệu giáo viên và kê khai được giữ nguyên 100%.");
-  return "Đã nâng cấp Cột F: Lớp Dạy (Sheet DATA) và Cột D: Lớp Dạy (Sheet DULIEU) thành công! Dữ liệu cũ được giữ nguyên.";
+  Logger.log("🎉 Hoàn tất nâng cấp hệ thống trung tâm thành công! Toàn bộ dữ liệu cũ được giữ nguyên 100%.");
+  return "Đã nâng cấp Cột F: Lớp Dạy (DATA), Cột C: Khối Lớp (HUB_SERVER) và Cột D: Lớp Dạy (DULIEU) thành công!";
 }
 
 function initialSetup() {
@@ -1736,6 +2223,13 @@ function initialSetup() {
 
   // 4. Khởi tạo và đồng bộ Sheet dulieu_hoanhap theo đúng thứ tự
   syncDuLieuHoaNhapWithData(true);
+
+  // 5. Khởi tạo Sheet HUB_SERVER nếu chưa có
+  try {
+    getOrCreateHubServerSheet(ss);
+  } catch (hubErr) {
+    Logger.log("Lỗi khởi tạo HUB_SERVER: " + hubErr);
+  }
 
   // 5. Khởi tạo các cấu hình hệ thống mặc định (Properties)
   try {
