@@ -14484,24 +14484,24 @@ function initialSetup() {
 
         rowsHtml += `
           <tr class="border-b border-slate-300 text-center">
-            <td class="py-1.5 px-1 border border-slate-300 font-bold align-middle">${idx + 1}</td>
-            <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-800 leading-snug align-middle">
-              ${details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(name)}</div>`).join('')}
+            <td class="py-1.5 px-0.5 border border-slate-300 font-bold align-middle">${idx + 1}</td>
+            <td class="py-1.5 px-1.5 border border-slate-300 text-left font-bold text-slate-800 align-middle">
+              ${details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''} whitespace-nowrap overflow-hidden text-ellipsis">${escapeHtml(name)}</div>`).join('')}
             </td>
-            <td class="py-1.5 px-1 border border-slate-300 font-bold text-slate-900 align-middle">${escapeHtml(r.lop || '--')}</td>
-            <td class="py-1 px-1 border border-slate-300 text-center align-middle">
-              ${details.births.map((b, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(b)}</div>`).join('')}
+            <td class="py-1.5 px-0.5 border border-slate-300 font-bold text-slate-900 align-middle whitespace-nowrap">${escapeHtml(r.lop || '--')}</td>
+            <td class="py-1.5 px-0.5 border border-slate-300 text-center align-middle whitespace-nowrap">
+              ${details.births.map((b, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''} whitespace-nowrap">${escapeHtml(b)}</div>`).join('')}
             </td>
-            <td class="py-1 px-2 border border-slate-300 text-left leading-snug text-[10px] align-middle">
+            <td class="py-1.5 px-1.5 border border-slate-300 text-left leading-tight text-[9.5px] align-middle break-words">
               ${details.disabilities.map((d, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(d)}</div>`).join('')}
             </td>
-            <td class="py-1 px-1 border border-slate-300 text-center text-[10px] align-middle">
+            <td class="py-1.5 px-0.5 border border-slate-300 text-center text-[9.5px] align-middle whitespace-nowrap">
               ${details.levels.map((lvl, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(lvl || 'Nhẹ')}</div>`).join('')}
             </td>
-            <td class="py-1.5 px-1 border border-slate-300 font-semibold align-middle">${escapeHtml(r.monDay || 'Tin học')}</td>
-            <td class="py-1.5 px-1 border border-slate-300 font-bold text-slate-800 align-middle">${formatNumber(tietTuan)}</td>
-            <td class="py-1.5 px-1 border border-slate-300 align-middle">${sem === 'all' ? `HK1: ${r.hk1Tuan || 18} | HK2: ${r.hk2Tuan || 17}` : formatNumber(soTuan)}</td>
-            <td class="py-1.5 px-1 border border-slate-300 font-black text-slate-900 bg-slate-50 align-middle">${formatNumber(tongTiet)}</td>
+            <td class="py-1.5 px-0.5 border border-slate-300 font-semibold align-middle whitespace-nowrap">${escapeHtml(r.monDay || 'Tin học')}</td>
+            <td class="py-1.5 px-0.5 border border-slate-300 font-bold text-slate-800 align-middle">${formatNumber(tietTuan)}</td>
+            <td class="py-1.5 px-0.5 border border-slate-300 align-middle">${sem === 'all' ? `HK1:${r.hk1Tuan || 18}<br>HK2:${r.hk2Tuan || 17}` : formatNumber(soTuan)}</td>
+            <td class="py-1.5 px-0.5 border border-slate-300 font-black text-slate-900 bg-slate-100 align-middle">${formatNumber(tongTiet)}</td>
           </tr>
         `;
       });
@@ -14551,19 +14551,19 @@ function initialSetup() {
         </div>
 
         <!-- BẢNG KÊ KHAI 9 CỘT THEO HÌNH H1 -->
-        <table class="w-full border-collapse border border-slate-400 text-center text-[10.5px] mb-3">
+        <table class="w-full border-collapse border border-slate-400 text-center text-[10px] mb-3" style="table-layout: fixed; width: 100%;">
           <thead>
             <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
-              <th class="py-1 px-1 border border-slate-300 w-8">STT</th>
-              <th class="py-1 px-2 border border-slate-300 text-left">Học và tên học sinh</th>
-              <th class="py-1 px-1 border border-slate-300 w-14">Lớp</th>
-              <th class="py-1 px-1 border border-slate-300 w-16">Năm sinh</th>
-              <th class="py-1 px-2 border border-slate-300 text-left">Dạng khuyết tật</th>
-              <th class="py-1 px-1 border border-slate-300 w-16">Mức độ</th>
-              <th class="py-1 px-1 border border-slate-300 w-18">Môn dạy</th>
-              <th class="py-1 px-1 border border-slate-300 w-20">Số tiết thực dạy /tuần</th>
-              <th class="py-1 px-1 border border-slate-300 w-20">Số tuần thực dạy</th>
-              <th class="py-1 px-1 border border-slate-300 w-24 bg-slate-200/60 font-black">Tổng số tiết dạy</th>
+              <th style="width: 4%;" class="py-1.5 px-0.5 border border-slate-300 text-center">STT</th>
+              <th style="width: 23%;" class="py-1.5 px-1.5 border border-slate-300 text-left">Học và tên học sinh</th>
+              <th style="width: 6.5%;" class="py-1.5 px-0.5 border border-slate-300 text-center">Lớp</th>
+              <th style="width: 8.5%;" class="py-1.5 px-0.5 border border-slate-300 text-center">Năm sinh</th>
+              <th style="width: 22%;" class="py-1.5 px-1.5 border border-slate-300 text-left">Dạng khuyết tật</th>
+              <th style="width: 6.5%;" class="py-1.5 px-0.5 border border-slate-300 text-center">Mức độ</th>
+              <th style="width: 7.5%;" class="py-1.5 px-0.5 border border-slate-300 text-center">Môn dạy</th>
+              <th style="width: 7.5%;" class="py-1.5 px-0.5 border border-slate-300 text-center leading-tight">Số tiết /tuần</th>
+              <th style="width: 6.5%;" class="py-1.5 px-0.5 border border-slate-300 text-center leading-tight">Số tuần</th>
+              <th style="width: 8%;" class="py-1.5 px-0.5 border border-slate-300 text-center bg-slate-200/70 font-black leading-tight">Tổng số tiết</th>
             </tr>
           </thead>
           <tbody>
@@ -14572,9 +14572,9 @@ function initialSetup() {
           <tfoot>
             <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400">
               <td colspan="7" class="py-1.5 px-3 text-center uppercase">TỔNG CỘNG</td>
-              <td class="py-1.5 px-1 border border-slate-300">${formatNumber(totalTietTuan)}</td>
-              <td class="py-1.5 px-1 border border-slate-300 text-slate-400 font-normal italic">--</td>
-              <td class="py-1.5 px-1 border border-slate-300 font-black bg-slate-200 text-xs sm:text-sm">${formatNumber(totalTongTiet)}</td>
+              <td class="py-1.5 px-0.5 border border-slate-300">${formatNumber(totalTietTuan)}</td>
+              <td class="py-1.5 px-0.5 border border-slate-300 text-slate-400 font-normal italic">--</td>
+              <td class="py-1.5 px-0.5 border border-slate-300 font-black bg-slate-200 text-xs">${formatNumber(totalTongTiet)}</td>
             </tr>
           </tfoot>
         </table>
