@@ -1014,7 +1014,7 @@
         </button>
 
         <button type="button" onclick="switchAdminSubTab('backend')" id="btn-admin-subtab-backend"
-          class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white shadow-sm shadow-orange-500/25">
+          class="hidden flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white shadow-sm shadow-orange-500/25">
           <i class="fa-solid fa-server"></i>
           <span>4. Cấu Hình Backend</span>
           <span id="badge-admin-backend-status"
@@ -4127,7 +4127,7 @@ function initialSetup() {
       <!-- Footer Modal: Nút Lưu Lại & Nút Đóng -->
       <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-          <button type="button" onclick="openResetDeclarationModal(currentAdminEditingTeacher ? currentAdminEditingTeacher.taiKhoan : '')" title="Xóa toàn bộ hoặc một học kỳ dữ liệu kê khai của giáo viên này"
+          <button type="button" id="btn-modal-reset-declaration" onclick="openResetDeclarationModal(currentAdminEditingTeacher ? currentAdminEditingTeacher.taiKhoan : '')" title="Xóa toàn bộ hoặc một học kỳ dữ liệu kê khai của giáo viên này"
             class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 font-bold rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-2xs active:scale-95">
             <i class="fa-solid fa-eraser"></i>
             <span class="hidden sm:inline">Xóa Kê Khai</span>
@@ -5910,6 +5910,10 @@ function initialSetup() {
        E. LOGIC PHÂN HỆ QUẢN TRỊ: SUB-TABS & LOAD DỮ LIỆU
        ======================================================= */
     function switchAdminSubTab(tabName) {
+      // Bảo vệ: Nếu tài khoản không phải Admin (ví dụ BGH) thì không thể vào Tab Backend
+      if (tabName === 'backend' && !isSuperAdmin(currentUser.quyen)) {
+        tabName = 'teachers';
+      }
       adminActiveSubTab = tabName;
 
       const btnTeachers = document.getElementById('btn-admin-subtab-teachers');
@@ -5932,7 +5936,16 @@ function initialSetup() {
       if (btnTeachers) btnTeachers.className = inactiveClass;
       if (btnSummary) btnSummary.className = inactiveClass;
       if (btnConfig) btnConfig.className = inactiveClass;
-      if (btnBackend) btnBackend.className = backendInactiveClass;
+
+      // Tab 4 (Cấu Hình Backend): Chỉ Admin tối cao mới hiển thị và có quyền chuyển tab
+      if (btnBackend) {
+        if (!isSuperAdmin(currentUser.quyen)) {
+          btnBackend.classList.add('hidden');
+        } else {
+          btnBackend.classList.remove('hidden');
+          btnBackend.className = (tabName === 'backend') ? backendActiveClass : backendInactiveClass;
+        }
+      }
 
       if (viewTeachers) viewTeachers.classList.add('hidden');
       if (viewSummary) viewSummary.classList.add('hidden');
@@ -5950,7 +5963,7 @@ function initialSetup() {
         if (btnConfig) btnConfig.className = activeClass;
         if (viewConfig) viewConfig.classList.remove('hidden');
         renderAdminConfigView();
-      } else if (tabName === 'backend') {
+      } else if (tabName === 'backend' && isSuperAdmin(currentUser.quyen)) {
         if (btnBackend) btnBackend.className = backendActiveClass;
         if (viewBackend) viewBackend.classList.remove('hidden');
         renderAdminBackendView();
@@ -9248,10 +9261,12 @@ function initialSetup() {
                   class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-600 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
                   <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
-                <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
+                ${isSuperAdmin(currentUser.quyen) ? `
+                  <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : ''}
               </div>
             </td>
           `;
@@ -9353,10 +9368,12 @@ function initialSetup() {
                   class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-600 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
                   <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
-                <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
+                ${isSuperAdmin(currentUser.quyen) ? `
+                  <button onclick="openResetDeclarationModal('${escapeJs(t.taiKhoan)}')" title="Xóa dữ liệu kê khai tiết"
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 transition flex items-center justify-center text-xs shadow-2xs active:scale-95">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : ''}
               </div>
             </td>
           `;
@@ -9760,6 +9777,16 @@ function initialSetup() {
       }
 
       currentAdminEditingTeacher = JSON.parse(JSON.stringify(teacher)); // clone
+
+      // Quyền BGH không có quyền xóa dữ liệu kê khai của giáo viên
+      const btnResetDecl = document.getElementById('btn-modal-reset-declaration');
+      if (btnResetDecl) {
+        if (isSuperAdmin(currentUser.quyen)) {
+          btnResetDecl.classList.remove('hidden');
+        } else {
+          btnResetDecl.classList.add('hidden');
+        }
+      }
 
       // Parse hoặc khởi tạo store cho GV này
       let tStore = initEmptyDataStore();
