@@ -672,7 +672,7 @@
             <tbody id="hn-teacher-table-tbody" class="divide-y divide-slate-100">
               <!-- Render từ JS -->
             </tbody>
-            <tfoot class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
+            <tfoot id="hn-admin-summary-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
               <tr class="text-center">
                 <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
                   TỔNG CỘNG
@@ -803,7 +803,7 @@
 
           <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left text-xs sm:text-sm">
-              <thead>
+              <thead id="hn-admin-summary-thead">
                 <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold text-center">
                   <th class="py-3 px-2 w-10 text-center">STT</th>
                   <th class="py-3 px-3 text-left w-32">Tài Khoản (TK)</th>
@@ -842,6 +842,20 @@
               <button type="button" onclick="switchHoaNhapAdminSem('all')" id="btn-hn-admin-sem-all"
                 class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
                 <span>Cả Năm (Tổng hợp)</span>
+              </button>
+            </div>
+
+            <!-- Chế độ xem: Theo Lớp (Mặc định) hoặc Theo Giáo Viên -->
+            <div class="flex items-center gap-1.5 p-1 bg-indigo-50 border border-indigo-200 rounded-xl w-fit">
+              <button type="button" onclick="switchHoaNhapSummaryViewMode('by_class')" id="btn-hn-sum-mode-class"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-xs">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Thống Kê Theo Lớp (Mặc định)</span>
+              </button>
+              <button type="button" onclick="switchHoaNhapSummaryViewMode('by_teacher')" id="btn-hn-sum-mode-teacher"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-indigo-900">
+                <i class="fa-solid fa-user-tie"></i>
+                <span>Xem Theo Giáo Viên</span>
               </button>
             </div>
 
@@ -15559,9 +15573,129 @@ function initialSetup() {
       });
     }
 
+    // Chế độ xem Tab 2: 'by_class' (Mặc định) hoặc 'by_teacher'
+    let hoaNhapSummaryViewMode = 'by_class';
+
+    function switchHoaNhapSummaryViewMode(mode) {
+      hoaNhapSummaryViewMode = mode;
+      const btnClass = document.getElementById('btn-hn-sum-mode-class');
+      const btnTeacher = document.getElementById('btn-hn-sum-mode-teacher');
+
+      if (btnClass) {
+        btnClass.className = mode === 'by_class'
+          ? "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-xs"
+          : "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-indigo-900";
+      }
+      if (btnTeacher) {
+        btnTeacher.className = mode === 'by_teacher'
+          ? "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-xs"
+          : "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-indigo-900";
+      }
+
+      renderHoaNhapAdminSummaryTable();
+    }
+
+    // Tách và so sánh tên lớp tự nhiên từ 6A1 -> 9A14
+    function parseClassParts(className) {
+      const s = String(className || '').trim().toUpperCase();
+      const gradeMatch = s.match(/^(\d+)/);
+      const grade = gradeMatch ? parseInt(gradeMatch[1], 10) : 99;
+      const numMatch = s.match(/(?:[A-Z\/\.\-_]+)(\d+)$/) || s.match(/(\d+)$/);
+      const subIndex = numMatch ? parseInt(numMatch[1], 10) : 99;
+      return { grade, subIndex, raw: s };
+    }
+
+    function compareSchoolClasses(a, b) {
+      const pA = parseClassParts(a);
+      const pB = parseClassParts(b);
+      if (pA.grade !== pB.grade) return pA.grade - pB.grade;
+      if (pA.subIndex !== pB.subIndex) return pA.subIndex - pB.subIndex;
+      return pA.raw.localeCompare(pB.raw);
+    }
+
+    function normalizeClassKey(c) {
+      if (!c) return '';
+      const s = String(c).trim().toUpperCase();
+      const m = s.match(/^([6-9])[\/\.\-_A-Z\s]*(\d+)$/);
+      if (m) {
+        return m[1] + 'A' + parseInt(m[2], 10);
+      }
+      return s.replace(/[\/\.\s\-_]/g, '');
+    }
+
+    function isSameClass(c1, c2) {
+      if (!c1 || !c2) return false;
+      return normalizeClassKey(c1) === normalizeClassKey(c2);
+    }
+
+    // Gom nhóm và thống kê số tiết dạy hòa nhập theo từng Lớp
+    // Quy tắc:
+    // 1. "nếu lớp nào k có hs hòa nhập thì k hiện lớp đó" -> Chỉ lấy các lớp có trong hoaNhapStudentsList
+    // 2. "theo thứ tự từ lớp 6a1 đến 9a14" -> Sắp xếp tự nhiên compareSchoolClasses
+    // 3. "trong lớp đó có bao nhiêu gv dạy hòa nhập ghi ra" -> Đếm và hiển thị chi tiết giáo viên
+    function buildHoaNhapClassSummaryData(sem) {
+      const classMap = new Map();
+
+      (hoaNhapStudentsList || []).forEach(s => {
+        const rawClass = (s.lop || '').trim();
+        if (!rawClass) return;
+        const key = normalizeClassKey(rawClass);
+        if (!classMap.has(key)) {
+          classMap.set(key, {
+            key: key,
+            rawClass: rawClass,
+            students: [],
+            teachers: [],
+            totalPeriodsPerWeek: 0,
+            totalPeriods: 0
+          });
+        }
+        classMap.get(key).students.push(s);
+      });
+
+      const sortedClasses = Array.from(classMap.values()).sort((a, b) => compareSchoolClasses(a.rawClass, b.rawClass));
+
+      let list = adminTeachersList || [];
+      if (isRoleBgh(currentUser.quyen)) {
+        list = list.filter(t => !isSuperAdmin(t.quyen));
+      }
+
+      sortedClasses.forEach(item => {
+        list.forEach(t => {
+          const stats = getTeacherHoaNhapStats(t);
+          const store = stats.store;
+          const semRows = sem === 'all'
+            ? (store.hk1 || []).concat(store.hk2 || [])
+            : (store[sem] || []);
+
+          const matchingRows = semRows.filter(r => isSameClass(r.lop, item.key));
+          matchingRows.forEach(r => {
+            const tietTuan = parseFloat(r.tietTuan) || 0;
+            const soTuan = parseFloat(r.soTuan) || (sem === 'hk2' ? 17 : 18);
+            const tongTiet = parseFloat(r.tongTiet) || (tietTuan * soTuan);
+
+            item.teachers.push({
+              taiKhoan: t.taiKhoan,
+              tenGv: t.tenGv,
+              monDay: r.monDay || t.monGv || t.subject || 'Tin học',
+              tietTuan: tietTuan,
+              soTuan: soTuan,
+              tongTiet: tongTiet
+            });
+            item.totalPeriodsPerWeek += tietTuan;
+            item.totalPeriods += tongTiet;
+          });
+        });
+      });
+
+      return sortedClasses;
+    }
+
     // Render Tab 2: Tổng Hợp Toàn Trường (Dạy Hòa Nhập)
     function renderHoaNhapAdminSummaryTable() {
       const tbody = document.getElementById('hn-admin-summary-tbody');
+      const thead = document.getElementById('hn-admin-summary-thead');
+      const tfoot = document.getElementById('hn-admin-summary-tfoot');
       if (!tbody) return;
       tbody.innerHTML = "";
 
@@ -15574,8 +15708,8 @@ function initialSetup() {
       let hnTeachersCount = 0;
       let totalPeriodsAllSchool = 0;
       let totalPeriodsPerWeekSchool = 0;
-      let summaryRows = [];
 
+      // Tính toán chung cho toàn trường
       list.forEach(t => {
         const stats = getTeacherHoaNhapStats(t);
         const store = stats.store;
@@ -15591,9 +15725,198 @@ function initialSetup() {
           const tietTuan = parseFloat(r.tietTuan) || 0;
           const soTuan = parseFloat(r.soTuan) || (hoaNhapAdminActiveSem === 'hk2' ? 17 : 18);
           const tongTiet = (parseFloat(r.tongTiet) || (tietTuan * soTuan));
-
           totalPeriodsPerWeekSchool += tietTuan;
           totalPeriodsAllSchool += tongTiet;
+        });
+      });
+
+      // Cập nhật 4 thẻ chỉ số
+      const statTotalTeachers = document.getElementById('hn-sum-stat-total-teachers');
+      if (statTotalTeachers) statTotalTeachers.textContent = totalTeachers;
+
+      const statHnTeachers = document.getElementById('hn-sum-stat-hn-teachers');
+      if (statHnTeachers) statHnTeachers.textContent = hnTeachersCount;
+
+      const statTotalStudents = document.getElementById('hn-sum-stat-total-students');
+      if (statTotalStudents) statTotalStudents.textContent = hoaNhapStudentsList.length;
+
+      const statTotalPeriods = document.getElementById('hn-sum-stat-total-periods');
+      if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
+
+      const badgeSummaryPeriods = document.getElementById('hn-badge-admin-total-periods');
+      if (badgeSummaryPeriods) badgeSummaryPeriods.textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
+
+      // ==========================================
+      // CHẾ ĐỘ 1: THỐNG KÊ THEO TỪNG LỚP (MẶC ĐỊNH)
+      // ==========================================
+      if (hoaNhapSummaryViewMode === 'by_class') {
+        if (thead) {
+          thead.innerHTML = `
+            <tr class="bg-indigo-50/70 border-b border-slate-200 text-slate-800 font-bold text-center">
+              <th class="py-3 px-2 w-10 text-center border-r border-slate-200">STT</th>
+              <th class="py-3 px-3 text-center w-24 border-r border-slate-200">Lớp</th>
+              <th class="py-3 px-3 text-left min-w-[200px] border-r border-slate-200">Học Sinh Hòa Nhập</th>
+              <th class="py-3 px-3 text-left min-w-[190px] border-r border-slate-200">Dạng Khuyết Tật & Mức Độ</th>
+              <th class="py-3 px-3 text-center w-24 border-r border-slate-200">Số GV Dạy</th>
+              <th class="py-3 px-3 text-left min-w-[280px] border-r border-slate-200">Danh Sách Giáo Viên & Môn</th>
+              <th class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tiết/tuần</th>
+              <th class="py-3 px-3 text-center w-20 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tuần</th>
+              <th class="py-3 px-3 text-center w-28 bg-purple-100/50 text-purple-950 font-black border-r border-slate-200">Tổng tiết dạy</th>
+              <th class="py-3 px-2 w-16 text-center">Thao tác</th>
+            </tr>
+          `;
+        }
+
+        const classSummaryList = buildHoaNhapClassSummaryData(hoaNhapAdminActiveSem);
+
+        if (classSummaryList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" class="py-8 text-center text-slate-400 italic">Không có dữ liệu lớp học sinh hòa nhập nào</td></tr>`;
+        } else {
+          classSummaryList.forEach((clsItem, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = idx % 2 === 0 ? "bg-white hover:bg-indigo-50/20 transition align-top" : "bg-slate-50/70 hover:bg-indigo-50/20 transition align-top";
+
+            // Học sinh hòa nhập
+            const hsHtml = clsItem.students.map((s, sIdx) => `
+              <div class="${sIdx > 0 ? 'border-t border-slate-200 pt-1.5 mt-1.5' : ''}">
+                <div class="font-bold text-slate-900">${escapeHtml(s.tenHs || '--')}</div>
+                <div class="text-[11px] text-slate-500 font-medium">NS: ${escapeHtml(s.namSinh || s.ngaySinh || '--')}</div>
+              </div>
+            `).join('');
+
+            // Dạng khuyết tật & mức độ
+            const ktHtml = clsItem.students.map((s, sIdx) => `
+              <div class="${sIdx > 0 ? 'border-t border-slate-200 pt-1.5 mt-1.5' : ''}">
+                <div class="text-xs text-slate-800 leading-snug">${escapeHtml(s.dangKhuyetTat || s.loaiHoaNhap || '--')}</div>
+                <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  ${escapeHtml(s.mucDo || 'Nhẹ')}
+                </span>
+              </div>
+            `).join('');
+
+            // Số giáo viên dạy trong lớp đó
+            const teacherCount = clsItem.teachers.length;
+            const teacherBadgeHtml = teacherCount > 0
+              ? `<span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">${teacherCount} GV</span>`
+              : `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">0 GV</span>`;
+
+            // Danh sách chi tiết các giáo viên và môn giảng dạy
+            let teachersListHtml = "";
+            if (teacherCount > 0) {
+              teachersListHtml = `
+                <div class="space-y-1.5 py-0.5">
+                  ${clsItem.teachers.map(t => {
+                    const safeTk = (t.taiKhoan || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    return `
+                      <div class="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs hover:border-indigo-300 transition">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                          <i class="fa-solid fa-chalkboard-user text-indigo-600 text-xs shrink-0"></i>
+                          <span class="font-bold text-slate-900 text-xs truncate">${escapeHtml(t.tenGv)}</span>
+                          <span class="text-[11px] font-semibold text-slate-500 shrink-0">(${escapeHtml(t.monDay)})</span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <span class="text-[11px] font-bold text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">${formatNumber(t.tietTuan)} t/t</span>
+                          <span class="text-xs font-black text-purple-700">${formatNumber(t.tongTiet)} t</span>
+                          <button type="button" onclick="openAdminViewTeacherHoaNhapModal('${safeTk}')"
+                            class="w-6 h-6 rounded bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white transition flex items-center justify-center"
+                            title="Xem chi tiết sổ của ${escapeHtml(t.tenGv)}">
+                            <i class="fa-solid fa-eye text-[10px]"></i>
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `;
+            } else {
+              teachersListHtml = `<div class="text-xs text-slate-400 italic py-1">Chưa có giáo viên nào kê khai tiết dạy lớp này</div>`;
+            }
+
+            const defaultSoTuan = hoaNhapAdminActiveSem === 'hk2' ? 17 : 18;
+
+            tr.innerHTML = `
+              <td class="py-3 px-2 text-center font-bold text-slate-500 border-r border-slate-200">${idx + 1}</td>
+              <td class="py-3 px-3 text-center border-r border-slate-200">
+                <span class="inline-block px-2.5 py-1 rounded-xl font-black bg-indigo-100 text-indigo-950 border border-indigo-200 text-sm shadow-2xs">
+                  ${escapeHtml(clsItem.rawClass)}
+                </span>
+              </td>
+              <td class="py-3 px-3 border-r border-slate-200">${hsHtml}</td>
+              <td class="py-3 px-3 border-r border-slate-200">${ktHtml}</td>
+              <td class="py-3 px-3 text-center border-r border-slate-200">${teacherBadgeHtml}</td>
+              <td class="py-3 px-3 border-r border-slate-200">${teachersListHtml}</td>
+              <td class="py-3 px-3 text-center font-black text-indigo-950 bg-indigo-50/30 border-r border-slate-200 text-sm">
+                ${formatNumber(clsItem.totalPeriodsPerWeek)}
+              </td>
+              <td class="py-3 px-3 text-center text-slate-700 border-r border-slate-200 text-xs">
+                ${defaultSoTuan}
+              </td>
+              <td class="py-3 px-3 text-center font-black text-purple-950 bg-purple-100/40 text-sm sm:text-base border-r border-slate-200">
+                ${formatNumber(clsItem.totalPeriods)} tiết
+              </td>
+              <td class="py-3 px-2 text-center">
+                ${teacherCount > 0 ? `
+                  <button type="button" onclick="openAdminViewTeacherHoaNhapModal('${(clsItem.teachers[0].taiKhoan || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
+                    class="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white transition flex items-center justify-center mx-auto"
+                    title="Xem sổ GV">
+                    <i class="fa-solid fa-eye text-xs"></i>
+                  </button>
+                ` : `--`}
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        if (tfoot) {
+          tfoot.innerHTML = `
+            <tr class="text-center">
+              <td colspan="6" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
+                TỔNG CỘNG TOÀN TRƯỜNG (${classSummaryList.length} LỚP HÒA NHẬP)
+              </td>
+              <td id="hn-admin-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">${formatNumber(totalPeriodsPerWeekSchool)}</td>
+              <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">--</td>
+              <td id="hn-admin-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">${formatNumber(totalPeriodsAllSchool)} tiết</td>
+              <td class="py-3 px-2"></td>
+            </tr>
+          `;
+        }
+        return;
+      }
+
+      // ==========================================
+      // CHẾ ĐỘ 2: XEM THEO GIÁO VIÊN
+      // ==========================================
+      if (thead) {
+        thead.innerHTML = `
+          <tr class="bg-indigo-50/70 border-b border-slate-200 text-slate-800 font-bold text-center">
+            <th class="py-3 px-2 w-10 text-center border-r border-slate-200">STT</th>
+            <th class="py-3 px-3 text-left min-w-[150px] border-r border-slate-200">Tên Giáo Viên</th>
+            <th class="py-3 px-3 text-center w-24 border-r border-slate-200">Môn Dạy</th>
+            <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Lớp Dạy</th>
+            <th class="py-3 px-3 text-left min-w-[180px] border-r border-slate-200">Danh Sách Học Sinh Hòa Nhập</th>
+            <th class="py-3 px-3 text-left min-w-[160px] border-r border-slate-200">Dạng Khuyết Tật</th>
+            <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Mức Độ</th>
+            <th class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tiết/tuần</th>
+            <th class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tuần</th>
+            <th class="py-3 px-3 text-center w-28 bg-purple-100/50 text-purple-950 font-black border-r border-slate-200">Tổng tiết dạy</th>
+            <th class="py-3 px-2 w-20 text-center">Thao tác</th>
+          </tr>
+        `;
+      }
+
+      let summaryRows = [];
+      list.forEach(t => {
+        const stats = getTeacherHoaNhapStats(t);
+        const store = stats.store;
+        const semRows = hoaNhapAdminActiveSem === 'all'
+          ? (store.hk1 || []).concat(store.hk2 || [])
+          : (store[hoaNhapAdminActiveSem] || []);
+
+        semRows.forEach(r => {
+          const tietTuan = parseFloat(r.tietTuan) || 0;
+          const soTuan = parseFloat(r.soTuan) || (hoaNhapAdminActiveSem === 'hk2' ? 17 : 18);
+          const tongTiet = (parseFloat(r.tongTiet) || (tietTuan * soTuan));
 
           summaryRows.push({
             teacherTk: t.taiKhoan,
@@ -15610,56 +15933,53 @@ function initialSetup() {
         });
       });
 
-      // Cập nhật 4 thẻ chỉ số
-      document.getElementById('hn-sum-stat-total-teachers').textContent = totalTeachers;
-      document.getElementById('hn-sum-stat-hn-teachers').textContent = hnTeachersCount;
-      document.getElementById('hn-sum-stat-total-students').textContent = hoaNhapStudentsList.length;
-      document.getElementById('hn-sum-stat-total-periods').textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
-
-      const badgeSummaryPeriods = document.getElementById('hn-badge-admin-total-periods');
-      if (badgeSummaryPeriods) badgeSummaryPeriods.textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
-
       if (summaryRows.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" class="py-8 text-center text-slate-400 italic">Chưa có giáo viên nào phát sinh tiết dạy hòa nhập trong kỳ này</td></tr>`;
-        return;
+      } else {
+        summaryRows.forEach((r, idx) => {
+          const tr = document.createElement('tr');
+          tr.className = idx % 2 === 0 ? "bg-white hover:bg-indigo-50/20 transition" : "bg-slate-50/70 hover:bg-indigo-50/20 transition";
+
+          const safeTk = (r.teacherTk || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+          tr.innerHTML = `
+            <td class="py-3 px-2 text-center font-bold text-slate-500 border-r border-slate-200">${idx + 1}</td>
+            <td class="py-3 px-3 font-bold text-slate-900 border-r border-slate-200">${escapeHtml(r.teacherName || '--')}</td>
+            <td class="py-3 px-3 text-center text-xs font-bold text-slate-700 border-r border-slate-200">${escapeHtml(r.monGv || '--')}</td>
+            <td class="py-3 px-3 text-center font-black text-indigo-950 border-r border-slate-200">${escapeHtml(r.lop || '--')}</td>
+            <td class="py-3 px-3 font-bold text-slate-800 border-r border-slate-200 leading-snug">${escapeHtml(r.tenHs || '--')}</td>
+            <td class="py-3 px-3 text-slate-700 text-xs border-r border-slate-200 leading-snug">${escapeHtml(r.dangKhuyetTat || '--')}</td>
+            <td class="py-3 px-3 text-center border-r border-slate-200">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(r.mucDo || 'Nhẹ')}</span>
+            </td>
+            <td class="py-3 px-3 text-center font-black text-indigo-950 bg-indigo-50/30 border-r border-slate-200">${formatNumber(r.tietTuan)}</td>
+            <td class="py-3 px-3 text-center text-slate-700 border-r border-slate-200">${formatNumber(r.soTuan)}</td>
+            <td class="py-3 px-3 text-center font-black text-purple-950 bg-purple-100/40 text-sm border-r border-slate-200">${formatNumber(r.tongTiet)}</td>
+            <td class="py-3 px-2 text-center">
+              <button type="button" onclick="openAdminViewTeacherHoaNhapModal('${safeTk}')"
+                class="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white transition flex items-center justify-center mx-auto"
+                title="Xem chi tiết sổ của giáo viên này">
+                <i class="fa-solid fa-eye text-xs"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
       }
 
-      summaryRows.forEach((r, idx) => {
-        const tr = document.createElement('tr');
-        tr.className = idx % 2 === 0 ? "bg-white hover:bg-indigo-50/20 transition" : "bg-slate-50/70 hover:bg-indigo-50/20 transition";
-
-        const safeTk = (r.teacherTk || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-        tr.innerHTML = `
-          <td class="py-3 px-2 text-center font-bold text-slate-500 border-r border-slate-200">${idx + 1}</td>
-          <td class="py-3 px-3 font-bold text-slate-900 border-r border-slate-200">${escapeHtml(r.teacherName || '--')}</td>
-          <td class="py-3 px-3 text-center text-xs font-bold text-slate-700 border-r border-slate-200">${escapeHtml(r.monGv || '--')}</td>
-          <td class="py-3 px-3 text-center font-black text-indigo-950 border-r border-slate-200">${escapeHtml(r.lop || '--')}</td>
-          <td class="py-3 px-3 font-bold text-slate-800 border-r border-slate-200 leading-snug">${escapeHtml(r.tenHs || '--')}</td>
-          <td class="py-3 px-3 text-slate-700 text-xs border-r border-slate-200 leading-snug">${escapeHtml(r.dangKhuyetTat || '--')}</td>
-          <td class="py-3 px-3 text-center border-r border-slate-200">
-            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(r.mucDo || 'Nhẹ')}</span>
-          </td>
-          <td class="py-3 px-3 text-center font-black text-indigo-950 bg-indigo-50/30 border-r border-slate-200">${formatNumber(r.tietTuan)}</td>
-          <td class="py-3 px-3 text-center text-slate-700 border-r border-slate-200">${formatNumber(r.soTuan)}</td>
-          <td class="py-3 px-3 text-center font-black text-purple-950 bg-purple-100/40 text-sm border-r border-slate-200">${formatNumber(r.tongTiet)}</td>
-          <td class="py-3 px-2 text-center">
-            <button type="button" onclick="openAdminViewTeacherHoaNhapModal('${safeTk}')"
-              class="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white transition flex items-center justify-center mx-auto"
-              title="Xem chi tiết sổ của giáo viên này">
-              <i class="fa-solid fa-eye text-xs"></i>
-            </button>
-          </td>
+      if (tfoot) {
+        tfoot.innerHTML = `
+          <tr class="text-center">
+            <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
+              TỔNG CỘNG TOÀN TRƯỜNG
+            </td>
+            <td id="hn-admin-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">${formatNumber(totalPeriodsPerWeekSchool)}</td>
+            <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">--</td>
+            <td id="hn-admin-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">${formatNumber(totalPeriodsAllSchool)} tiết</td>
+            <td class="py-3 px-2"></td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
-
-      // Footer
-      const footTietTuan = document.getElementById('hn-admin-foot-periods-per-week');
-      if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeekSchool);
-
-      const footTongTiet = document.getElementById('hn-admin-foot-total-periods');
-      if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
+      }
     }
 
     // Render Tab 3: Danh Sách HS Hòa Nhập (Sheet HOA NHAP)
@@ -15875,10 +16195,135 @@ function initialSetup() {
         list = list.filter(t => !isSuperAdmin(t.quyen));
       }
 
-      let summaryRows = [];
       let totalPeriodsPerWeekSchool = 0;
       let totalPeriodsAllSchool = 0;
 
+      const modal = document.getElementById('modal-pdf-hoanhap');
+      const paper = document.getElementById('hoanhap-pdf-paper');
+      const titleEl = document.getElementById('pdf-hn-modal-title');
+      if (!modal || !paper) return;
+
+      const printDate = new Date();
+      const todayDay = String(printDate.getDate()).padStart(2, '0');
+      const todayMonth = String(printDate.getMonth() + 1).padStart(2, '0');
+      const todayYear = printDate.getFullYear();
+
+      // ==========================================
+      // XUẤT PDF THEO LỚP (MẶC ĐỊNH)
+      // ==========================================
+      if (hoaNhapSummaryViewMode === 'by_class') {
+        const classSummaryList = buildHoaNhapClassSummaryData(sem);
+        classSummaryList.forEach(c => {
+          totalPeriodsPerWeekSchool += c.totalPeriodsPerWeek;
+          totalPeriodsAllSchool += c.totalPeriods;
+        });
+
+        if (titleEl) titleEl.textContent = `Báo Cáo Tổng Hợp Dạy Hòa Nhập Theo Lớp - ${semLabel}`;
+
+        let rowsHtml = "";
+        if (classSummaryList.length === 0) {
+          rowsHtml = `<tr><td colspan="10" class="py-4 text-center text-slate-400 italic">Không có dữ liệu lớp học sinh hòa nhập</td></tr>`;
+        } else {
+          classSummaryList.forEach((clsItem, idx) => {
+            const hsNames = clsItem.students.map(s => escapeHtml(s.tenHs || '--')).join('<br>');
+            const hsDobs = clsItem.students.map(s => escapeHtml(s.namSinh || s.ngaySinh || '--')).join('<br>');
+            const hsKts = clsItem.students.map(s => escapeHtml(s.dangKhuyetTat || s.loaiHoaNhap || '--')).join('<br>');
+            const hsLevels = clsItem.students.map(s => escapeHtml(s.mucDo || 'Nhẹ')).join('<br>');
+
+            const teacherCount = clsItem.teachers.length;
+            const teachersText = teacherCount > 0
+              ? clsItem.teachers.map(t => `<b>${escapeHtml(t.tenGv)}</b> (${escapeHtml(t.monDay)}): ${formatNumber(t.tietTuan)}t/t x ${t.soTuan} = ${formatNumber(t.tongTiet)}t`).join('<br>')
+              : '<span class="italic text-slate-400">Chưa kê khai</span>';
+
+            rowsHtml += `
+              <tr class="border-b border-slate-300 text-center text-[10px]">
+                <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${idx + 1}</td>
+                <td class="py-1 px-1 border border-slate-300 font-black text-indigo-950 align-middle bg-slate-50">${escapeHtml(clsItem.rawClass)}</td>
+                <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-900 align-middle leading-tight">${hsNames}</td>
+                <td class="py-1 px-1 border border-slate-300 align-middle leading-tight">${hsDobs}</td>
+                <td class="py-1 px-2 border border-slate-300 text-left text-[9.5px] align-middle leading-tight">${hsKts}</td>
+                <td class="py-1 px-1 border border-slate-300 align-middle leading-tight">${hsLevels}</td>
+                <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${teacherCount} GV</td>
+                <td class="py-1 px-2 border border-slate-300 text-left text-[9.5px] align-middle leading-tight">${teachersText}</td>
+                <td class="py-1 px-1 border border-slate-300 font-bold align-middle">${formatNumber(clsItem.totalPeriodsPerWeek)}</td>
+                <td class="py-1 px-1 border border-slate-300 font-black bg-slate-100 align-middle">${formatNumber(clsItem.totalPeriods)}</td>
+              </tr>
+            `;
+          });
+        }
+
+        paper.innerHTML = `
+          <div class="mb-3">
+            <div class="text-left">
+              <div class="inline-block text-center">
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+                <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
+              </div>
+            </div>
+
+            <div class="text-center mt-2">
+              <h1 class="text-base sm:text-lg font-black uppercase text-slate-900 leading-tight">
+                BẢNG TỔNG HỢP SỐ TIẾT DẠY HỌC SINH HÒA NHẬP THEO LỚP TOÀN TRƯỜNG
+              </h1>
+              <p class="text-xs font-bold text-indigo-800 mt-0.5">${semLabel}</p>
+            </div>
+          </div>
+
+          <table class="w-full border-collapse border border-slate-400 text-center text-[10px] mb-3">
+            <thead>
+              <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
+                <th class="py-1 px-1 border border-slate-300 w-8">STT</th>
+                <th class="py-1 px-1 border border-slate-300 w-12">Lớp</th>
+                <th class="py-1 px-2 border border-slate-300 text-left min-w-[130px]">Học sinh hòa nhập</th>
+                <th class="py-1 px-1 border border-slate-300 w-16">Năm sinh</th>
+                <th class="py-1 px-2 border border-slate-300 text-left min-w-[120px]">Dạng khuyết tật</th>
+                <th class="py-1 px-1 border border-slate-300 w-12">Mức độ</th>
+                <th class="py-1 px-1 border border-slate-300 w-14">Số GV</th>
+                <th class="py-1 px-2 border border-slate-300 text-left min-w-[160px]">Giáo viên & Môn dạy</th>
+                <th class="py-1 px-1 border border-slate-300 w-14">Tiết/tuần</th>
+                <th class="py-1 px-1 border border-slate-300 w-16 bg-slate-200/60 font-black">Tổng tiết</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+            <tfoot>
+              <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400">
+                <td colspan="8" class="py-1.5 px-2 text-center uppercase tracking-wider text-[11px]">
+                  TỔNG CỘNG TOÀN TRƯỜNG (${classSummaryList.length} LỚP HÒA NHẬP)
+                </td>
+                <td class="py-1.5 px-1 border border-slate-300 font-black text-[11px]">${formatNumber(totalPeriodsPerWeekSchool)}</td>
+                <td class="py-1.5 px-1 border border-slate-300 font-black text-[11px] bg-slate-200">${formatNumber(totalPeriodsAllSchool)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="mt-4 pt-1">
+            <div class="grid grid-cols-2 gap-4 text-center mt-3 text-xs">
+              <div>
+                <p class="italic text-[11px] text-slate-600">Ngày ...... tháng ...... năm ${todayYear}</p>
+                <p class="font-bold uppercase text-slate-800 mt-1">Phó hiệu trưởng</p>
+                <p class="italic text-[11px] text-slate-500">Duyệt</p>
+              </div>
+              <div>
+                <p class="italic text-[11px] text-slate-600">Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}</p>
+                <p class="font-bold uppercase text-slate-800 mt-1">Người lập biểu</p>
+                <p class="italic text-[11px] text-slate-500 mb-14">(Ký và ghi rõ họ tên)</p>
+                <p class="font-bold text-slate-900">${escapeHtml(currentUser.tenGv || '')}</p>
+              </div>
+            </div>
+          </div>
+        `;
+
+        modal.classList.remove('hidden');
+        return;
+      }
+
+      // ==========================================
+      // XUẤT PDF THEO GIÁO VIÊN
+      // ==========================================
+      let summaryRows = [];
       list.forEach(t => {
         const stats = getTeacherHoaNhapStats(t);
         const store = stats.store;
@@ -15939,16 +16384,6 @@ function initialSetup() {
         rowsHtml = `<tr><td colspan="10" class="py-4 text-center text-slate-400 italic">Không có dữ liệu tiết dạy hòa nhập trong kỳ này</td></tr>`;
       }
 
-      const printDate = new Date();
-      const todayDay = String(printDate.getDate()).padStart(2, '0');
-      const todayMonth = String(printDate.getMonth() + 1).padStart(2, '0');
-      const todayYear = printDate.getFullYear();
-
-      const modal = document.getElementById('modal-pdf-hoanhap');
-      const paper = document.getElementById('hoanhap-pdf-paper');
-      const titleEl = document.getElementById('pdf-hn-modal-title');
-      if (!modal || !paper) return;
-
       if (titleEl) titleEl.textContent = `Báo Cáo Tổng Hợp Số Tiết Dạy Hòa Nhập Toàn Trường - ${semLabel}`;
 
       paper.innerHTML = `
@@ -15989,10 +16424,12 @@ function initialSetup() {
           </tbody>
           <tfoot>
             <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400">
-              <td colspan="7" class="py-1.5 px-3 text-center uppercase">TỔNG CỘNG TOÀN TRƯỜNG</td>
-              <td class="py-1.5 px-1 border border-slate-300">${formatNumber(totalPeriodsPerWeekSchool)}</td>
+              <td colspan="7" class="py-1.5 px-2 text-center uppercase tracking-wider text-[11px]">
+                TỔNG CỘNG TOÀN TRƯỜNG
+              </td>
+              <td class="py-1.5 px-1 border border-slate-300 font-black text-[11px]">${formatNumber(totalPeriodsPerWeekSchool)}</td>
               <td class="py-1.5 px-1 border border-slate-300 text-slate-400 font-normal italic">--</td>
-              <td class="py-1.5 px-1 border border-slate-300 font-black bg-slate-200 text-xs sm:text-sm">${formatNumber(totalPeriodsAllSchool)}</td>
+              <td class="py-1.5 px-1 border border-slate-300 font-black text-[11px] bg-slate-200">${formatNumber(totalPeriodsAllSchool)}</td>
             </tr>
           </tfoot>
         </table>
@@ -16016,8 +16453,6 @@ function initialSetup() {
 
       modal.classList.remove('hidden');
     }
-
-    // Xuất Excel bảng tổng hợp toàn trường
 
     // Xuất PDF Thống kê danh sách giáo viên dạy hòa nhập toàn trường (Khổ ngang A4)
     function exportHoaNhapTeachersStatusPdf() {
@@ -16279,6 +16714,62 @@ function initialSetup() {
         list = list.filter(t => !isSuperAdmin(t.quyen));
       }
 
+      // ==========================================
+      // XUẤT EXCEL THEO LỚP (MẶC ĐỊNH)
+      // ==========================================
+      if (hoaNhapSummaryViewMode === 'by_class') {
+        const classSummaryList = buildHoaNhapClassSummaryData(sem);
+        const excelData = [
+          ["STT", "Lớp", "Học sinh hòa nhập", "Năm sinh", "Dạng khuyết tật", "Mức độ", "Số GV dạy", "Danh sách giáo viên giảng dạy & môn", "Số tiết/tuần", "Số tuần", "Tổng số tiết dạy"]
+        ];
+
+        let totalTietTuan = 0;
+        let totalTongTiet = 0;
+        const defaultSoTuan = sem === 'hk2' ? 17 : 18;
+
+        classSummaryList.forEach((clsItem, idx) => {
+          totalTietTuan += clsItem.totalPeriodsPerWeek;
+          totalTongTiet += clsItem.totalPeriods;
+
+          const hsNames = clsItem.students.map(s => s.tenHs || '').filter(Boolean).join('\n');
+          const hsDobs = clsItem.students.map(s => s.namSinh || s.ngaySinh || '').filter(Boolean).join('\n');
+          const hsKts = clsItem.students.map(s => s.dangKhuyetTat || s.loaiHoaNhap || '').filter(Boolean).join('\n');
+          const hsLevels = clsItem.students.map(s => s.mucDo || 'Nhẹ').filter(Boolean).join('\n');
+
+          const teachersStr = clsItem.teachers.length > 0
+            ? clsItem.teachers.map(t => `${t.tenGv} (${t.monDay}): ${t.tietTuan} tiết/tuần x ${t.soTuan} tuần = ${t.tongTiet} tiết`).join('\n')
+            : 'Chưa có GV kê khai';
+
+          excelData.push([
+            idx + 1,
+            clsItem.rawClass,
+            hsNames,
+            hsDobs,
+            hsKts,
+            hsLevels,
+            clsItem.teachers.length,
+            teachersStr,
+            clsItem.totalPeriodsPerWeek,
+            defaultSoTuan,
+            clsItem.totalPeriods
+          ]);
+        });
+
+        excelData.push(["", "TỔNG CỘNG TOÀN TRƯỜNG (" + classSummaryList.length + " LỚP HÒA NHẬP)", "", "", "", "", "", "", totalTietTuan, "", totalTongTiet]);
+
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "BaoCaoHoaNhapTheoLop");
+
+        const fileName = `Bao_Cao_Hoa_Nhap_Theo_Lop_${semLabel.replace(/\s+/g, '_')}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        showToast("Đã xuất file Excel báo cáo hòa nhập theo lớp thành công!", "success");
+        return;
+      }
+
+      // ==========================================
+      // XUẤT EXCEL THEO GIÁO VIÊN
+      // ==========================================
       const excelData = [
         ["STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Học và tên học sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"]
       ];
