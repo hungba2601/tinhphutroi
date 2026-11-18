@@ -7064,14 +7064,28 @@ function initialSetup() {
           console.warn("Ping error:", pingErr);
         }
 
-        // ⭐️ ĐỒNG BỘ VÀO SHEET HUB_SERVER TRÊN MÁY CHỦ TRUNG TÂM (CỘT C: KHỐI LỚP)
+        const allClassesCommaStr = [k6Val, k7Val, k8Val, k9Val].filter(Boolean).join(", ");
+
+        // ⭐️ GỬI ĐỒNG BỘ KHỐI LỚP VÀO SHEET DATA CỦA TRƯỜNG QUA URL BACKEND RIÊNG
         try {
-          showToast("Đang đồng bộ thông tin trường và khối lớp vào HUB_SERVER trung tâm...", "info");
+          await callGasBackend({
+            action: "saveClasses",
+            taiKhoan: schoolAdmin,
+            lopDay: allClassesCommaStr
+          }, url);
+        } catch (subErr) {
+          console.warn("Lỗi đồng bộ vào Backend riêng của trường:", subErr);
+        }
+
+        // ⭐️ ĐỒNG BỘ VÀO SHEET HUB_SERVER VÀ SHEET DATA TRÊN MÁY CHỦ TRUNG TÂM
+        try {
+          showToast("Đang đồng bộ thông tin trường và khối lớp vào Sheet DATA & HUB_SERVER...", "info");
           const regRes = await callGasBackend({
             action: "registerHubServer",
             taiKhoan: schoolAdmin,
             tenTruong: schoolName,
             khoiLop: khoiLopStr,
+            lopDay: allClassesCommaStr,
             url: url
           }, MASTER_GOOGLE_APPS_SCRIPT_URL);
 
