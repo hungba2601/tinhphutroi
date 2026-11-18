@@ -701,20 +701,7 @@
               </div>
             </div>
 
-            <!-- Ô NHẬP SỐ TIẾT DẠY THEO QUY ĐỊNH (TIẾT/TUẦN) -->
-            <div class="w-36 flex-1 sm:flex-none">
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1" for="quota-input">
-                <i class="fa-solid fa-scale-balanced text-emerald-600 mr-1"></i> Tiết QĐ / Tuần:
-              </label>
-              <div class="relative">
-                <input type="number" id="quota-input" min="1" max="40" step="0.5" value="19"
-                  title="Nhập số tiết dạy theo quy định trên tuần (chuẩn THCS là 19 tiết/tuần)"
-                  class="w-full pl-3 pr-9 py-2 bg-emerald-50/70 border border-emerald-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-emerald-950 font-black text-xs sm:text-sm text-center"
-                  onchange="handleQuotaChange(this.value)" oninput="handleQuotaChange(this.value)">
-                <span
-                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[11px] pointer-events-none">tiết</span>
-              </div>
-            </div>
+            <input type="hidden" id="quota-input" value="19">
 
 
 
@@ -775,7 +762,7 @@
                 <button type="button" onclick="saveTeacherClassesToSheet()" id="btn-save-classes"
                   class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-1.5">
                   <i id="btn-save-classes-icon" class="fa-solid fa-floppy-disk"></i>
-                  <span id="btn-save-classes-text">Lưu Lớp Dạy (Cột D)</span>
+                  <span id="btn-save-classes-text">Lưu Lớp Dạy</span>
                 </button>
               </div>
 
@@ -5123,7 +5110,7 @@ function initialSetup() {
 
       try {
         const classesStr = getTeacherSelectedClassesString();
-        showToast("Đang lưu danh sách lớp dạy lên Google Sheet (Cột D)...", "info");
+        showToast("Đang lưu danh sách lớp dạy lên Google Sheet...", "info");
 
         const res = await callGasBackend({
           action: "saveClasses",
@@ -5142,7 +5129,7 @@ function initialSetup() {
       } finally {
         if (btn) btn.disabled = false;
         if (icon) icon.className = "fa-solid fa-floppy-disk";
-        if (text) text.textContent = "Lưu Lớp Dạy (Cột D)";
+        if (text) text.textContent = "Lưu Lớp Dạy";
       }
     }
 
