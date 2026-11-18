@@ -366,13 +366,14 @@ function isUsernameMatch(tk1, tk2) {
  * Tự động ánh xạ theo tiêu đề; nếu chưa có cột Ngày sinh sẽ tự động chèn cạnh cột Tên
  */
 function getSheetDataCols(sheetData) {
-  const lastCol = Math.max(5, sheetData.getLastColumn());
+  const lastCol = Math.max(6, sheetData.getLastColumn());
   const header = sheetData.getRange(1, 1, 1, lastCol).getValues()[0];
   let colTk = 0;
   let colTenGv = 1;
   let colNgaySinh = -1;
   let colQuyen = 2;
   let colMatKhau = 3;
+  let colLopDay = -1;
 
   for (let c = 0; c < header.length; c++) {
     const h = String(header[c] || "").trim().toLowerCase();
@@ -381,6 +382,7 @@ function getSheetDataCols(sheetData) {
     else if (h.includes("ngày sinh") || h.includes("ngaysinh") || h.includes("sinh") || h.includes("dob")) colNgaySinh = c;
     else if (h.includes("quyền") || h.includes("quyen") || h.includes("role")) colQuyen = c;
     else if (h.includes("mật khẩu") || h.includes("matkhau") || h.includes("mk") || h.includes("pass")) colMatKhau = c;
+    else if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") colLopDay = c;
   }
 
   // Nếu trong Sheet DATA chưa có cột Ngày sinh -> tự động chèn ngay sau cột Tên
@@ -393,6 +395,7 @@ function getSheetDataCols(sheetData) {
       colNgaySinh = colTenGv + 1;
       if (colQuyen >= colNgaySinh) colQuyen++;
       if (colMatKhau >= colNgaySinh) colMatKhau++;
+      if (colLopDay !== -1 && colLopDay >= colNgaySinh) colLopDay++;
     } catch (e) {
       if (header.length >= 5) {
         colNgaySinh = 2;
@@ -402,7 +405,14 @@ function getSheetDataCols(sheetData) {
     }
   }
 
-  return { colTk, colTenGv, colNgaySinh, colQuyen, colMatKhau };
+  return {
+    colTk: colTk,
+    colTenGv: colTenGv,
+    colNgaySinh: colNgaySinh,
+    colQuyen: colQuyen,
+    colMatKhau: colMatKhau,
+    colLopDay: (typeof colLopDay === 'number' && !isNaN(colLopDay)) ? colLopDay : -1
+  };
 }
 
 /**
@@ -1618,26 +1628,37 @@ function jsonResponse(data) {
  */
 function capNhatCotMoi() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // 0. NÂNG CẤP SHEET DATA: Bổ sung Cột F: LỚP DẠY
+  
+  // 1. Nâng cấp Sheet DATA: Thêm Cột F: LỚP DẠY
   let sheetData = ss.getSheetByName(SHEET_DATA);
   if (sheetData) {
-    const cols = getSheetDataCols(sheetData);
-    const targetCol = (cols.colLopDay !== -1) ? (cols.colLopDay + 1) : Math.max(6, sheetData.getLastColumn() + 1);
+    const lastCol = sheetData.getLastColumn();
+    let lopDayCol = -1;
+    if (lastCol > 0) {
+      const headerRow = sheetData.getRange(1, 1, 1, lastCol).getValues()[0];
+      for (let c = 0; c < headerRow.length; c++) {
+        const h = String(headerRow[c] || "").trim().toLowerCase();
+        if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") {
+          lopDayCol = c + 1; // 1-based column
+          break;
+        }
+      }
+    }
+    const targetCol = (lopDayCol > 0) ? lopDayCol : Math.max(6, lastCol + 1);
     sheetData.getRange(1, targetCol).setValue("Lớp Dạy");
     sheetData.getRange(1, targetCol).setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
     sheetData.setColumnWidth(targetCol, 220);
-    sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
-    Logger.log("✅ Đã tạo Cột F: Lớp Dạy trên Sheet DATA!");
+    const maxRows = Math.max(sheetData.getMaxRows(), sheetData.getLastRow(), 2);
+    sheetData.getRange(1, targetCol, maxRows, 1).setNumberFormat("@");
+    Logger.log("✅ Đã tạo Cột F: Lớp Dạy (cột " + targetCol + ") trên Sheet DATA!");
   }
-  
-  // 1. Nâng cấp Sheet DULIEU: Thêm Cột D: LỚP DẠY
+
+  // 2. Nâng cấp Sheet DULIEU: Thêm Cột D: LỚP DẠY
   let sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
   if (!sheetDuLieu) {
     sheetDuLieu = ss.insertSheet(SHEET_DULIEU);
   }
   
-  // Đảm bảo dòng tiêu đề hàng 1 có đủ 4 cột
   sheetDuLieu.getRange(1, 1).setValue("TK");
   sheetDuLieu.getRange(1, 2).setValue("TÊN GV");
   sheetDuLieu.getRange(1, 3).setValue("DỮ LIỆU GV NHẬP DANG JSON");
@@ -1653,7 +1674,7 @@ function capNhatCotMoi() {
   
   Logger.log("✅ Đã cập nhật Cột D: LỚP DẠY trên Sheet DULIEU!");
 
-  // 2. Tự động kiểm tra và đồng bộ an toàn
+  // 3. Tự động kiểm tra và đồng bộ an toàn
   try {
     syncDuLieuWithData(false);
   } catch (e) {
@@ -1661,7 +1682,7 @@ function capNhatCotMoi() {
   }
 
   Logger.log("🎉 Hoàn tất nâng cấp cấu trúc bảng tính thành công! Toàn bộ dữ liệu giáo viên và kê khai được giữ nguyên 100%.");
-  return "Đã nâng cấp Cột D: LỚP DẠY thành công! Toàn bộ dữ liệu cũ được giữ nguyên.";
+  return "Đã nâng cấp Cột F: Lớp Dạy (Sheet DATA) và Cột D: Lớp Dạy (Sheet DULIEU) thành công! Dữ liệu cũ được giữ nguyên.";
 }
 
 function initialSetup() {
