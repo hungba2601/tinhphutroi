@@ -1365,6 +1365,22 @@ function handleGetAdminSummary(adminTaiKhoan) {
     }
   }
 
+  // Xác định xem người gọi có phải quyền BGH hay không
+  let isCallerBgh = false;
+  if (adminTaiKhoan) {
+    const normAdminTk = normalizeUsername(adminTaiKhoan);
+    for (let k = 1; k < dataUsersRaw.length; k++) {
+      const rRaw = dataUsersRaw[k];
+      const rDisp = dataUsersDisplay[k];
+      const tkK = String(rDisp[cols.colTk] || rRaw[cols.colTk] || "").trim();
+      if (isUsernameMatch(tkK, normAdminTk)) {
+        const callerRole = String(rRaw[cols.colQuyen] || "gv").trim().toLowerCase();
+        isCallerBgh = isRoleBgh(callerRole);
+        break;
+      }
+    }
+  }
+
   const list = [];
   for (let i = 1; i < dataUsersRaw.length; i++) {
     const rowRaw = dataUsersRaw[i];
@@ -1375,6 +1391,11 @@ function handleGetAdminSummary(adminTaiKhoan) {
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
     const ngaySinh = formatBirthDate(cols.colNgaySinh !== -1 ? (rowDisp[cols.colNgaySinh] || rowRaw[cols.colNgaySinh]) : "");
     const quyen = String(rowRaw[cols.colQuyen] || "gv").trim();
+
+    // Tài khoản quyền BGH sẽ KHÔNG nhìn thấy các tài khoản Admin
+    if (isCallerBgh && isSuperAdmin(quyen)) {
+      continue;
+    }
     const matKhau = String(rowRaw[cols.colMatKhau] !== undefined ? rowRaw[cols.colMatKhau] : "").trim();
 
     const cleanNormTk = normTk.replace(/^'+/, "").toLowerCase();

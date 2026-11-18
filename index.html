@@ -6001,6 +6001,11 @@ function initialSetup() {
             return t;
           });
 
+          // Tài khoản BGH sẽ không nhìn thấy các tài khoản Admin
+          if (isRoleBgh(currentUser.quyen)) {
+            adminTeachersList = adminTeachersList.filter(t => !isSuperAdmin(t.quyen));
+          }
+
           // Luôn đồng bộ lại thông tin của tài khoản đang đăng nhập (currentUser) từ Sheet DATA
           if (currentUser && currentUser.taiKhoan) {
             const me = adminTeachersList.find(t => isUsernameEqual(t.taiKhoan, currentUser.taiKhoan));
@@ -6229,6 +6234,14 @@ function initialSetup() {
     /* =======================================================
        F. RENDER TAB 1: DANH SÁCH GIÁO VIÊN (QUẢN LÝ)
        ======================================================= */
+    function getEffectiveAdminTeachersList() {
+      if (!Array.isArray(adminTeachersList)) return [];
+      if (isRoleBgh(currentUser.quyen)) {
+        return adminTeachersList.filter(t => !isSuperAdmin(t.quyen));
+      }
+      return adminTeachersList;
+    }
+
     function renderAdminTeachersTable() {
       const tbody = document.getElementById('admin-teachers-tbody');
 
@@ -6249,14 +6262,16 @@ function initialSetup() {
 
       tbody.innerHTML = "";
 
+      const activeList = getEffectiveAdminTeachersList();
+
       let totalHk1Done = 0, totalHk2Done = 0;
-      adminTeachersList.forEach(t => {
+      activeList.forEach(t => {
         const s = calculateTeacherOvertimeTotals(t.dataJson);
         if (s.hasDeclaredHk1) totalHk1Done++;
         if (s.hasDeclaredHk2) totalHk2Done++;
       });
 
-      const filtered = adminTeachersList.filter(t => {
+      const filtered = activeList.filter(t => {
         const stats = calculateTeacherOvertimeTotals(t.dataJson);
         const nameMatch = (t.tenGv || "").toLowerCase().includes(searchVal);
         const normTk = normalizeUsername(t.taiKhoan).toLowerCase();
@@ -6284,9 +6299,9 @@ function initialSetup() {
         return matchText && matchSubject && matchStatus;
       });
 
-      if (badgeTotal) badgeTotal.textContent = adminTeachersList.length;
+      if (badgeTotal) badgeTotal.textContent = activeList.length;
       if (countLabel) {
-        countLabel.innerHTML = `Hiển thị <b>${filtered.length}</b> / ${adminTeachersList.length} giáo viên &bull; <span class="text-emerald-700 font-bold">HK1: ${totalHk1Done}/${adminTeachersList.length}</span> &bull; <span class="text-teal-700 font-bold">HK2: ${totalHk2Done}/${adminTeachersList.length} đã kê khai</span>`;
+        countLabel.innerHTML = `Hiển thị <b>${filtered.length}</b> / ${activeList.length} giáo viên &bull; <span class="text-emerald-700 font-bold">HK1: ${totalHk1Done}/${activeList.length}</span> &bull; <span class="text-teal-700 font-bold">HK2: ${totalHk2Done}/${activeList.length} đã kê khai</span>`;
       }
 
       // Cập nhật nhãn nút Xuất PDF & Excel theo đúng lựa chọn lọc của Admin
@@ -7389,7 +7404,8 @@ function initialSetup() {
        (Hỗ trợ kiểm soát GV đã kê khai / chưa kê khai HK1 & HK2)
        ======================================================= */
     function exportTeachersStatusExcel() {
-      if (!adminTeachersList || adminTeachersList.length === 0) {
+      const activeList = getEffectiveAdminTeachersList();
+      if (!activeList || activeList.length === 0) {
         showToast("Chưa có danh sách giáo viên để xuất Excel!", "warning");
         return;
       }
@@ -7401,20 +7417,20 @@ function initialSetup() {
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
       const fileTimestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
 
-      const totalGv = adminTeachersList.length;
-      const hk1Done = adminTeachersList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk1).length;
+      const totalGv = activeList.length;
+      const hk1Done = activeList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk1).length;
       const hk1None = totalGv - hk1Done;
       const hk1Pct = ((hk1Done / totalGv) * 100).toFixed(1);
 
-      const hk2Done = adminTeachersList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk2).length;
+      const hk2Done = activeList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk2).length;
       const hk2None = totalGv - hk2Done;
       const hk2Pct = ((hk2Done / totalGv) * 100).toFixed(1);
 
-      const bothDone = adminTeachersList.filter(t => {
+      const bothDone = activeList.filter(t => {
         const s = calculateTeacherOvertimeTotals(t.dataJson);
         return s.hasDeclaredHk1 && s.hasDeclaredHk2;
       }).length;
-      const bothNone = adminTeachersList.filter(t => {
+      const bothNone = activeList.filter(t => {
         const s = calculateTeacherOvertimeTotals(t.dataJson);
         return !s.hasDeclaredHk1 && !s.hasDeclaredHk2;
       }).length;
@@ -7423,11 +7439,11 @@ function initialSetup() {
       const search = (document.getElementById('admin-search-teachers')?.value || "").trim().toLowerCase();
       const filterSubject = document.getElementById('admin-filter-subject')?.value || "";
       const filterStatus = document.getElementById('admin-filter-status')?.value || "";
-      let listToExport = adminTeachersList;
+      let listToExport = activeList;
       let filterDesc = "Toàn bộ giáo viên nhà trường";
 
       if (search || filterSubject || filterStatus) {
-        listToExport = adminTeachersList.filter(t => {
+        listToExport = activeList.filter(t => {
           const stats = calculateTeacherOvertimeTotals(t.dataJson);
           const displayTk = normalizeUsername(t.taiKhoan).toLowerCase();
           const rawTk = (t.taiKhoan || "").toLowerCase();
@@ -7758,7 +7774,8 @@ function initialSetup() {
     let currentTeachersStatusPdfFileName = "";
 
     function previewTeachersStatusPdf() {
-      if (!adminTeachersList || adminTeachersList.length === 0) {
+      const activeList = getEffectiveAdminTeachersList();
+      if (!activeList || activeList.length === 0) {
         showToast("Chưa có danh sách giáo viên để xuất PDF!", "warning");
         return;
       }
@@ -7770,20 +7787,20 @@ function initialSetup() {
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const dateSlug = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
 
-      const totalGv = adminTeachersList.length;
-      const hk1Done = adminTeachersList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk1).length;
+      const totalGv = activeList.length;
+      const hk1Done = activeList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk1).length;
       const hk1None = totalGv - hk1Done;
       const hk1Pct = ((hk1Done / totalGv) * 100).toFixed(1);
 
-      const hk2Done = adminTeachersList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk2).length;
+      const hk2Done = activeList.filter(t => calculateTeacherOvertimeTotals(t.dataJson).hasDeclaredHk2).length;
       const hk2None = totalGv - hk2Done;
       const hk2Pct = ((hk2Done / totalGv) * 100).toFixed(1);
 
-      const bothDone = adminTeachersList.filter(t => {
+      const bothDone = activeList.filter(t => {
         const s = calculateTeacherOvertimeTotals(t.dataJson);
         return s.hasDeclaredHk1 && s.hasDeclaredHk2;
       }).length;
-      const bothNone = adminTeachersList.filter(t => {
+      const bothNone = activeList.filter(t => {
         const s = calculateTeacherOvertimeTotals(t.dataJson);
         return !s.hasDeclaredHk1 && !s.hasDeclaredHk2;
       }).length;
@@ -7793,7 +7810,7 @@ function initialSetup() {
       const filterSubject = document.getElementById('admin-filter-subject')?.value || "";
       const filterStatus = document.getElementById('admin-filter-status')?.value || "";
 
-      const listToExport = adminTeachersList.filter(t => {
+      const listToExport = activeList.filter(t => {
         const stats = calculateTeacherOvertimeTotals(t.dataJson);
         const nameMatch = (t.tenGv || "").toLowerCase().includes(searchVal);
         const normTk = normalizeUsername(t.taiKhoan).toLowerCase();
@@ -9000,11 +9017,12 @@ function initialSetup() {
     }
 
     function updateAdminSummaryFilterButtons() {
-      let countAll = adminTeachersList.length;
+      const activeList = getEffectiveAdminTeachersList();
+      let countAll = activeList.length;
       let countOver = 0;
       let countNoOver = 0;
 
-      adminTeachersList.forEach(t => {
+      activeList.forEach(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
         if (ov > 0) countOver++;
         else countNoOver++;
@@ -9089,8 +9107,9 @@ function initialSetup() {
 
       updateAdminSummaryFilterButtons();
 
-      let totalTeachers = adminTeachersList.length;
-      let filteredTeachers = adminTeachersList.filter(t => {
+      const activeList = getEffectiveAdminTeachersList();
+      let totalTeachers = activeList.length;
+      let filteredTeachers = activeList.filter(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
         if (adminSummaryOvertimeFilter === 'overtime') return ov > 0;
         if (adminSummaryOvertimeFilter === 'no_overtime') return ov <= 0;
