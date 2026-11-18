@@ -761,6 +761,43 @@
 
         <!-- Bảng danh sách giáo viên -->
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+          <!-- Thanh tiêu đề bảng & 3 nút quản trị: Khóa kê khai, Xuất PDF, Xuất Excel -->
+          <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white">
+            <div>
+              <h3 class="font-black text-slate-800 text-sm sm:text-base flex items-center gap-2">
+                <i class="fa-solid fa-users-gear text-indigo-600"></i>
+                <span>Danh Sách Giáo Viên Từ Google Sheet (Sheet DATA & DULIEU)</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5" id="hn-admin-teachers-stats-info">
+                Đang tải dữ liệu giáo viên...
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Nút 1: Khóa Kê Khai Toàn Trường -->
+              <button type="button" onclick="toggleGlobalDeclarationLock()" id="btn-hn-global-declaration-lock"
+                title="Khóa hoặc mở khóa quyền kê khai và lưu số liệu cho toàn bộ giáo viên trong trường"
+                class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-rose-600/20 transition flex items-center gap-2">
+                <i id="btn-hn-global-lock-icon" class="fa-solid fa-lock text-sm"></i>
+                <span id="btn-hn-global-lock-text">Khóa Kê Khai Toàn Trường</span>
+              </button>
+
+              <!-- Nút 2: Xuất PDF Thống Kê -->
+              <button type="button" onclick="exportHoaNhapTeachersStatusPdf()" id="btn-hn-export-teachers-pdf"
+                class="px-3.5 py-2 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-rose-600/20 transition flex items-center gap-2">
+                <i class="fa-solid fa-file-pdf text-rose-200 text-sm"></i>
+                <span>Xuất PDF Thống Kê</span>
+              </button>
+
+              <!-- Nút 3: Xuất Excel Thống Kê -->
+              <button type="button" onclick="exportHoaNhapTeachersStatusExcel()" id="btn-hn-export-teachers-excel"
+                class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-emerald-700/20 transition flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-emerald-200 text-sm"></i>
+                <span>Xuất Excel Thống Kê</span>
+              </button>
+            </div>
+          </div>
+
           <div class="overflow-x-auto">
             <table class="w-full border-collapse text-left text-xs sm:text-sm">
               <thead>
@@ -8167,6 +8204,24 @@ function initialSetup() {
         }
       }
 
+      // Đồng bộ nút khóa của Phân hệ 2
+      const btnHN = document.getElementById('btn-hn-global-declaration-lock');
+      const iconHN = document.getElementById('btn-hn-global-lock-icon');
+      const textHN = document.getElementById('btn-hn-global-lock-text');
+      if (btnHN && iconHN && textHN) {
+        if (isSystemLocked) {
+          btnHN.className = "px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition flex items-center gap-2";
+          iconHN.className = "fa-solid fa-lock-open text-sm";
+          textHN.textContent = "Mở Khóa Kê Khai Toàn Trường";
+          btnHN.title = "Đang KHÓA kê khai toàn trường. Nhấp để MỞ KHÓA cho toàn thể giáo viên tiếp tục kê khai.";
+        } else {
+          btnHN.className = "px-3.5 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-rose-600/20 transition flex items-center gap-2";
+          iconHN.className = "fa-solid fa-lock text-sm";
+          textHN.textContent = "Khóa Kê Khai Toàn Trường";
+          btnHN.title = "Đang MỞ kê khai. Nhấp để KHÓA toàn bộ giáo viên không cho chỉnh sửa số liệu.";
+        }
+      }
+
       if (banner) {
         if (isSystemLocked) {
           banner.classList.remove('hidden');
@@ -15358,6 +15413,15 @@ function initialSetup() {
       const badgeCount = document.getElementById('hn-badge-admin-teachers-count');
       if (badgeCount) badgeCount.textContent = (adminTeachersList || []).length;
 
+      // Cập nhật dòng thông tin thống kê trên tiêu đề bảng
+      const statsInfoEl = document.getElementById('hn-admin-teachers-stats-info');
+      if (statsInfoEl) {
+        const totalGv = (adminTeachersList || []).length;
+        const hnGv = (adminTeachersList || []).filter(t => getTeacherHoaNhapStats(t).hasHnClasses).length;
+        const declaredGv = (adminTeachersList || []).filter(t => getTeacherHoaNhapStats(t).isDeclared).length;
+        statsInfoEl.textContent = `Hiển thị ${list.length}/${totalGv} giáo viên • ${hnGv} GV có lớp hòa nhập • ${declaredGv} GV đã kê khai`;
+      }
+
       if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-semibold italic">Không tìm thấy giáo viên phù hợp</td></tr>`;
         return;
@@ -15890,6 +15954,253 @@ function initialSetup() {
     }
 
     // Xuất Excel bảng tổng hợp toàn trường
+
+    // Xuất PDF Thống kê danh sách giáo viên dạy hòa nhập toàn trường (Khổ ngang A4)
+    function exportHoaNhapTeachersStatusPdf() {
+      let list = adminTeachersList || [];
+      if (isRoleBgh(currentUser.quyen)) {
+        list = list.filter(t => !isSuperAdmin(t.quyen));
+      }
+
+      if (hoaNhapAdminSearchQuery) {
+        list = list.filter(t => {
+          const name = (t.tenGv || "").toLowerCase();
+          const tk = (t.taiKhoan || "").toLowerCase();
+          const mon = (t.monGv || t.subject || "").toLowerCase();
+          const lop = (t.lopDay || "").toLowerCase();
+          return name.includes(hoaNhapAdminSearchQuery) || tk.includes(hoaNhapAdminSearchQuery) || mon.includes(hoaNhapAdminSearchQuery) || lop.includes(hoaNhapAdminSearchQuery);
+        });
+      }
+      if (hoaNhapAdminStatusFilter === 'has_hn') {
+        list = list.filter(t => getTeacherHoaNhapStats(t).hasHnClasses);
+      } else if (hoaNhapAdminStatusFilter === 'declared') {
+        list = list.filter(t => getTeacherHoaNhapStats(t).isDeclared);
+      } else if (hoaNhapAdminStatusFilter === 'not_declared') {
+        list = list.filter(t => !getTeacherHoaNhapStats(t).isDeclared);
+      }
+
+      if (list.length === 0) {
+        showToast("Không có dữ liệu giáo viên để xuất PDF!", "warning");
+        return;
+      }
+
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      const totalGv = list.length;
+      const hnGvCount = list.filter(t => getTeacherHoaNhapStats(t).hasHnClasses).length;
+      const declaredCount = list.filter(t => getTeacherHoaNhapStats(t).isDeclared).length;
+
+      let rowsHtml = "";
+      list.forEach((t, idx) => {
+        const stats = getTeacherHoaNhapStats(t);
+        const tClasses = parseTeacherLopDay(t.lopDay || '');
+        const displayClasses = formatTeacherClassesSummary(tClasses) || tClasses.join(", ") || "--";
+        const hnClassesText = stats.hnClassesList.join(", ") || "--";
+        const statusText = stats.isDeclared ? "Đã kê khai" : "Chưa kê khai";
+
+        rowsHtml += `
+          <tr class="border-b border-slate-300 text-center">
+            <td class="py-1 px-1 border border-slate-300 font-bold">${idx + 1}</td>
+            <td class="py-1 px-1.5 border border-slate-300 text-left font-mono text-[10px]">${escapeHtml(t.taiKhoan || '--')}</td>
+            <td class="py-1 px-2 border border-slate-300 text-left font-bold text-slate-800">${escapeHtml(t.tenGv || '--')}</td>
+            <td class="py-1 px-1 border border-slate-300">${escapeHtml(t.monGv || t.subject || 'Tin học')}</td>
+            <td class="py-1 px-1.5 border border-slate-300 text-left text-[9.5px]">${escapeHtml(displayClasses)}</td>
+            <td class="py-1 px-1.5 border border-slate-300 text-center text-[9.5px] font-bold text-indigo-900">${escapeHtml(hnClassesText)}</td>
+            <td class="py-1 px-1 border border-slate-300 font-bold">${stats.hnClassesList.length || 0}</td>
+            <td class="py-1 px-1 border border-slate-300 ${stats.isDeclared ? 'font-bold text-emerald-800' : 'text-slate-400'}">${statusText}</td>
+            <td class="py-1 px-1 border border-slate-300 font-bold text-slate-800">${stats.hk1Total > 0 ? formatNumber(stats.hk1Total) : '--'}</td>
+            <td class="py-1 px-1 border border-slate-300 font-bold text-slate-800">${stats.hk2Total > 0 ? formatNumber(stats.hk2Total) : '--'}</td>
+            <td class="py-1 px-1 border border-slate-300 font-black text-purple-950 bg-purple-50/50">${stats.yearTotal > 0 ? formatNumber(stats.yearTotal) : '--'}</td>
+          </tr>
+        `;
+      });
+
+      const pdfContainer = document.createElement('div');
+      pdfContainer.className = "bg-white p-6 text-slate-900 text-xs";
+      pdfContainer.style.width = "100%";
+      pdfContainer.innerHTML = `
+        <div class="mb-3">
+          <div class="text-left inline-block text-center">
+            <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
+            <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+            <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
+          </div>
+          <div class="text-center mt-2">
+            <h1 class="text-base font-black uppercase text-slate-900 leading-tight">
+              BÁO CÁO THỐNG KÊ TÌNH HÌNH KÊ KHAI TIẾT DẠY HÒA NHẬP
+            </h1>
+            <p class="text-xs font-bold text-indigo-800 mt-0.5">
+              Danh Sách Toàn Trường • Ngày lập: ${dateStr}
+            </p>
+            <p class="text-[11px] text-slate-500 mt-0.5">
+              Tổng số giáo viên: <strong>${totalGv}</strong> | GV có lớp hòa nhập: <strong>${hnGvCount}</strong> | Đã kê khai: <strong>${declaredCount}/${totalGv}</strong>
+            </p>
+          </div>
+        </div>
+
+        <table class="w-full border-collapse border border-slate-400 text-center text-[10px] mb-3" style="table-layout: fixed; width: 100%;">
+          <thead>
+            <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
+              <th style="width: 4%;" class="py-1.5 px-0.5 border border-slate-300">STT</th>
+              <th style="width: 11%;" class="py-1.5 px-1 border border-slate-300 text-left">Tài khoản</th>
+              <th style="width: 18%;" class="py-1.5 px-1.5 border border-slate-300 text-left">Tên Giáo Viên</th>
+              <th style="width: 8%;" class="py-1.5 px-0.5 border border-slate-300">Môn dạy</th>
+              <th style="width: 16%;" class="py-1.5 px-1 border border-slate-300 text-left">Lớp dạy</th>
+              <th style="width: 14%;" class="py-1.5 px-1 border border-slate-300">Lớp có HS HN</th>
+              <th style="width: 6%;" class="py-1.5 px-0.5 border border-slate-300">Số lớp</th>
+              <th style="width: 9%;" class="py-1.5 px-0.5 border border-slate-300">Trạng thái</th>
+              <th style="width: 5%;" class="py-1.5 px-0.5 border border-slate-300">HK1</th>
+              <th style="width: 5%;" class="py-1.5 px-0.5 border border-slate-300">HK2</th>
+              <th style="width: 6%;" class="py-1.5 px-0.5 border border-slate-300 bg-slate-200/70 font-black">Cả năm</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="grid grid-cols-2 gap-4 text-center mt-4 text-xs">
+          <div>
+            <p class="italic text-[11px] text-slate-600">Ngày ...... tháng ...... năm ${now.getFullYear()}</p>
+            <p class="font-bold uppercase text-slate-800 mt-1">Người lập biểu</p>
+            <p class="italic text-[11px] text-slate-500 mb-12">(Ký và ghi rõ họ tên)</p>
+            <p class="font-bold text-slate-900">${escapeHtml(currentUser.tenGv || '')}</p>
+          </div>
+          <div>
+            <p class="italic text-[11px] text-slate-600">Ngày ...... tháng ...... năm ${now.getFullYear()}</p>
+            <p class="font-bold uppercase text-slate-800 mt-1">Ban Giám Hiệu</p>
+            <p class="italic text-[11px] text-slate-500 mb-12">(Duyệt)</p>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(pdfContainer);
+
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: `Thong_Ke_Giao_Vien_Hoa_Nhap_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      showToast("Đang tạo tệp PDF thống kê...", "info");
+      if (typeof html2pdf !== 'undefined') {
+        html2pdf().set(opt).from(pdfContainer).save().then(() => {
+          document.body.removeChild(pdfContainer);
+          showToast("Đã xuất file PDF thống kê thành công!", "success");
+        }).catch(err => {
+          document.body.removeChild(pdfContainer);
+          showToast("Lỗi xuất PDF: " + err.message, "error");
+        });
+      } else {
+        window.print();
+        document.body.removeChild(pdfContainer);
+      }
+    }
+
+    // Xuất Excel Thống kê danh sách giáo viên dạy hòa nhập toàn trường
+    function exportHoaNhapTeachersStatusExcel() {
+      let list = adminTeachersList || [];
+      if (isRoleBgh(currentUser.quyen)) {
+        list = list.filter(t => !isSuperAdmin(t.quyen));
+      }
+
+      if (hoaNhapAdminSearchQuery) {
+        list = list.filter(t => {
+          const name = (t.tenGv || "").toLowerCase();
+          const tk = (t.taiKhoan || "").toLowerCase();
+          const mon = (t.monGv || t.subject || "").toLowerCase();
+          const lop = (t.lopDay || "").toLowerCase();
+          return name.includes(hoaNhapAdminSearchQuery) || tk.includes(hoaNhapAdminSearchQuery) || mon.includes(hoaNhapAdminSearchQuery) || lop.includes(hoaNhapAdminSearchQuery);
+        });
+      }
+      if (hoaNhapAdminStatusFilter === 'has_hn') {
+        list = list.filter(t => getTeacherHoaNhapStats(t).hasHnClasses);
+      } else if (hoaNhapAdminStatusFilter === 'declared') {
+        list = list.filter(t => getTeacherHoaNhapStats(t).isDeclared);
+      } else if (hoaNhapAdminStatusFilter === 'not_declared') {
+        list = list.filter(t => !getTeacherHoaNhapStats(t).isDeclared);
+      }
+
+      if (list.length === 0) {
+        showToast("Không có dữ liệu giáo viên để xuất Excel!", "warning");
+        return;
+      }
+
+      if (typeof XLSX === 'undefined') {
+        showToast("Thư viện Excel chưa được nạp!", "error");
+        return;
+      }
+
+      showToast("Đang xuất file Excel thống kê giáo viên dạy hòa nhập...", "info");
+
+      const rows = [];
+      rows.push(["ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN - TRƯỜNG THCS AN NHƠN"]);
+      rows.push(["BẢNG THỐNG KÊ TÌNH HÌNH KÊ KHAI TIẾT DẠY HỌC SINH HÒA NHẬP"]);
+      rows.push([`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')} | Người lập: ${currentUser.tenGv || ''}`]);
+      rows.push([]); // dòng trống
+      rows.push([
+        "STT",
+        "Tài Khoản",
+        "Họ Và Tên Giáo Viên",
+        "Môn Giảng Dạy",
+        "Lớp Giảng Dạy",
+        "Lớp Có HS Hòa Nhập",
+        "Số Lớp Hòa Nhập",
+        "Trạng Thái",
+        "Số Tiết HK1",
+        "Số Tiết HK2",
+        "Tổng Tiết Cả Năm"
+      ]);
+
+      list.forEach((t, idx) => {
+        const stats = getTeacherHoaNhapStats(t);
+        const tClasses = parseTeacherLopDay(t.lopDay || '');
+        const displayClasses = formatTeacherClassesSummary(tClasses) || tClasses.join(", ") || "--";
+        const hnClassesText = stats.hnClassesList.join(", ") || "--";
+
+        rows.push([
+          idx + 1,
+          t.taiKhoan || "",
+          t.tenGv || "",
+          t.monGv || t.subject || "Tin học",
+          displayClasses,
+          hnClassesText,
+          stats.hnClassesList.length || 0,
+          stats.isDeclared ? "Đã kê khai" : "Chưa kê khai",
+          stats.hk1Total || 0,
+          stats.hk2Total || 0,
+          stats.yearTotal || 0
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Auto width columns
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 14 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "THONG_KE_HOA_NHAP");
+
+      const now = new Date();
+      const fileDate = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+      XLSX.writeFile(wb, `Thong_Ke_Giao_Vien_Hoa_Nhap_THCS_An_Nhon_${fileDate}.xlsx`);
+      showToast("Đã tải xuống file Excel thống kê thành công!", "success");
+    }
+
     function exportHoaNhapAdminExcel() {
       if (typeof XLSX === 'undefined') {
         showToast("Thư viện SheetJS (xlsx) chưa sẵn sàng để xuất Excel!", "warning");
