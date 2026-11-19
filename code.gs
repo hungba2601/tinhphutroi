@@ -334,7 +334,12 @@ function formatBirthDate(val) {
     const y = val.getFullYear();
     return d + "/" + m + "/" + y;
   }
-  return String(val).trim();
+  const s = String(val).trim();
+  const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (isoMatch) {
+    return ("0" + isoMatch[3]).slice(-2) + "/" + ("0" + isoMatch[2]).slice(-2) + "/" + isoMatch[1];
+  }
+  return s;
 }
 
 /**
@@ -680,25 +685,33 @@ function handleGetHoaNhapStudents() {
   for (let i = 0; i < vals.length; i++) {
     const tenHs = String(disp[i][colTen] || vals[i][colTen] || "").trim();
     if (!tenHs) continue;
-    const rawBirth = disp[i][colNgaySinh] || vals[i][colNgaySinh];
+    const vDate = vals[i][colNgaySinh];
+    const dStr = String(disp[i][colNgaySinh] || "").trim();
+    let fullNgaySinh = "";
+    if (vDate instanceof Date) {
+      fullNgaySinh = formatBirthDate(vDate);
+    } else if (dStr) {
+      fullNgaySinh = formatBirthDate(dStr);
+    } else if (vDate) {
+      fullNgaySinh = formatBirthDate(vDate);
+    }
     let namSinh = "";
-    if (rawBirth) {
-      const birthStr = formatBirthDate(rawBirth);
-      const yearMatch = birthStr.match(/\d{4}/);
-      namSinh = yearMatch ? yearMatch[0] : birthStr;
+    if (fullNgaySinh) {
+      const yearMatch = fullNgaySinh.match(/\d{4}/);
+      namSinh = yearMatch ? yearMatch[0] : fullNgaySinh;
     }
     const mucDoVal = (colMucDo >= 0 && colMucDo < lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
     const thoiGianVal = (colThoiGian >= 0 && colThoiGian < lastCol) ? String(disp[i][colThoiGian] || vals[i][colThoiGian] || "").trim() : "";
 
     list.push({
       tenHs: tenHs,
-      ngaySinh: formatBirthDate(rawBirth),
-      namSinh: namSinh || String(rawBirth || "").trim(),
+      ngaySinh: fullNgaySinh || namSinh,
+      namSinh: namSinh || fullNgaySinh,
       lop: String(disp[i][colLop] || vals[i][colLop] || "").trim(),
-      loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
-      dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
+      loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "Khuyết tật").trim(),
+      dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "Khuyết tật").trim(),
       mucDo: mucDoVal || "Nhẹ",
-      thoiGian: thoiGianVal
+      thoiGian: thoiGianVal || ""
     });
   }
   return jsonResponse({ success: true, list: list });

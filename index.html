@@ -1102,8 +1102,8 @@
                   <th class="py-3 px-3 text-left min-w-[150px] border-r border-slate-200">Tên Giáo Viên</th>
                   <th class="py-3 px-3 text-center w-24 border-r border-slate-200">Môn Dạy</th>
                   <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Lớp Dạy</th>
-                  <th class="py-3 px-3 text-left min-w-[180px] border-r border-slate-200">Danh Sách Học Sinh Hòa Nhập
-                  </th>
+                  <th class="py-3 px-3 text-left min-w-[170px] border-r border-slate-200">Họ và tên học sinh</th>
+                  <th class="py-3 px-3 text-center w-32 border-r border-slate-200">Ngày sinh</th>
                   <th class="py-3 px-3 text-left min-w-[160px] border-r border-slate-200">Dạng Khuyết Tật</th>
                   <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Mức Độ</th>
                   <th
@@ -1115,7 +1115,7 @@
                   <th
                     class="py-3 px-3 text-center w-28 bg-purple-100/50 text-purple-950 font-black border-r border-slate-200">
                     Tổng tiết dạy</th>
-                  <th class="py-3 px-2 w-20 text-center">Thao tác</th>
+                  <th class="py-3 px-2 w-16 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="hn-admin-summary-tbody" class="divide-y divide-slate-100">
@@ -1123,7 +1123,7 @@
               </tbody>
               <tfoot id="hn-admin-summary-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
                 <tr class="text-center">
-                  <td colspan="7"
+                  <td colspan="8"
                     class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
                     TỔNG CỘNG TOÀN TRƯỜNG
                   </td>
@@ -1170,7 +1170,7 @@
                   <th class="py-3 px-3 w-12 text-center">STT</th>
                   <th class="py-3 px-4 text-left min-w-[200px]">Họ và tên học sinh</th>
                   <th class="py-3 px-3 text-center w-24">Lớp</th>
-                  <th class="py-3 px-3 text-center w-28">Năm sinh</th>
+                  <th class="py-3 px-3 text-center w-36">Ngày tháng năm sinh</th>
                   <th class="py-3 px-4 text-left min-w-[220px]">Dạng khuyết tật</th>
                   <th class="py-3 px-3 text-center w-28">Mức độ</th>
                   <th class="py-3 px-3 text-center w-36">Thời gian (Tuần)</th>
@@ -2760,7 +2760,12 @@ function formatBirthDate(val) {
     const y = val.getFullYear();
     return d + "/" + m + "/" + y;
   }
-  return String(val).trim();
+  const s = String(val).trim();
+  const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (isoMatch) {
+    return ("0" + isoMatch[3]).slice(-2) + "/" + ("0" + isoMatch[2]).slice(-2) + "/" + isoMatch[1];
+  }
+  return s;
 }
 
 /**
@@ -3106,25 +3111,33 @@ function handleGetHoaNhapStudents() {
   for (let i = 0; i &lt; vals.length; i++) {
     const tenHs = String(disp[i][colTen] || vals[i][colTen] || "").trim();
     if (!tenHs) continue;
-    const rawBirth = disp[i][colNgaySinh] || vals[i][colNgaySinh];
+    const vDate = vals[i][colNgaySinh];
+    const dStr = String(disp[i][colNgaySinh] || "").trim();
+    let fullNgaySinh = "";
+    if (vDate instanceof Date) {
+      fullNgaySinh = formatBirthDate(vDate);
+    } else if (dStr) {
+      fullNgaySinh = formatBirthDate(dStr);
+    } else if (vDate) {
+      fullNgaySinh = formatBirthDate(vDate);
+    }
     let namSinh = "";
-    if (rawBirth) {
-      const birthStr = formatBirthDate(rawBirth);
-      const yearMatch = birthStr.match(/\d{4}/);
-      namSinh = yearMatch ? yearMatch[0] : birthStr;
+    if (fullNgaySinh) {
+      const yearMatch = fullNgaySinh.match(/\d{4}/);
+      namSinh = yearMatch ? yearMatch[0] : fullNgaySinh;
     }
     const mucDoVal = (colMucDo &gt;= 0 &amp;&amp; colMucDo &lt; lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
     const thoiGianVal = (colThoiGian &gt;= 0 &amp;&amp; colThoiGian &lt; lastCol) ? String(disp[i][colThoiGian] || vals[i][colThoiGian] || "").trim() : "";
 
     list.push({
       tenHs: tenHs,
-      ngaySinh: formatBirthDate(rawBirth),
-      namSinh: namSinh || String(rawBirth || "").trim(),
+      ngaySinh: fullNgaySinh || namSinh,
+      namSinh: namSinh || fullNgaySinh,
       lop: String(disp[i][colLop] || vals[i][colLop] || "").trim(),
-      loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
-      dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
+      loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "Khuyết tật").trim(),
+      dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "Khuyết tật").trim(),
       mucDo: mucDoVal || "Nhẹ",
-      thoiGian: thoiGianVal
+      thoiGian: thoiGianVal || ""
     });
   }
   return jsonResponse({ success: true, list: list });
@@ -15613,7 +15626,7 @@ function initialSetup() {
       if (r.students && Array.isArray(r.students) && r.students.length > 0) {
         return {
           names: r.students.map(s => s.tenHs || '--'),
-          births: r.students.map(s => s.namSinh || '--'),
+          births: r.students.map(s => s.ngaySinh || s.namSinh || '--'),
           disabilities: r.students.map(s => s.dangKhuyetTat || '--'),
           levels: r.students.map(s => s.mucDo || 'Nhẹ'),
           times: r.students.map(s => s.thoiGian || '')
@@ -17459,8 +17472,9 @@ function initialSetup() {
             <th class="py-3 px-3 text-left min-w-[160px] border-r border-slate-200">Tên Giáo Viên</th>
             <th class="py-3 px-3 text-center w-24 border-r border-slate-200">Môn Dạy</th>
             <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Lớp Dạy</th>
-            <th class="py-3 px-3 text-left min-w-[190px] border-r border-slate-200">Danh Sách Học Sinh Hòa Nhập</th>
-            <th class="py-3 px-3 text-left min-w-[170px] border-r border-slate-200">Dạng Khuyết Tật</th>
+            <th class="py-3 px-3 text-left min-w-[170px] border-r border-slate-200">Họ và tên học sinh</th>
+            <th class="py-3 px-3 text-center w-32 border-r border-slate-200">Ngày sinh</th>
+            <th class="py-3 px-3 text-left min-w-[160px] border-r border-slate-200">Dạng Khuyết Tật</th>
             <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Mức Độ</th>
             <th class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tiết/tuần</th>
             <th class="py-3 px-3 text-center w-20 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tuần</th>
@@ -17515,7 +17529,7 @@ function initialSetup() {
       if (badgeSummaryPeriods) badgeSummaryPeriods.textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
 
       if (summaryRows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="py-8 text-center text-slate-400 italic">Không có dữ liệu phù hợp với bộ lọc</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="py-8 text-center text-slate-400 italic">Không có dữ liệu phù hợp với bộ lọc</td></tr>`;
         return;
       }
 
@@ -17526,8 +17540,9 @@ function initialSetup() {
 
         const safeTk = (r.teacherTk || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
-        // Xử lý danh sách học sinh: Nếu có 2, 3 HS thì hiển thị xuống dòng riêng biệt
+        // Xử lý danh sách học sinh: Tách làm 2 cột riêng biệt (Họ và tên học sinh & Ngày tháng năm sinh)
         let studentNamesHtml = "";
+        let studentBirthsHtml = "";
         let disabilityHtml = "";
         let levelsHtml = "";
 
@@ -17535,7 +17550,12 @@ function initialSetup() {
           studentNamesHtml = r.students.map((s, sIdx) => `
             <div class="${sIdx > 0 ? 'border-t border-slate-200 pt-1 mt-1' : ''}">
               <span class="font-bold text-slate-900">${escapeHtml(s.tenHs || '--')}</span>
-              ${s.namSinh || s.ngaySinh ? `<span class="text-[11px] text-slate-500 font-normal ml-1">(${escapeHtml(s.namSinh || s.ngaySinh)})</span>` : ''}
+            </div>
+          `).join('');
+
+          studentBirthsHtml = r.students.map((s, sIdx) => `
+            <div class="${sIdx > 0 ? 'border-t border-slate-200 pt-1 mt-1' : ''}">
+              <span class="text-xs text-slate-700 font-semibold">${escapeHtml(s.ngaySinh || s.namSinh || '--')}</span>
             </div>
           `).join('');
 
@@ -17554,7 +17574,8 @@ function initialSetup() {
           `).join('');
         } else {
           const details = getRowStudentDetails(r);
-          studentNamesHtml = details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-1 mt-1' : ''}">${escapeHtml(name)}</div>`).join('');
+          studentNamesHtml = details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-1 mt-1' : ''}"><span class="font-bold text-slate-900">${escapeHtml(name)}</span></div>`).join('');
+          studentBirthsHtml = details.births.map((b, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-1 mt-1' : ''}"><span class="text-xs text-slate-700 font-semibold">${escapeHtml(b)}</span></div>`).join('');
           disabilityHtml = details.disabilities.map((d, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-1 mt-1' : ''}">${escapeHtml(d)}</div>`).join('');
           levelsHtml = details.levels.map((lvl, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-1 mt-1' : ''}"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(lvl || 'Nhẹ')}</span></div>`).join('');
         }
@@ -17581,6 +17602,9 @@ function initialSetup() {
           </td>
           <td class="py-3 px-3 text-left font-bold text-slate-800 border-r border-slate-200 leading-snug">
             ${studentNamesHtml}
+          </td>
+          <td class="py-3 px-3 text-center text-slate-700 text-xs border-r border-slate-200 leading-snug">
+            ${studentBirthsHtml}
           </td>
           <td class="py-3 px-3 text-left text-slate-700 text-xs border-r border-slate-200 leading-snug">
             ${disabilityHtml}
@@ -17614,7 +17638,7 @@ function initialSetup() {
       if (tfoot) {
         tfoot.innerHTML = `
           <tr class="text-center">
-            <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
+            <td colspan="8" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
               TỔNG CỘNG TOÀN TRƯỜNG
             </td>
             <td id="hn-admin-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">${formatNumber(totalPeriodsPerWeekSchool)}</td>
@@ -17648,7 +17672,7 @@ function initialSetup() {
           <td class="py-3 px-3 text-center font-bold text-slate-500">${idx + 1}</td>
           <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(s.tenHs || '--')}</td>
           <td class="py-3 px-3 text-center font-black text-indigo-950">${escapeHtml(s.lop || '--')}</td>
-          <td class="py-3 px-3 text-center text-slate-600">${escapeHtml(s.namSinh || s.ngaySinh || '--')}</td>
+          <td class="py-3 px-3 text-center text-slate-700 font-semibold">${escapeHtml(s.ngaySinh || s.namSinh || '--')}</td>
           <td class="py-3 px-4 text-slate-700 leading-snug">${escapeHtml(s.dangKhuyetTat || s.loaiHoaNhap || '--')}</td>
           <td class="py-3 px-3 text-center">
             <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -17957,12 +17981,13 @@ function initialSetup() {
       const tableTheadHtml = `
         <thead>
           <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
-            <th style="width: 4.5%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">STT</th>
-            <th style="width: 17%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Tên Giáo Viên</th>
-            <th style="width: 9%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Môn Dạy</th>
-            <th style="width: 7%;" class="py-0.5 px-0.5 border border-slate-300 font-black text-center text-[8.5px]">Lớp Dạy</th>
-            <th style="width: 23%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Danh Sách Học Sinh Hòa Nhập</th>
-            <th style="width: 17.5%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Dạng Khuyết Tật</th>
+            <th style="width: 4%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">STT</th>
+            <th style="width: 15%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Tên Giáo Viên</th>
+            <th style="width: 8%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Môn Dạy</th>
+            <th style="width: 6.5%;" class="py-0.5 px-0.5 border border-slate-300 font-black text-center text-[8.5px]">Lớp Dạy</th>
+            <th style="width: 19%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Họ và tên học sinh</th>
+            <th style="width: 10%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Ngày sinh</th>
+            <th style="width: 15.5%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Dạng Khuyết Tật</th>
             <th style="width: 6%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Mức Độ</th>
             <th style="width: 5%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Tiết/tuần</th>
             <th style="width: 5%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Số tuần</th>
@@ -17974,7 +17999,7 @@ function initialSetup() {
       const tableTfootHtml = `
         <tfoot>
           <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400 text-[9px]">
-            <td colspan="7" class="py-1 px-2 text-center uppercase tracking-wider">
+            <td colspan="8" class="py-1 px-2 text-center uppercase tracking-wider">
               TỔNG CỘNG TOÀN TRƯỜNG
             </td>
             <td class="py-1 px-0.5 border border-slate-300 font-black text-center">${formatNumber(totalPeriodsPerWeekSchool)}</td>
@@ -18012,6 +18037,7 @@ function initialSetup() {
           const globalIdx = pageInfo.start + localIdx + 1;
 
           let hsNames = "";
+          let hsBirths = "";
           let hsKts = "";
           let hsLevels = "";
 
@@ -18021,6 +18047,7 @@ function initialSetup() {
               const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
               return `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.tenHs || '--')}${hasTime ? ` (${escapeHtml(sTime)})` : ''}</div>`;
             }).join('');
+            hsBirths = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.ngaySinh || s.namSinh || '--')}</div>`).join('');
             hsKts = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.dangKhuyetTat || s.loaiHoaNhap || '--')}</div>`).join('');
             hsLevels = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.mucDo || 'Nhẹ')}</div>`).join('');
           } else {
@@ -18030,6 +18057,7 @@ function initialSetup() {
               const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
               return `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(name)}${hasTime ? ` (${escapeHtml(sTime)})` : ''}</div>`;
             }).join('');
+            hsBirths = details.births.map((b, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(b)}</div>`).join('');
             hsKts = details.disabilities.map((d, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(d)}</div>`).join('');
             hsLevels = details.levels.map((lvl, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(lvl || 'Nhẹ')}</div>`).join('');
           }
@@ -18043,6 +18071,7 @@ function initialSetup() {
               <td class="py-0.5 px-0.5 border border-slate-300 align-middle truncate">${escapeHtml(r.monGv || '--')}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 font-black text-indigo-950 align-middle bg-slate-50">${escapeHtml(r.lop || '--')}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 text-left leading-tight align-middle">${hsNames}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 text-center leading-tight align-middle">${hsBirths}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 text-left text-[8px] leading-tight align-middle">${hsKts}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 align-middle leading-tight">${hsLevels}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 font-bold align-middle">${formatNumber(r.tietTuan)}</td>
@@ -18053,7 +18082,7 @@ function initialSetup() {
         });
 
         if (summaryRows.length === 0) {
-          rowsHtml = `<tr><td colspan="10" class="py-4 text-center text-slate-400 italic">Không có dữ liệu tiết dạy hòa nhập trong kỳ này</td></tr>`;
+          rowsHtml = `<tr><td colspan="11" class="py-4 text-center text-slate-400 italic">Không có dữ liệu tiết dạy hòa nhập trong kỳ này</td></tr>`;
         }
 
         const pageHeaderHtml = pageInfo.isFirst ? `
@@ -18381,7 +18410,7 @@ function initialSetup() {
       const summaryRows = getFilteredHoaNhapSummaryRows(sem, hoaNhapSummaryViewMode);
 
       const excelData = [
-        ["STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Học và tên học sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"]
+        ["STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Học và tên học sinh", "Ngày tháng năm sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"]
       ];
 
       let totalTietTuan = 0;
@@ -18392,6 +18421,7 @@ function initialSetup() {
         totalTongTiet += r.tongTiet;
 
         let hsText = "";
+        let birthText = "";
         let ktText = "";
         let mucDoText = "";
 
@@ -18401,6 +18431,7 @@ function initialSetup() {
             const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
             return `${s.tenHs || ''}${hasTime ? ` (${sTime})` : ''}`;
           }).filter(Boolean).join('\n');
+          birthText = r.students.map(s => s.ngaySinh || s.namSinh || '').filter(Boolean).join('\n');
           ktText = r.students.map(s => s.dangKhuyetTat || s.loaiHoaNhap || '').filter(Boolean).join('\n');
           mucDoText = r.students.map(s => s.mucDo || 'Nhẹ').filter(Boolean).join('\n');
         } else {
@@ -18410,6 +18441,7 @@ function initialSetup() {
             const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
             return `${name}${hasTime ? ` (${sTime})` : ''}`;
           }).filter(Boolean).join('\n');
+          birthText = details.births.join('\n');
           ktText = details.disabilities.join('\n');
           mucDoText = details.levels.join('\n');
         }
@@ -18420,6 +18452,7 @@ function initialSetup() {
           r.monGv || "Tin học",
           r.lop || "",
           hsText,
+          birthText,
           ktText,
           mucDoText,
           r.tietTuan,
@@ -18428,7 +18461,7 @@ function initialSetup() {
         ]);
       });
 
-      excelData.push(["", "TỔNG CỘNG TOÀN TRƯỜNG", "", "", "", "", "", totalTietTuan, "", totalTongTiet]);
+      excelData.push(["", "TỔNG CỘNG TOÀN TRƯỜNG", "", "", "", "", "", "", totalTietTuan, "", totalTongTiet]);
 
       const ws = XLSX.utils.aoa_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
