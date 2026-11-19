@@ -385,13 +385,17 @@ function normalizeUsername(tk) {
 function isSuperAdmin(role) {
   if (!role) return false;
   const r = String(role).trim().toLowerCase();
-  return r === "admin" || r === "quantri" || r === "quản trị" || r === "superadmin";
+  return r === "admin" || r === "quantri" || r === "quản trị" || r === "superadmin" ||
+         r.includes("admin") || r.includes("quản trị") || r.includes("quan tri");
 }
 
 function isRoleBgh(role) {
   if (!role) return false;
   const r = String(role).trim().toLowerCase();
-  return r === "bgh" || r === "ban giám hiệu" || r === "bangiamhieu";
+  return r === "bgh" || r === "ban giám hiệu" || r === "bangiamhieu" ||
+         r.includes("bgh") || r.includes("giám hiệu") || r.includes("giam hieu") ||
+         r.includes("hiệu trưởng") || r.includes("hieu truong") || r.includes("cbql") ||
+         r === "ht" || r === "pht";
 }
 
 function isRoleAdmin(role) {
@@ -401,21 +405,27 @@ function isRoleAdmin(role) {
 function isRoleGv(teacherOrRole, username) {
   let role = "";
   let tk = "";
+  let ten = "";
   if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
     role = teacherOrRole.quyen || teacherOrRole.vaiTro || "";
     tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || "";
+    ten = teacherOrRole.tenGv || "";
   } else {
     role = teacherOrRole || "";
     tk = username || "";
   }
-  const cleanTk = String(tk || "").trim().toLowerCase();
-  if (cleanTk === 'admin' || cleanTk === 'blt') return false;
+  const cleanTk = String(tk || "").trim().toLowerCase().replace(/^'+/, "");
+  if (cleanTk === "admin" || cleanTk === "blt" || cleanTk === "bgh" || cleanTk === "quantri") return false;
 
   const r = String(role || "").trim().toLowerCase();
   if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
-  if (r.includes('admin') || r.includes('bgh') || r.includes('quản') || r.includes('giám hiệu')) return false;
+  if (r.includes("admin") || r.includes("bgh") || r.includes("quản") || r.includes("giám hiệu") ||
+      r.includes("hiệu trưởng") || r.includes("cbql")) return false;
 
-  if (r === 'gv' || r === 'giáo viên' || r === 'giaovien' || r === 'teacher') return true;
+  const t = String(ten || "").trim().toLowerCase();
+  if (t.includes("quản trị viên") || t.includes("ban giám hiệu") || t.includes("trụ sở chính") || t.includes("bình lợi trung")) return false;
+
+  if (r === "gv" || r === "giáo viên" || r === "giaovien" || r === "teacher") return true;
   if (!r) return true;
   return false;
 }
@@ -1010,8 +1020,8 @@ function handleGetAllHoaNhapData() {
         const hNormTk = normalizeUsername(hDispTk || hRawTk);
         const cleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
         const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
-        // Bỏ qua tài khoản admin, không đưa vào danh sách giáo viên dạy hòa nhập
-        if (cleanRaw === 'admin' || cleanNorm === 'admin') continue;
+        // Bỏ qua tài khoản admin / BGH, không đưa vào danh sách giáo viên dạy hòa nhập
+        if (cleanRaw === 'admin' || cleanNorm === 'admin' || cleanRaw === 'blt' || cleanNorm === 'blt' || cleanRaw === 'bgh' || cleanNorm === 'bgh') continue;
         const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
         if (cleanRaw) map[cleanRaw] = hJsonStr;
         if (cleanNorm) map[cleanNorm] = hJsonStr;
@@ -1029,9 +1039,9 @@ function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
 
   const cleanTk = String(taiKhoan).trim().toLowerCase();
-  // Tài khoản Admin / Quản trị không lưu vào bảng kê khai dạy hòa nhập
-  if (cleanTk === "admin") {
-    return jsonResponse({ success: true, message: "Tài khoản Quản trị không tham gia kê khai tiết dạy." });
+  // Tài khoản Admin / Quản trị / BGH không lưu vào bảng kê khai dạy hòa nhập
+  if (cleanTk === "admin" || cleanTk === "blt" || cleanTk === "bgh" || cleanTk === "quantri") {
+    return jsonResponse({ success: true, message: "Tài khoản Quản trị / BGH không tham gia kê khai tiết dạy." });
   }
 
   // Kiểm tra nếu hệ thống đang bị khóa kê khai toàn trường (trừ tài khoản admin)

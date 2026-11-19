@@ -2815,13 +2815,17 @@ function normalizeUsername(tk) {
 function isSuperAdmin(role) {
   if (!role) return false;
   const r = String(role).trim().toLowerCase();
-  return r === "admin" || r === "quantri" || r === "quản trị" || r === "superadmin";
+  return r === "admin" || r === "quantri" || r === "quản trị" || r === "superadmin" ||
+         r.includes("admin") || r.includes("quản trị") || r.includes("quan tri");
 }
 
 function isRoleBgh(role) {
   if (!role) return false;
   const r = String(role).trim().toLowerCase();
-  return r === "bgh" || r === "ban giám hiệu" || r === "bangiamhieu";
+  return r === "bgh" || r === "ban giám hiệu" || r === "bangiamhieu" ||
+         r.includes("bgh") || r.includes("giám hiệu") || r.includes("giam hieu") ||
+         r.includes("hiệu trưởng") || r.includes("hieu truong") || r.includes("cbql") ||
+         r === "ht" || r === "pht";
 }
 
 function isRoleAdmin(role) {
@@ -2831,21 +2835,27 @@ function isRoleAdmin(role) {
 function isRoleGv(teacherOrRole, username) {
   let role = "";
   let tk = "";
+  let ten = "";
   if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
     role = teacherOrRole.quyen || teacherOrRole.vaiTro || "";
     tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || "";
+    ten = teacherOrRole.tenGv || "";
   } else {
     role = teacherOrRole || "";
     tk = username || "";
   }
-  const cleanTk = String(tk || "").trim().toLowerCase();
-  if (cleanTk === 'admin' || cleanTk === 'blt') return false;
+  const cleanTk = String(tk || "").trim().toLowerCase().replace(/^'+/, "");
+  if (cleanTk === "admin" || cleanTk === "blt" || cleanTk === "bgh" || cleanTk === "quantri") return false;
 
   const r = String(role || "").trim().toLowerCase();
   if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
-  if (r.includes('admin') || r.includes('bgh') || r.includes('quản') || r.includes('giám hiệu')) return false;
+  if (r.includes("admin") || r.includes("bgh") || r.includes("quản") || r.includes("giám hiệu") ||
+      r.includes("hiệu trưởng") || r.includes("cbql")) return false;
 
-  if (r === 'gv' || r === 'giáo viên' || r === 'giaovien' || r === 'teacher') return true;
+  const t = String(ten || "").trim().toLowerCase();
+  if (t.includes("quản trị viên") || t.includes("ban giám hiệu") || t.includes("trụ sở chính") || t.includes("bình lợi trung")) return false;
+
+  if (r === "gv" || r === "giáo viên" || r === "giaovien" || r === "teacher") return true;
   if (!r) return true;
   return false;
 }
@@ -3440,8 +3450,8 @@ function handleGetAllHoaNhapData() {
         const hNormTk = normalizeUsername(hDispTk || hRawTk);
         const cleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
         const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
-        // Bỏ qua tài khoản admin, không đưa vào danh sách giáo viên dạy hòa nhập
-        if (cleanRaw === 'admin' || cleanNorm === 'admin') continue;
+        // Bỏ qua tài khoản admin / BGH, không đưa vào danh sách giáo viên dạy hòa nhập
+        if (cleanRaw === 'admin' || cleanNorm === 'admin' || cleanRaw === 'blt' || cleanNorm === 'blt' || cleanRaw === 'bgh' || cleanNorm === 'bgh') continue;
         const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
         if (cleanRaw) map[cleanRaw] = hJsonStr;
         if (cleanNorm) map[cleanNorm] = hJsonStr;
@@ -3459,9 +3469,9 @@ function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
 
   const cleanTk = String(taiKhoan).trim().toLowerCase();
-  // Tài khoản Admin / Quản trị không lưu vào bảng kê khai dạy hòa nhập
-  if (cleanTk === "admin") {
-    return jsonResponse({ success: true, message: "Tài khoản Quản trị không tham gia kê khai tiết dạy." });
+  // Tài khoản Admin / Quản trị / BGH không lưu vào bảng kê khai dạy hòa nhập
+  if (cleanTk === "admin" || cleanTk === "blt" || cleanTk === "bgh" || cleanTk === "quantri") {
+    return jsonResponse({ success: true, message: "Tài khoản Quản trị / BGH không tham gia kê khai tiết dạy." });
   }
 
   // Kiểm tra nếu hệ thống đang bị khóa kê khai toàn trường (trừ tài khoản admin)
@@ -7932,13 +7942,17 @@ function initialSetup() {
     function isSuperAdmin(role) {
       if (!role) return false;
       const r = String(role).trim().toLowerCase();
-      return r === 'admin' || r === 'quantri' || r === 'quản trị' || r === 'superadmin';
+      return r === 'admin' || r === 'quantri' || r === 'quản trị' || r === 'superadmin' ||
+             r.includes('admin') || r.includes('quản trị') || r.includes('quan tri');
     }
 
     function isRoleBgh(role) {
       if (!role) return false;
       const r = String(role).trim().toLowerCase();
-      return r === 'bgh' || r === 'ban giám hiệu' || r === 'bangiamhieu';
+      return r === 'bgh' || r === 'ban giám hiệu' || r === 'bangiamhieu' ||
+             r.includes('bgh') || r.includes('giám hiệu') || r.includes('giam hieu') ||
+             r.includes('hiệu trưởng') || r.includes('hieu truong') || r.includes('cbql') ||
+             r === 'ht' || r === 'pht';
     }
 
     function isRoleAdmin(role) {
@@ -7948,23 +7962,40 @@ function initialSetup() {
     function isRoleGv(teacherOrRole, username) {
       let role = '';
       let tk = '';
+      let ten = '';
       if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
         role = teacherOrRole.quyen || teacherOrRole.vaiTro || '';
         tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || '';
+        ten = teacherOrRole.tenGv || '';
       } else {
         role = teacherOrRole || '';
         tk = username || '';
       }
-      const cleanTk = String(tk || '').trim().toLowerCase();
-      if (cleanTk === 'admin' || cleanTk === 'blt') return false;
+      const cleanTk = String(tk || '').trim().toLowerCase().replace(/^'+/, '');
+      if (cleanTk === 'admin' || cleanTk === 'blt' || cleanTk === 'bgh' || cleanTk === 'quantri') return false;
+
+      // Loại bỏ tài khoản đang đăng nhập nếu là Quản trị hoặc Ban Giám Hiệu
+      if (typeof currentUser !== 'undefined' && currentUser && (currentUser.isLoggedInAsAdmin || isRoleAdmin(currentUser.quyen))) {
+        if (cleanTk && isUsernameMatch(cleanTk, currentUser.taiKhoan)) return false;
+      }
 
       const r = String(role || '').trim().toLowerCase();
       if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
-      if (r.includes('admin') || r.includes('bgh') || r.includes('quản') || r.includes('giám hiệu')) return false;
+      if (r.includes('admin') || r.includes('bgh') || r.includes('quản') || r.includes('giám hiệu') ||
+          r.includes('hiệu trưởng') || r.includes('cbql')) return false;
+
+      const t = String(ten || '').trim().toLowerCase();
+      if (t.includes('quản trị viên') || t.includes('ban giám hiệu') || t.includes('trụ sở chính') || t.includes('bình lợi trung')) return false;
 
       if (r === 'gv' || r === 'giáo viên' || r === 'giaovien' || r === 'teacher') return true;
       if (!r) return true;
       return false;
+    }
+
+    // Danh sách giáo viên chuẩn để tổng hợp toàn trường Phân hệ 1 (Chỉ lấy tài khoản có quyền GV)
+    function getSummaryTeachersList() {
+      if (!Array.isArray(adminTeachersList)) return [];
+      return adminTeachersList.filter(t => t && isRoleGv(t));
     }
 
     // Chuẩn hóa tài khoản (Thêm số 0 vào đầu nếu là SĐT 9 chữ số)
@@ -10186,7 +10217,7 @@ function initialSetup() {
        (Hỗ trợ kiểm soát GV đã kê khai / chưa kê khai HK1 & HK2)
        ======================================================= */
     function exportTeachersStatusExcel() {
-      const activeList = getEffectiveAdminTeachersList();
+      const activeList = getSummaryTeachersList();
       if (!activeList || activeList.length === 0) {
         showToast("Chưa có danh sách giáo viên để xuất Excel!", "warning");
         return;
@@ -10604,7 +10635,7 @@ function initialSetup() {
     let currentTeachersStatusPdfFileName = "";
 
     function previewTeachersStatusPdf() {
-      const activeList = getEffectiveAdminTeachersList();
+      const activeList = getSummaryTeachersList();
       if (!activeList || activeList.length === 0) {
         showToast("Chưa có danh sách giáo viên để xuất PDF!", "warning");
         return;
@@ -11847,7 +11878,7 @@ function initialSetup() {
     }
 
     function updateAdminSummaryFilterButtons() {
-      const activeList = getEffectiveAdminTeachersList().filter(t => isRoleGv(t));
+      const activeList = getSummaryTeachersList();
       let countAll = activeList.length;
       let countOver = 0;
       let countNoOver = 0;
@@ -11937,7 +11968,7 @@ function initialSetup() {
 
       updateAdminSummaryFilterButtons();
 
-      const activeList = getEffectiveAdminTeachersList().filter(t => isRoleGv(t));
+      const activeList = getSummaryTeachersList();
       let totalTeachers = activeList.length;
       let filteredTeachers = activeList.filter(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
@@ -13013,7 +13044,7 @@ function initialSetup() {
     let currentSchoolSummaryPdfFileName = "";
 
     function previewSchoolSummaryReport() {
-      const baseTeachers = (adminTeachersList || []).filter(t => isRoleGv(t));
+      const baseTeachers = getSummaryTeachersList();
       const filteredTeachers = baseTeachers.filter(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
         if (adminSummaryOvertimeFilter === 'overtime') return ov > 0;
@@ -13440,7 +13471,7 @@ function initialSetup() {
       }
 
       // Lọc danh sách giáo viên chính xác theo Học kỳ & Trạng thái phụ trội hiện tại của Admin (chỉ lấy quyền GV)
-      const baseTeachers = (adminTeachersList || []).filter(t => isRoleGv(t));
+      const baseTeachers = getSummaryTeachersList();
       const filteredTeachers = baseTeachers.filter(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
         if (adminSummaryOvertimeFilter === 'overtime') return ov > 0;
