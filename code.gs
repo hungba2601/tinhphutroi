@@ -375,6 +375,28 @@ function isRoleAdmin(role) {
   return isSuperAdmin(role) || isRoleBgh(role);
 }
 
+function isRoleGv(teacherOrRole, username) {
+  let role = "";
+  let tk = "";
+  if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
+    role = teacherOrRole.quyen || teacherOrRole.vaiTro || "";
+    tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || "";
+  } else {
+    role = teacherOrRole || "";
+    tk = username || "";
+  }
+  const cleanTk = String(tk || "").trim().toLowerCase();
+  if (cleanTk === 'admin' || cleanTk === 'blt') return false;
+
+  const r = String(role || "").trim().toLowerCase();
+  if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
+  if (r.includes('admin') || r.includes('bgh') || r.includes('quản') || r.includes('giám hiệu')) return false;
+
+  if (r === 'gv' || r === 'giáo viên' || r === 'giaovien' || r === 'teacher') return true;
+  if (!r) return true;
+  return false;
+}
+
 function isUsernameMatch(tk1, tk2) {
   if (!tk1 || !tk2) return false;
   const s1 = String(tk1).trim().toLowerCase();
@@ -594,7 +616,7 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
     const cleanTk = normTk.replace(/^'+/, "").toLowerCase();
     const quyen = String(rowRaw[cols.colQuyen] || "").trim().toLowerCase();
     // Bỏ qua tài khoản admin, không đưa vào danh sách kê khai dạy hòa nhập
-    if (cleanTk === "admin" || isSuperAdmin(quyen)) continue;
+    if (cleanTk === "admin" || cleanTk === "blt" || !isRoleGv(quyen, cleanTk)) continue;
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
 
     // Lấy dữ liệu JSON hòa nhập đã kê khai trước đó (nếu có)
@@ -1597,7 +1619,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
                   duLieuMap[cleanNormTk.replace(/^0+/, "")] || null;
 
     const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
-    const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || isSuperAdmin(quyen)) ? null : dDataHn;
+    const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || cleanNormTk === 'blt' || !isRoleGv(quyen, cleanNormTk)) ? null : dDataHn;
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,

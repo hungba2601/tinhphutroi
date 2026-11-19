@@ -2421,26 +2421,25 @@
             </div>
             <textarea id="raw-backend-code" readonly
               class="w-full h-80 font-mono text-xs p-3.5 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed select-all"
-              placeholder="Đang tải mã nguồn user_code.gs...">
-/**
+              placeholder="Đang tải mã nguồn user_code.gs...">/**
  * =========================================================================
  * BACKEND GOOGLE APPS SCRIPT: SỔ TÍNH TIẾT DẠY VƯỢT ĐỊNH MỨC - THCS AN NHƠN
  * Tác giả: Nguyễn Phi Hùng | Zalo: 0938750424
  * =========================================================================
  * 
- * HƯỚNG DẪN CÀI ĐẶT &amp; TRIỂN KHAI:
+ * HƯỚNG DẪN CÀI ĐẶT & TRIỂN KHAI:
  * 1. Mở Google Sheet của bạn.
  * 2. Đổi tên Sheet1 thành "DATA" và thêm một Sheet mới tên là "DULIEU".
  *    Hoặc chạy hàm initialSetup() trong trình soạn thảo Apps Script để tự tạo cấu trúc tự động.
- * 3. Vào menu: Tiện ích mở rộng (Extensions) -&gt; Apps Script.
+ * 3. Vào menu: Tiện ích mở rộng (Extensions) -> Apps Script.
  * 4. Xóa hết code cũ và dán toàn bộ nội dung file này vào. Nhấn Ctrl + S để lưu.
  * 5. Để đồng bộ toàn bộ giáo viên từ Sheet DATA sang Sheet DULIEU theo đúng thứ tự cố định:
  *    - Chọn hàm 'dongBoSheetDuLieu' từ danh sách hàm và nhấn nút 'Chạy' (Run).
- * 6. Nhấn nút "Triển khai" (Deploy) -&gt; "Quản lý bản triển khai" -&gt; Sửa hoặc "Triển khai mới":
+ * 6. Nhấn nút "Triển khai" (Deploy) -> "Quản lý bản triển khai" -> Sửa hoặc "Triển khai mới":
  *    - Loại: "Ứng dụng web" (Web App).
  *    - Thực thi dưới dạng (Execute as): "Tôi" (Me / tài khoản của bạn).
  *    - Ai có quyền truy cập (Who has access): "Bất kỳ ai" (Anyone).
- * 7. Nhấn "Triển khai" (Deploy) -&gt; Cấp quyền nếu Google hỏi -&gt; Sao chép URL Web App.
+ * 7. Nhấn "Triển khai" (Deploy) -> Cấp quyền nếu Google hỏi -> Sao chép URL Web App.
  * =========================================================================
  */
 
@@ -2469,7 +2468,7 @@ function setSystemLocked(isLocked) {
 }
 
 /**
- * LẤY CẤU HÌNH HIỂN THỊ CỘT KÊ KHAI (CỘT 3: BD HSG &amp; CỘT 4: DẠY TS10)
+ * LẤY CẤU HÌNH HIỂN THỊ CỘT KÊ KHAI (CỘT 3: BD HSG & CỘT 4: DẠY TS10)
  */
 function getColumnConfig() {
   try {
@@ -2511,7 +2510,7 @@ const SHEET_HUB_SERVER = "HUB_SERVER"; // Cột A: TÊN TK | Cột B: TÊN TRƯ�
  */
 function doGet(e) {
   try {
-    const params = e &amp;&amp; e.parameter ? e.parameter : {};
+    const params = e && e.parameter ? e.parameter : {};
     const action = params.action || "ping";
 
     if (action === "getHubServers" || action === "getHubSchools" || action === "listSchools") {
@@ -2584,13 +2583,13 @@ function doGet(e) {
 function doPost(e) {
   try {
     let payload = {};
-    if (e &amp;&amp; e.postData &amp;&amp; e.postData.contents) {
+    if (e && e.postData && e.postData.contents) {
       try {
         payload = JSON.parse(e.postData.contents);
       } catch (parseErr) {
         payload = e.parameter || {};
       }
-    } else if (e &amp;&amp; e.parameter) {
+    } else if (e && e.parameter) {
       payload = e.parameter;
     }
 
@@ -2667,8 +2666,8 @@ function doPost(e) {
 
       case "saveColumnConfig":
       case "setColumnConfig": {
-        const showBdHsg = payload.showBdHsg !== false &amp;&amp; payload.showBdHsg !== "false";
-        const showDayTs10 = payload.showDayTs10 !== false &amp;&amp; payload.showDayTs10 !== "false";
+        const showBdHsg = payload.showBdHsg !== false && payload.showBdHsg !== "false";
+        const showDayTs10 = payload.showDayTs10 !== false && payload.showDayTs10 !== "false";
         setColumnConfig(showBdHsg, showDayTs10);
         return jsonResponse({
           success: true,
@@ -2799,6 +2798,28 @@ function isRoleAdmin(role) {
   return isSuperAdmin(role) || isRoleBgh(role);
 }
 
+function isRoleGv(teacherOrRole, username) {
+  let role = "";
+  let tk = "";
+  if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
+    role = teacherOrRole.quyen || teacherOrRole.vaiTro || "";
+    tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || "";
+  } else {
+    role = teacherOrRole || "";
+    tk = username || "";
+  }
+  const cleanTk = String(tk || "").trim().toLowerCase();
+  if (cleanTk === 'admin' || cleanTk === 'blt') return false;
+
+  const r = String(role || "").trim().toLowerCase();
+  if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
+  if (r.includes('admin') || r.includes('bgh') || r.includes('quản') || r.includes('giám hiệu')) return false;
+
+  if (r === 'gv' || r === 'giáo viên' || r === 'giaovien' || r === 'teacher') return true;
+  if (!r) return true;
+  return false;
+}
+
 function isUsernameMatch(tk1, tk2) {
   if (!tk1 || !tk2) return false;
   const s1 = String(tk1).trim().toLowerCase();
@@ -2822,7 +2843,7 @@ function getSheetDataCols(sheetData) {
   let colMatKhau = 3;
   let colLopDay = -1;
 
-  for (let c = 0; c &lt; header.length; c++) {
+  for (let c = 0; c < header.length; c++) {
     const h = String(header[c] || "").trim().toLowerCase();
     if (h.includes("tài khoản") || h === "tk") colTk = c;
     else if (h.includes("tên") || h.includes("họ và tên")) colTenGv = c;
@@ -2832,7 +2853,7 @@ function getSheetDataCols(sheetData) {
     else if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") colLopDay = c;
   }
 
-  // Nếu trong Sheet DATA chưa có cột Ngày sinh -&gt; tự động chèn ngay sau cột Tên
+  // Nếu trong Sheet DATA chưa có cột Ngày sinh -> tự động chèn ngay sau cột Tên
   if (colNgaySinh === -1) {
     try {
       const insertIdx = colTenGv + 2; // 1-based index
@@ -2840,11 +2861,11 @@ function getSheetDataCols(sheetData) {
       sheetData.getRange(1, insertIdx).setValue("Ngày sinh")
         .setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
       colNgaySinh = colTenGv + 1;
-      if (colQuyen &gt;= colNgaySinh) colQuyen++;
-      if (colMatKhau &gt;= colNgaySinh) colMatKhau++;
-      if (colLopDay !== -1 &amp;&amp; colLopDay &gt;= colNgaySinh) colLopDay++;
+      if (colQuyen >= colNgaySinh) colQuyen++;
+      if (colMatKhau >= colNgaySinh) colMatKhau++;
+      if (colLopDay !== -1 && colLopDay >= colNgaySinh) colLopDay++;
     } catch (e) {
-      if (header.length &gt;= 5) {
+      if (header.length >= 5) {
         colNgaySinh = 2;
         colQuyen = 3;
         colMatKhau = 4;
@@ -2858,13 +2879,13 @@ function getSheetDataCols(sheetData) {
     colNgaySinh: colNgaySinh,
     colQuyen: colQuyen,
     colMatKhau: colMatKhau,
-    colLopDay: (typeof colLopDay === 'number' &amp;&amp; !isNaN(colLopDay)) ? colLopDay : -1
+    colLopDay: (typeof colLopDay === 'number' && !isNaN(colLopDay)) ? colLopDay : -1
   };
 }
 
 /**
  * ĐỒNG BỘ TOÀN BỘ GIÁO VIÊN TỪ SHEET DATA SANG SHEET DULIEU THEO THỨ TỰ CỐ ĐỊNH:
- * - Giữ nguyên 100% thứ tự các giáo viên từ Sheet DATA (hàng 2 -&gt; N).
+ * - Giữ nguyên 100% thứ tự các giáo viên từ Sheet DATA (hàng 2 -> N).
  * - Cột A: TK (luôn định dạng Văn bản Text '@' để giữ số 0 ở đầu)
  * - Cột B: TÊN GV
  * - Cột C: DỮ LIỆU GV NHẬP DANG JSON (giữ nguyên dữ liệu đã khai báo trước đó của giáo viên nếu có, hoặc để trống "")
@@ -2877,15 +2898,15 @@ function getSheetFlexible(ss, targetName, aliases) {
   if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(targetName);
   if (sheet) return sheet;
-  if (aliases &amp;&amp; Array.isArray(aliases)) {
-    for (let i = 0; i &lt; aliases.length; i++) {
+  if (aliases && Array.isArray(aliases)) {
+    for (let i = 0; i < aliases.length; i++) {
       sheet = ss.getSheetByName(aliases[i]);
       if (sheet) return sheet;
     }
   }
   const allSheets = ss.getSheets();
   const cleanTarget = targetName.toLowerCase().replace(/\s+/g, '');
-  for (let j = 0; j &lt; allSheets.length; j++) {
+  for (let j = 0; j < allSheets.length; j++) {
     const sName = allSheets[j].getName().toLowerCase().replace(/\s+/g, '');
     if (sName === cleanTarget) return allSheets[j];
   }
@@ -2918,15 +2939,15 @@ function initHoaNhapSheet(ss) {
     sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ", "Nhẹ", "Tuần 8"]);
     sheetHN.getRange(2, 2, 3, 1).setNumberFormat("@");
   } else {
-    // Tự động kiểm tra tiêu đề dòng 1 và thêm cột MỨC ĐỘ &amp; THỜI GIAN nếu còn thiếu
+    // Tự động kiểm tra tiêu đề dòng 1 và thêm cột MỨC ĐỘ & THỜI GIAN nếu còn thiếu
     const maxCols = Math.max(4, sheetHN.getLastColumn());
-    const headerVals = sheetHN.getRange(1, 1, 1, maxCols).getValues()[0].map(h =&gt; String(h || "").trim().toLowerCase());
-    const hasMucDo = headerVals.some(h =&gt; h.includes("mức") || h.includes("muc"));
-    const hasThoiGian = headerVals.some(h =&gt; h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
+    const headerVals = sheetHN.getRange(1, 1, 1, maxCols).getValues()[0].map(h => String(h || "").trim().toLowerCase());
+    const hasMucDo = headerVals.some(h => h.includes("mức") || h.includes("muc"));
+    const hasThoiGian = headerVals.some(h => h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
 
     if (!hasMucDo) {
       let colIdx = 5;
-      while (colIdx &lt;= sheetHN.getLastColumn() &amp;&amp; sheetHN.getRange(1, colIdx).getValue()) {
+      while (colIdx <= sheetHN.getLastColumn() && sheetHN.getRange(1, colIdx).getValue()) {
         colIdx++;
       }
       sheetHN.getRange(1, colIdx).setValue("MỨC ĐỘ").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
@@ -2934,7 +2955,7 @@ function initHoaNhapSheet(ss) {
     }
     if (!hasThoiGian) {
       let colIdx = 6;
-      while (colIdx &lt;= sheetHN.getLastColumn() &amp;&amp; sheetHN.getRange(1, colIdx).getValue()) {
+      while (colIdx <= sheetHN.getLastColumn() && sheetHN.getRange(1, colIdx).getValue()) {
         colIdx++;
       }
       sheetHN.getRange(1, colIdx).setValue("THỜI GIAN").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
@@ -2945,12 +2966,12 @@ function initHoaNhapSheet(ss) {
 }
 
 /**
- * ⭐️ HÀM TẠO HOẶC CẬP NHẬT CỘT MỨC ĐỘ &amp; THỜI GIAN CHO SHEET "HOA NHAP" ⭐️
+ * ⭐️ HÀM TẠO HOẶC CẬP NHẬT CỘT MỨC ĐỘ & THỜI GIAN CHO SHEET "HOA NHAP" ⭐️
  * 👉 Trong giao diện Google Apps Script:
  * 1. Ở thanh công cụ trên cùng, chọn tên hàm: "capNhatCotSheetHoaNhap" (hoặc "initHoaNhapSheet")
  * 2. Nhấn nút "Chạy" (Run ▶️)
- * =&gt; Hệ thống sẽ tự động thêm 2 cột: Cột E (MỨC ĐỘ) và Cột F (THỜI GIAN) vào dòng 1 của sheet HOA NHAP
- * =&gt; Bảo toàn 100% dữ liệu học sinh hiện có, không làm mất hay xáo trộn dữ liệu.
+ * => Hệ thống sẽ tự động thêm 2 cột: Cột E (MỨC ĐỘ) và Cột F (THỜI GIAN) vào dòng 1 của sheet HOA NHAP
+ * => Bảo toàn 100% dữ liệu học sinh hiện có, không làm mất hay xáo trộn dữ liệu.
  */
 function capNhatCotSheetHoaNhap() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2989,15 +3010,15 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
   const existingJsonMap = {};
   const duLieuLastRow = sheetDuLieuHN.getLastRow();
   const duLieuLastCol = Math.max(2, sheetDuLieuHN.getLastColumn());
-  if (duLieuLastRow &gt; 1) {
+  if (duLieuLastRow > 1) {
     const duLieuValues = sheetDuLieuHN.getRange(1, 1, duLieuLastRow, duLieuLastCol).getValues();
     const duLieuDisplay = sheetDuLieuHN.getRange(1, 1, duLieuLastRow, duLieuLastCol).getDisplayValues();
-    for (let j = 1; j &lt; duLieuValues.length; j++) {
+    for (let j = 1; j < duLieuValues.length; j++) {
       const rawTk = String(duLieuValues[j][0] || "").trim();
       const dispTk = String(duLieuDisplay[j][0] || "").trim();
       const normTk = normalizeUsername(dispTk || rawTk);
       // Tự động nhận diện nếu sheet trước đó có 2 cột (JSON ở col 2) hoặc đã có 3 cột (JSON ở col 3)
-      const jsonContent = duLieuLastCol &gt;= 3 ? (duLieuValues[j][2] !== undefined &amp;&amp; duLieuValues[j][2] !== "" ? duLieuValues[j][2] : duLieuValues[j][1]) : duLieuValues[j][1];
+      const jsonContent = duLieuLastCol >= 3 ? (duLieuValues[j][2] !== undefined && duLieuValues[j][2] !== "" ? duLieuValues[j][2] : duLieuValues[j][1]) : duLieuValues[j][1];
       if (jsonContent) {
         if (normTk) existingJsonMap[normTk.toLowerCase()] = jsonContent;
         if (rawTk) existingJsonMap[rawTk.toLowerCase()] = jsonContent;
@@ -3009,7 +3030,7 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
 
   // 2. Thu thập danh sách giáo viên từ Sheet DATA theo đúng thứ tự hàng cố định
   const teacherRows = [];
-  for (let i = 1; i &lt; dataValuesRaw.length; i++) {
+  for (let i = 1; i < dataValuesRaw.length; i++) {
     const rowRaw = dataValuesRaw[i];
     const rowDisp = dataValuesDisplay[i];
     const rawTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
@@ -3018,7 +3039,7 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
     const cleanTk = normTk.replace(/^'+/, "").toLowerCase();
     const quyen = String(rowRaw[cols.colQuyen] || "").trim().toLowerCase();
     // Bỏ qua tài khoản admin, không đưa vào danh sách kê khai dạy hòa nhập
-    if (cleanTk === "admin" || isSuperAdmin(quyen)) continue;
+    if (cleanTk === "admin" || cleanTk === "blt" || !isRoleGv(quyen, cleanTk)) continue;
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
 
     // Lấy dữ liệu JSON hòa nhập đã kê khai trước đó (nếu có)
@@ -3036,10 +3057,10 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
   }
 
   // 3. Kiểm tra xem Sheet dulieu_hoanhap đã đúng thứ tự và đủ số lượng chưa
-  if (!forceRebuild &amp;&amp; duLieuLastRow === teacherRows.length + 1 &amp;&amp; duLieuLastCol &gt;= 3) {
+  if (!forceRebuild && duLieuLastRow === teacherRows.length + 1 && duLieuLastCol >= 3) {
     let perfectlyMatched = true;
     const currentDuLieuDisplay = sheetDuLieuHN.getRange(2, 1, teacherRows.length, 1).getDisplayValues();
-    for (let k = 0; k &lt; teacherRows.length; k++) {
+    for (let k = 0; k < teacherRows.length; k++) {
       const curTk = String(currentDuLieuDisplay[k][0] || "").trim();
       const expectedTk = teacherRows[k][0].replace(/^'/, "");
       if (!isUsernameMatch(curTk, expectedTk)) {
@@ -3073,7 +3094,7 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
   return {
     success: true,
     count: teacherRows.length,
-    message: "Đã đồng bộ thành công " + teacherRows.length + " giáo viên (TK &amp; Tên GV) sang Sheet dulieu_hoanhap theo đúng thứ tự cố định!"
+    message: "Đã đồng bộ thành công " + teacherRows.length + " giáo viên (TK & Tên GV) sang Sheet dulieu_hoanhap theo đúng thứ tự cố định!"
   };
 }
 
@@ -3084,14 +3105,14 @@ function handleGetHoaNhapStudents() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetHN = initHoaNhapSheet(ss);
   const lastRow = sheetHN.getLastRow();
-  if (lastRow &lt;= 1) {
+  if (lastRow <= 1) {
     return jsonResponse({ success: true, list: [] });
   }
   const lastCol = Math.max(6, sheetHN.getLastColumn());
-  const header = sheetHN.getRange(1, 1, 1, lastCol).getValues()[0].map(h =&gt; String(h || "").trim().toLowerCase());
+  const header = sheetHN.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim().toLowerCase());
 
   let colTen = 0, colNgaySinh = 1, colLop = 2, colLoai = 3, colMucDo = -1, colThoiGian = -1;
-  for (let c = 0; c &lt; header.length; c++) {
+  for (let c = 0; c < header.length; c++) {
     const h = header[c];
     if (h.includes("tên") || h.includes("họ và tên") || h.includes("học sinh")) colTen = c;
     else if (h.includes("lớp") || h.includes("lop")) colLop = c;
@@ -3100,13 +3121,13 @@ function handleGetHoaNhapStudents() {
     else if (h.includes("mức độ") || h.includes("muc do") || h.includes("mức")) colMucDo = c;
     else if (h.includes("thời gian") || h.includes("thoi gian") || h.includes("tuần") || h.includes("tuan") || h.includes("công nhận")) colThoiGian = c;
   }
-  if (colMucDo === -1 &amp;&amp; lastCol &gt;= 5) colMucDo = 4;
-  if (colThoiGian === -1 &amp;&amp; lastCol &gt;= 6) colThoiGian = 5;
+  if (colMucDo === -1 && lastCol >= 5) colMucDo = 4;
+  if (colThoiGian === -1 && lastCol >= 6) colThoiGian = 5;
 
   const vals = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getValues();
   const disp = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
   const list = [];
-  for (let i = 0; i &lt; vals.length; i++) {
+  for (let i = 0; i < vals.length; i++) {
     const tenHs = String(disp[i][colTen] || vals[i][colTen] || "").trim();
     if (!tenHs) continue;
     const vDate = vals[i][colNgaySinh];
@@ -3124,8 +3145,8 @@ function handleGetHoaNhapStudents() {
       const yearMatch = fullNgaySinh.match(/\d{4}/);
       namSinh = yearMatch ? yearMatch[0] : fullNgaySinh;
     }
-    const mucDoVal = (colMucDo &gt;= 0 &amp;&amp; colMucDo &lt; lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
-    const thoiGianVal = (colThoiGian &gt;= 0 &amp;&amp; colThoiGian &lt; lastCol) ? String(disp[i][colThoiGian] || vals[i][colThoiGian] || "").trim() : "";
+    const mucDoVal = (colMucDo >= 0 && colMucDo < lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
+    const thoiGianVal = (colThoiGian >= 0 && colThoiGian < lastCol) ? String(disp[i][colThoiGian] || vals[i][colThoiGian] || "").trim() : "";
 
     list.push({
       tenHs: tenHs,
@@ -3150,14 +3171,14 @@ function handleGetHoaNhapData(taiKhoan) {
   const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
   if (!sheetDuLieuHN) return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
   const lastRow = sheetDuLieuHN.getLastRow();
-  if (lastRow &lt;= 1) return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
+  if (lastRow <= 1) return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
   const numCols = Math.max(2, sheetDuLieuHN.getLastColumn());
   const vals = sheetDuLieuHN.getRange(2, 1, lastRow - 1, numCols).getValues();
   const disp = sheetDuLieuHN.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
-  for (let i = 0; i &lt; vals.length; i++) {
+  for (let i = 0; i < vals.length; i++) {
     const tk = String(disp[i][0] || vals[i][0] || "").trim();
     if (isUsernameMatch(tk, taiKhoan)) {
-      const jsonVal = numCols &gt;= 3 ? (vals[i][2] || vals[i][1] || null) : (vals[i][1] || null);
+      const jsonVal = numCols >= 3 ? (vals[i][2] || vals[i][1] || null) : (vals[i][1] || null);
       return jsonResponse({ success: true, data: jsonVal, isSystemLocked: isSystemLocked() });
     }
   }
@@ -3176,11 +3197,11 @@ function handleGetAllHoaNhapData() {
   const map = {};
   try {
     const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
-    if (sheetDuLieuHN &amp;&amp; sheetDuLieuHN.getLastRow() &gt; 1) {
+    if (sheetDuLieuHN && sheetDuLieuHN.getLastRow() > 1) {
       const hnumCols = Math.max(3, sheetDuLieuHN.getLastColumn());
       const hnVals = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getValues();
       const hnDisp = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getDisplayValues();
-      for (let h = 0; h &lt; hnVals.length; h++) {
+      for (let h = 0; h < hnVals.length; h++) {
         const hRawTk = String(hnVals[h][0] || "").trim();
         const hDispTk = String(hnDisp[h][0] || "").trim();
         const hNormTk = normalizeUsername(hDispTk || hRawTk);
@@ -3212,7 +3233,7 @@ function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
 
   // Kiểm tra nếu hệ thống đang bị khóa kê khai toàn trường (trừ tài khoản admin)
   const isUserAdmin = isAdmin === true;
-  if (isSystemLocked() &amp;&amp; !isUserAdmin) {
+  if (isSystemLocked() && !isUserAdmin) {
     return jsonResponse({
       success: false,
       message: "Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban giám hiệu nhà trường. Quý thầy cô chỉ có thể xem số liệu, không thể lưu dữ liệu mới lúc này!"
@@ -3228,10 +3249,10 @@ function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
 
   const lastRow = sheetDuLieuHN.getLastRow();
   const matchingRows = [];
-  if (lastRow &gt; 1) {
+  if (lastRow > 1) {
     const vals = sheetDuLieuHN.getRange(2, 1, lastRow - 1, 1).getValues();
     const disp = sheetDuLieuHN.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
-    for (let i = 0; i &lt; vals.length; i++) {
+    for (let i = 0; i < vals.length; i++) {
       const tk = String(disp[i][0] || vals[i][0] || "").trim();
       if (isUsernameMatch(tk, taiKhoan)) {
         matchingRows.push(i + 2); // Chỉ số dòng thực tế trong sheet
@@ -3250,7 +3271,7 @@ function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
       const dVals = sheetData.getDataRange().getValues();
       const dDisp = sheetData.getDataRange().getDisplayValues();
       const cols = getSheetDataCols(sheetData);
-      for (let r = 1; r &lt; dVals.length; r++) {
+      for (let r = 1; r < dVals.length; r++) {
         const sTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
         if (isUsernameMatch(sTk, taiKhoan)) {
           tenGv = String(dDisp[r][cols.colTenGv] || dVals[r][cols.colTenGv] || "").trim();
@@ -3269,7 +3290,7 @@ function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
 
     // XÓA TẤT CẢ các dòng cũ trùng lặp của cùng tài khoản này (nếu có)
     // Duyệt ngược từ dưới lên để không làm xáo trộn số hàng
-    for (let m = matchingRows.length - 1; m &gt;= 1; m--) {
+    for (let m = matchingRows.length - 1; m >= 1; m--) {
       sheetDuLieuHN.deleteRow(matchingRows[m]);
     }
   }
@@ -3297,10 +3318,10 @@ function syncDuLieuWithData(forceRebuild) {
   const existingDataMap = {};
   const duLieuLastRow = sheetDuLieu.getLastRow();
   const duLieuLastCol = Math.max(sheetDuLieu.getLastColumn(), 4);
-  if (duLieuLastRow &gt; 1) {
+  if (duLieuLastRow > 1) {
     const duLieuValues = sheetDuLieu.getRange(1, 1, duLieuLastRow, duLieuLastCol).getValues();
     const duLieuDisplay = sheetDuLieu.getRange(1, 1, duLieuLastRow, duLieuLastCol).getDisplayValues();
-    for (let j = 1; j &lt; duLieuValues.length; j++) {
+    for (let j = 1; j < duLieuValues.length; j++) {
       const rawTk = String(duLieuValues[j][0] || "").trim();
       const dispTk = String(duLieuDisplay[j][0] || "").trim();
       const normTk = normalizeUsername(dispTk || rawTk);
@@ -3316,7 +3337,7 @@ function syncDuLieuWithData(forceRebuild) {
 
   // 2. Thu thập danh sách giáo viên từ Sheet DATA theo đúng thứ tự hàng cố định
   const teacherRows = [];
-  for (let i = 1; i &lt; dataValuesRaw.length; i++) {
+  for (let i = 1; i < dataValuesRaw.length; i++) {
     const rowRaw = dataValuesRaw[i];
     const rowDisp = dataValuesDisplay[i];
     const rawTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
@@ -3338,10 +3359,10 @@ function syncDuLieuWithData(forceRebuild) {
   }
 
   // 3. Kiểm tra xem Sheet DULIEU đã đúng thứ tự và đủ số lượng chưa
-  if (!forceRebuild &amp;&amp; duLieuLastRow === teacherRows.length + 1) {
+  if (!forceRebuild && duLieuLastRow === teacherRows.length + 1) {
     let perfectlyMatched = true;
     const currentDuLieuDisplay = sheetDuLieu.getRange(2, 1, teacherRows.length, 1).getDisplayValues();
-    for (let k = 0; k &lt; teacherRows.length; k++) {
+    for (let k = 0; k < teacherRows.length; k++) {
       const curTk = String(currentDuLieuDisplay[k][0] || "").trim();
       const expectedTk = teacherRows[k][0].replace(/^'/, "");
       if (!isUsernameMatch(curTk, expectedTk)) {
@@ -3383,7 +3404,7 @@ function syncDuLieuWithData(forceRebuild) {
   return {
     success: true,
     count: teacherRows.length,
-    message: "Đã đồng bộ thành công " + teacherRows.length + " giáo viên từ Sheet DATA sang Sheet DULIEU &amp; Sheet dulieu_hoanhap theo đúng thứ tự cố định!"
+    message: "Đã đồng bộ thành công " + teacherRows.length + " giáo viên từ Sheet DATA sang Sheet DULIEU & Sheet dulieu_hoanhap theo đúng thứ tự cố định!"
   };
 }
 
@@ -3411,7 +3432,7 @@ function handleLogin(taiKhoan, matKhau) {
   const tkClean = String(taiKhoan).trim();
   const mkClean = String(matKhau).trim();
 
-  for (let i = 1; i &lt; dataValuesRaw.length; i++) {
+  for (let i = 1; i < dataValuesRaw.length; i++) {
     const rowRaw = dataValuesRaw[i];
     const rowDisp = dataValuesDisplay[i];
     const rowTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
@@ -3445,7 +3466,7 @@ function handleLogin(taiKhoan, matKhau) {
   if (sheetDuLieu) {
     const duLieuValues = sheetDuLieu.getDataRange().getValues();
     const duLieuDisplay = sheetDuLieu.getDataRange().getDisplayValues();
-    for (let j = 1; j &lt; duLieuValues.length; j++) {
+    for (let j = 1; j < duLieuValues.length; j++) {
       const dTk = String(duLieuDisplay[j][0] || duLieuValues[j][0] || "").trim();
       if (isUsernameMatch(dTk, tkClean)) {
         teacherDataJson = duLieuValues[j][2]; // Cột C: DỮ LIỆU GV NHẬP DANG JSON
@@ -3461,10 +3482,10 @@ function handleLogin(taiKhoan, matKhau) {
       const sheetHub = ss.getSheetByName(SHEET_HUB_SERVER);
       if (sheetHub) {
         const hubLastRow = sheetHub.getLastRow();
-        if (hubLastRow &gt;= 2) {
+        if (hubLastRow >= 2) {
           const hubValues = sheetHub.getRange(2, 1, hubLastRow - 1, 4).getValues();
           const hubDisplay = sheetHub.getRange(2, 1, hubLastRow - 1, 4).getDisplayValues();
-          for (let k = 0; k &lt; hubValues.length; k++) {
+          for (let k = 0; k < hubValues.length; k++) {
             const hTk = String(hubDisplay[k][0] || hubValues[k][0] || "").trim();
             const hName = String(hubDisplay[k][1] || hubValues[k][1] || "").trim();
             const hUrl = String(hubDisplay[k][2] || hubValues[k][2] || "").trim();
@@ -3509,7 +3530,7 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
 
   // Kiểm tra nếu hệ thống đang bị khóa kê khai toàn trường (trừ tài khoản admin)
   const isUserAdmin = isAdmin === true || String(taiKhoan).trim().toLowerCase() === "admin";
-  if (isSystemLocked() &amp;&amp; !isUserAdmin) {
+  if (isSystemLocked() && !isUserAdmin) {
     return jsonResponse({
       success: false,
       message: "Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban giám hiệu nhà trường. Quý thầy cô chỉ có thể xem số liệu, không thể lưu dữ liệu mới lúc này!"
@@ -3533,7 +3554,7 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
 
   // 1. Tìm dòng của giáo viên trong Sheet DULIEU
   let targetRow = -1;
-  for (let i = 1; i &lt; values.length; i++) {
+  for (let i = 1; i < values.length; i++) {
     const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
     if (isUsernameMatch(rowTk, tkClean)) {
       targetRow = i + 1; // 1-based row index
@@ -3549,7 +3570,7 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
     // Tìm lại dòng của giáo viên sau khi đã đồng bộ
     values = sheetDuLieu.getDataRange().getValues();
     displayValues = sheetDuLieu.getDataRange().getDisplayValues();
-    for (let i = 1; i &lt; values.length; i++) {
+    for (let i = 1; i < values.length; i++) {
       const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
       if (isUsernameMatch(rowTk, tkClean)) {
         targetRow = i + 1;
@@ -3563,10 +3584,10 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
     if (tenGv) {
       sheetDuLieu.getRange(targetRow, 2).setValue(tenGv);
     }
-    if (dataJson !== undefined &amp;&amp; dataJson !== null) {
+    if (dataJson !== undefined && dataJson !== null) {
       sheetDuLieu.getRange(targetRow, 3).setValue(jsonString);
     }
-    if (lopDay !== undefined &amp;&amp; lopDay !== null) {
+    if (lopDay !== undefined && lopDay !== null) {
       const lopDayStr = Array.isArray(lopDay) ? lopDay.join(", ") : String(lopDay).trim();
       sheetDuLieu.getRange(targetRow, 4).setValue(lopDayStr);
 
@@ -3580,7 +3601,7 @@ function handleSaveData(taiKhoan, tenGv, dataJson, isAdmin, lopDay) {
           sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
           const dataVals = sheetData.getDataRange().getValues();
           const dataDisp = sheetData.getDataRange().getDisplayValues();
-          for (let d = 1; d &lt; dataVals.length; d++) {
+          for (let d = 1; d < dataVals.length; d++) {
             const dTk = String(dataDisp[d][cols.colTk] || dataVals[d][cols.colTk] || "").trim();
             if (isUsernameMatch(dTk, tkClean)) {
               sheetData.getRange(d + 1, targetCol).setValue(lopDayStr);
@@ -3625,7 +3646,7 @@ function handleSaveClasses(taiKhoan, lopDay) {
   let values = sheetDuLieu.getDataRange().getValues();
   let displayValues = sheetDuLieu.getDataRange().getDisplayValues();
   let targetRow = -1;
-  for (let i = 1; i &lt; values.length; i++) {
+  for (let i = 1; i < values.length; i++) {
     const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
     if (isUsernameMatch(rowTk, tkClean)) {
       targetRow = i + 1;
@@ -3637,7 +3658,7 @@ function handleSaveClasses(taiKhoan, lopDay) {
     syncDuLieuWithData(true);
     values = sheetDuLieu.getDataRange().getValues();
     displayValues = sheetDuLieu.getDataRange().getDisplayValues();
-    for (let i = 1; i &lt; values.length; i++) {
+    for (let i = 1; i < values.length; i++) {
       const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
       if (isUsernameMatch(rowTk, tkClean)) {
         targetRow = i + 1;
@@ -3659,7 +3680,7 @@ function handleSaveClasses(taiKhoan, lopDay) {
         sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
         const dataVals = sheetData.getDataRange().getValues();
         const dataDisp = sheetData.getDataRange().getDisplayValues();
-        for (let d = 1; d &lt; dataVals.length; d++) {
+        for (let d = 1; d < dataVals.length; d++) {
           const dTk = String(dataDisp[d][cols.colTk] || dataVals[d][cols.colTk] || "").trim();
           if (isUsernameMatch(dTk, tkClean)) {
             sheetData.getRange(d + 1, targetCol).setValue(lopDayStr);
@@ -3708,7 +3729,7 @@ function handleResetDeclaration(payload) {
   let targetRow = -1;
   let currentJson = {};
 
-  for (let i = 1; i &lt; values.length; i++) {
+  for (let i = 1; i < values.length; i++) {
     const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
     if (isUsernameMatch(rowTk, tkClean)) {
       targetRow = i + 1;
@@ -3729,7 +3750,7 @@ function handleResetDeclaration(payload) {
   if (!currentJson.hk2) currentJson.hk2 = {};
 
   if (scope === "hk1" || scope === "all") {
-    for (let w = 1; w &lt;= 18; w++) {
+    for (let w = 1; w <= 18; w++) {
       currentJson.hk1["w" + w] = { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
     }
     currentJson.hk1_declared = false;
@@ -3737,7 +3758,7 @@ function handleResetDeclaration(payload) {
   }
 
   if (scope === "hk2" || scope === "all") {
-    for (let w = 19; w &lt;= 35; w++) {
+    for (let w = 19; w <= 35; w++) {
       currentJson.hk2["w" + w] = { assigned: 0, leave: 0, bdhsg: 0, ts10: 0 };
     }
     currentJson.hk2_declared = false;
@@ -3772,7 +3793,7 @@ function handleGetData(taiKhoan) {
     const dataValuesRaw = sheetData.getDataRange().getValues();
     const dataValuesDisplay = sheetData.getDataRange().getDisplayValues();
     const tkClean = String(taiKhoan).trim();
-    for (let i = 1; i &lt; dataValuesRaw.length; i++) {
+    for (let i = 1; i < dataValuesRaw.length; i++) {
       const rowRaw = dataValuesRaw[i];
       const rowDisp = dataValuesDisplay[i];
       const rowTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
@@ -3796,11 +3817,11 @@ function handleGetData(taiKhoan) {
     const values = sheetDuLieu.getDataRange().getValues();
     const displayValues = sheetDuLieu.getDataRange().getDisplayValues();
     const tkClean = String(taiKhoan).trim();
-    for (let i = 1; i &lt; values.length; i++) {
+    for (let i = 1; i < values.length; i++) {
       const rowTk = String(displayValues[i][0] || values[i][0] || "").trim();
       if (isUsernameMatch(rowTk, tkClean)) {
         teacherDataJson = values[i][2];
-        if (!teacherName &amp;&amp; values[i][1]) teacherName = values[i][1];
+        if (!teacherName && values[i][1]) teacherName = values[i][1];
         teacherLopDay = displayValues[i][3] || values[i][3] || "";
         break;
       }
@@ -3827,7 +3848,7 @@ function handleChangePassword(taiKhoan, oldPassword, newPassword) {
     return jsonResponse({ success: false, message: "Vui lòng nhập đầy đủ mật khẩu cũ và mới!" });
   }
 
-  if (String(newPassword).length &lt; 6) {
+  if (String(newPassword).length < 6) {
     return jsonResponse({ success: false, message: "Mật khẩu mới phải có ít nhất 6 ký tự!" });
   }
 
@@ -3844,7 +3865,7 @@ function handleChangePassword(taiKhoan, oldPassword, newPassword) {
   const oldMkClean = String(oldPassword).trim();
   const newMkClean = String(newPassword).trim();
 
-  for (let i = 1; i &lt; values.length; i++) {
+  for (let i = 1; i < values.length; i++) {
     const row = values[i];
     const rowDisp = displayValues[i];
     const rowTk = String(rowDisp[cols.colTk] || row[cols.colTk] || "").trim();
@@ -3891,7 +3912,7 @@ function handleAdminResetPassword(payload) {
   const displayValues = sheetData.getDataRange().getDisplayValues();
   let foundRow = -1;
 
-  for (let i = 1; i &lt; dataValues.length; i++) {
+  for (let i = 1; i < dataValues.length; i++) {
     const rowTk = String(displayValues[i][cols.colTk] || dataValues[i][cols.colTk] || "").trim();
     if (isUsernameMatch(rowTk, taiKhoan)) {
       foundRow = i + 1; // 1-based index
@@ -3919,8 +3940,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
     return jsonResponse({ success: false, message: "Không tìm thấy sheet DATA!" });
   }
 
-  // Tự động đồng bộ: nếu Sheet DULIEU chưa có hoặc thiếu dòng so với Sheet DATA -&gt; tự động đồng bộ theo thứ tự cố định
-  if (!sheetDuLieu || sheetDuLieu.getLastRow() &lt; sheetData.getLastRow()) {
+  // Tự động đồng bộ: nếu Sheet DULIEU chưa có hoặc thiếu dòng so với Sheet DATA -> tự động đồng bộ theo thứ tự cố định
+  if (!sheetDuLieu || sheetDuLieu.getLastRow() < sheetData.getLastRow()) {
     try {
       syncDuLieuWithData(false);
       sheetDuLieu = ss.getSheetByName(SHEET_DULIEU);
@@ -3937,7 +3958,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
   if (sheetDuLieu) {
     const duLieuValues = sheetDuLieu.getDataRange().getValues();
     const duLieuDisplay = sheetDuLieu.getDataRange().getDisplayValues();
-    for (let j = 1; j &lt; duLieuValues.length; j++) {
+    for (let j = 1; j < duLieuValues.length; j++) {
       const rawTk = String(duLieuValues[j][0] || "").trim();
       const dispTk = String(duLieuDisplay[j][0] || "").trim();
       const normTk = normalizeUsername(dispTk || rawTk);
@@ -3960,11 +3981,11 @@ function handleGetAdminSummary(adminTaiKhoan) {
   const hoaNhapMap = {};
   try {
     const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
-    if (sheetDuLieuHN &amp;&amp; sheetDuLieuHN.getLastRow() &gt; 1) {
+    if (sheetDuLieuHN && sheetDuLieuHN.getLastRow() > 1) {
       const hnumCols = Math.max(3, sheetDuLieuHN.getLastColumn());
       const hnVals = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getValues();
       const hnDisp = sheetDuLieuHN.getRange(2, 1, sheetDuLieuHN.getLastRow() - 1, hnumCols).getDisplayValues();
-      for (let h = 0; h &lt; hnVals.length; h++) {
+      for (let h = 0; h < hnVals.length; h++) {
         const hRawTk = String(hnVals[h][0] || "").trim();
         const hDispTk = String(hnDisp[h][0] || "").trim();
         const hNormTk = normalizeUsername(hDispTk || hRawTk);
@@ -3985,7 +4006,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
   let isCallerBgh = false;
   if (adminTaiKhoan) {
     const normAdminTk = normalizeUsername(adminTaiKhoan);
-    for (let k = 1; k &lt; dataUsersRaw.length; k++) {
+    for (let k = 1; k < dataUsersRaw.length; k++) {
       const rRaw = dataUsersRaw[k];
       const rDisp = dataUsersDisplay[k];
       const tkK = String(rDisp[cols.colTk] || rRaw[cols.colTk] || "").trim();
@@ -3998,7 +4019,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
   }
 
   const list = [];
-  for (let i = 1; i &lt; dataUsersRaw.length; i++) {
+  for (let i = 1; i < dataUsersRaw.length; i++) {
     const rowRaw = dataUsersRaw[i];
     const rowDisp = dataUsersDisplay[i];
     const rawTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
@@ -4009,7 +4030,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
     const quyen = String(rowRaw[cols.colQuyen] || "gv").trim();
 
     // Tài khoản quyền BGH sẽ KHÔNG nhìn thấy các tài khoản Admin
-    if (isCallerBgh &amp;&amp; isSuperAdmin(quyen)) {
+    if (isCallerBgh && isSuperAdmin(quyen)) {
       continue;
     }
     const matKhau = String(rowRaw[cols.colMatKhau] !== undefined ? rowRaw[cols.colMatKhau] : "").trim();
@@ -4021,7 +4042,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
                   duLieuMap[cleanNormTk.replace(/^0+/, "")] || null;
 
     const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
-    const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || isSuperAdmin(quyen)) ? null : dDataHn;
+    const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || cleanNormTk === 'blt' || !isRoleGv(quyen, cleanNormTk)) ? null : dDataHn;
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,
@@ -4072,7 +4093,7 @@ function handleCreateAccount(payload) {
   const displayValues = sheetData.getDataRange().getDisplayValues();
 
   // Kiểm tra trùng tài khoản
-  for (let i = 1; i &lt; dataValues.length; i++) {
+  for (let i = 1; i < dataValues.length; i++) {
     const existingTk = String(displayValues[i][cols.colTk] || dataValues[i][cols.colTk] || "").trim();
     if (isUsernameMatch(existingTk, tk)) {
       return jsonResponse({ success: false, message: "Tài khoản '" + tk + "' đã tồn tại trên hệ thống!" });
@@ -4095,7 +4116,7 @@ function handleCreateAccount(payload) {
   const totalExisting = Math.max(0, lastRowData - 1); // Trừ hàng tiêu đề (hàng 1)
 
   let insertedAtPos = null;
-  if (!isNaN(rawPos) &amp;&amp; rawPos &gt;= 1 &amp;&amp; rawPos &lt;= totalExisting) {
+  if (!isNaN(rawPos) && rawPos >= 1 && rawPos <= totalExisting) {
     const insertRow = rawPos + 1; // Hàng 1 là tiêu đề, nên STT rawPos nằm tại hàng rawPos + 1
     sheetData.insertRowBefore(insertRow);
     sheetData.getRange(insertRow, 1, 1, rowData.length).setValues([rowData]);
@@ -4121,7 +4142,7 @@ function handleCreateAccount(payload) {
       hk2: {}
     };
     const lastRowDuLieu = sheetDuLieu.getLastRow();
-    if (insertedAtPos !== null &amp;&amp; insertedAtPos &lt;= totalExisting &amp;&amp; (insertedAtPos + 1) &lt;= lastRowDuLieu) {
+    if (insertedAtPos !== null && insertedAtPos <= totalExisting && (insertedAtPos + 1) <= lastRowDuLieu) {
       const insertRowDuLieu = insertedAtPos + 1;
       sheetDuLieu.insertRowBefore(insertRowDuLieu);
       sheetDuLieu.getRange(insertRowDuLieu, 1, 1, 3).setValues([[cellTk, tenGv, JSON.stringify(initStore)]]);
@@ -4132,7 +4153,7 @@ function handleCreateAccount(payload) {
     }
   }
 
-  const posNotice = (insertedAtPos !== null &amp;&amp; insertedAtPos &lt;= totalExisting)
+  const posNotice = (insertedAtPos !== null && insertedAtPos <= totalExisting)
     ? " tại vị trí STT " + insertedAtPos + " (các giáo viên phía sau đã được tự động đẩy xuống)"
     : " vào cuối danh sách (STT " + insertedAtPos + ")";
 
@@ -4171,11 +4192,11 @@ function handleUpdateAccount(payload) {
   const displayValues = sheetData.getDataRange().getDisplayValues();
   let foundRow = -1;
 
-  for (let i = 1; i &lt; dataValues.length; i++) {
+  for (let i = 1; i < dataValues.length; i++) {
     const rowTk = String(displayValues[i][cols.colTk] || dataValues[i][cols.colTk] || "").trim();
     if (isUsernameMatch(rowTk, originalTk)) {
       foundRow = i + 1; // 1-based index
-    } else if (!isUsernameMatch(originalTk, newTk) &amp;&amp; isUsernameMatch(rowTk, newTk)) {
+    } else if (!isUsernameMatch(originalTk, newTk) && isUsernameMatch(rowTk, newTk)) {
       return jsonResponse({ success: false, message: "Tài khoản mới '" + newTk + "' đã trùng với một tài khoản khác!" });
     }
   }
@@ -4188,7 +4209,7 @@ function handleUpdateAccount(payload) {
   const cellTk = /^\d+$/.test(newTk) ? "'" + newTk : newTk;
   sheetData.getRange(foundRow, cols.colTk + 1).setValue(cellTk);
   sheetData.getRange(foundRow, cols.colTenGv + 1).setValue(tenGv);
-  if (cols.colNgaySinh !== -1 &amp;&amp; ngaySinh !== undefined) {
+  if (cols.colNgaySinh !== -1 && ngaySinh !== undefined) {
     sheetData.getRange(foundRow, cols.colNgaySinh + 1).setValue(ngaySinh);
   }
   sheetData.getRange(foundRow, cols.colQuyen + 1).setValue(quyen);
@@ -4202,7 +4223,7 @@ function handleUpdateAccount(payload) {
     const duLieuValues = sheetDuLieu.getDataRange().getValues();
     const duLieuDisplay = sheetDuLieu.getDataRange().getDisplayValues();
     let duLieuFound = false;
-    for (let j = 1; j &lt; duLieuValues.length; j++) {
+    for (let j = 1; j < duLieuValues.length; j++) {
       const dTk = String(duLieuDisplay[j][0] || duLieuValues[j][0] || "").trim();
       if (isUsernameMatch(dTk, originalTk)) {
         duLieuFound = true;
@@ -4248,7 +4269,7 @@ function handleDeleteAccount(taiKhoan) {
   const displayValues = sheetData.getDataRange().getDisplayValues();
   let deletedFromData = false;
 
-  for (let i = 1; i &lt; dataValues.length; i++) {
+  for (let i = 1; i < dataValues.length; i++) {
     const rowTk = String(displayValues[i][cols.colTk] || dataValues[i][cols.colTk] || "").trim();
     if (isUsernameMatch(rowTk, tkClean)) {
       sheetData.deleteRow(i + 1);
@@ -4266,7 +4287,7 @@ function handleDeleteAccount(taiKhoan) {
   if (sheetDuLieu) {
     const duLieuValues = sheetDuLieu.getDataRange().getValues();
     const duLieuDisplay = sheetDuLieu.getDataRange().getDisplayValues();
-    for (let j = 1; j &lt; duLieuValues.length; j++) {
+    for (let j = 1; j < duLieuValues.length; j++) {
       const dTk = String(duLieuDisplay[j][0] || duLieuValues[j][0] || "").trim();
       if (isUsernameMatch(dTk, tkClean)) {
         sheetDuLieu.deleteRow(j + 1);
@@ -4315,7 +4336,7 @@ function jsonResponse(data) {
  * LẤY HOẶC TẠO SHEET HUB_SERVER:
  * Cột A: TÀI KHOẢN (Tài khoản quản trị của trường)
  * Cột B: TÊN TRƯỜNG / ĐƠN VỊ (Tên trường hiển thị tại ô chọn trường đăng nhập)
- * Cột C: KHỐI LỚP (Dữ liệu khối &amp; lớp các trường khai báo)
+ * Cột C: KHỐI LỚP (Dữ liệu khối & lớp các trường khai báo)
  * Cột D: ĐỊA CHỈ URL WEB APP (Web App URL của trường)
  * Cột E: NGÀY CẬP NHẬT
  */
@@ -4347,7 +4368,7 @@ function getOrCreateHubServerSheet(ss) {
       Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss")
     ]);
   } else {
-    // Nếu sheet cũ chỉ có 4 cột và cột 3 là URL -&gt; tự động chèn thêm Cột C: Khối Lớp
+    // Nếu sheet cũ chỉ có 4 cột và cột 3 là URL -> tự động chèn thêm Cột C: Khối Lớp
     try {
       const lastCol = sheet.getLastColumn();
       if (lastCol === 4) {
@@ -4376,12 +4397,12 @@ function handleGetHubServers() {
     const lastRow = sheet.getLastRow();
     
     const schools = [];
-    if (lastRow &gt;= 2) {
+    if (lastRow >= 2) {
       const numCols = Math.max(sheet.getLastColumn(), 5);
       const values = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
       const displayValues = sheet.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
 
-      for (let i = 0; i &lt; values.length; i++) {
+      for (let i = 0; i < values.length; i++) {
         const tk = String(displayValues[i][0] || values[i][0] || "").trim();
         const tenTruong = String(displayValues[i][1] || values[i][1] || "").trim();
         const col3 = String(displayValues[i][2] || values[i][2] || "").trim();
@@ -4468,12 +4489,12 @@ function handleRegisterHubServer(payload) {
     const timestamp = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
 
     let foundIndex = -1;
-    if (lastRow &gt;= 2) {
+    if (lastRow >= 2) {
       const numCols = Math.max(sheet.getLastColumn(), 5);
       const values = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
       const displayValues = sheet.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
 
-      for (let i = 0; i &lt; values.length; i++) {
+      for (let i = 0; i < values.length; i++) {
         const rowTk = String(displayValues[i][0] || values[i][0] || "").trim().toLowerCase();
         const rowName = String(displayValues[i][1] || values[i][1] || "").trim().toLowerCase();
         const col3 = String(displayValues[i][2] || values[i][2] || "").trim();
@@ -4500,9 +4521,9 @@ function handleRegisterHubServer(payload) {
         if (sheetData) {
           const lastCol = sheetData.getLastColumn();
           let lopDayCol = -1;
-          if (lastCol &gt; 0) {
+          if (lastCol > 0) {
             const headerRow = sheetData.getRange(1, 1, 1, lastCol).getValues()[0];
-            for (let c = 0; c &lt; headerRow.length; c++) {
+            for (let c = 0; c < headerRow.length; c++) {
               const h = String(headerRow[c] || "").trim().toLowerCase();
               if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") {
                 lopDayCol = c + 1;
@@ -4510,20 +4531,20 @@ function handleRegisterHubServer(payload) {
               }
             }
           }
-          const targetCol = (lopDayCol &gt; 0) ? lopDayCol : Math.max(6, lastCol + 1);
+          const targetCol = (lopDayCol > 0) ? lopDayCol : Math.max(6, lastCol + 1);
           sheetData.getRange(1, targetCol).setValue("Lớp Dạy").setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
           sheetData.setColumnWidth(targetCol, 220);
           sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
 
           let classesDisplayStr = String(payload.lopDay || "").trim();
-          if (!classesDisplayStr &amp;&amp; khoiLop) {
+          if (!classesDisplayStr && khoiLop) {
             try {
               const parsed = JSON.parse(khoiLop);
               const allList = [];
-              ['6', '7', '8', '9'].forEach(g =&gt; {
+              ['6', '7', '8', '9'].forEach(g => {
                 if (Array.isArray(parsed[g])) allList.push(...parsed[g]);
               });
-              if (allList.length &gt; 0) classesDisplayStr = allList.join(", ");
+              if (allList.length > 0) classesDisplayStr = allList.join(", ");
             } catch (e) {
               classesDisplayStr = khoiLop;
             }
@@ -4533,10 +4554,10 @@ function handleRegisterHubServer(payload) {
             const dataVals = sheetData.getDataRange().getValues();
             const dataDisp = sheetData.getDataRange().getDisplayValues();
             const cols = getSheetDataCols(sheetData);
-            for (let d = 1; d &lt; dataVals.length; d++) {
+            for (let d = 1; d < dataVals.length; d++) {
               const dTk = String(dataDisp[d][cols.colTk] || dataVals[d][cols.colTk] || "").trim();
               const dTen = String(dataDisp[d][cols.colTenGv] || dataVals[d][cols.colTenGv] || "").trim();
-              if (isUsernameMatch(dTk, taiKhoan) || (tenTruong &amp;&amp; dTen.toLowerCase() === tenTruong.toLowerCase())) {
+              if (isUsernameMatch(dTk, taiKhoan) || (tenTruong && dTen.toLowerCase() === tenTruong.toLowerCase())) {
                 sheetData.getRange(d + 1, targetCol).setValue(classesDisplayStr);
                 break;
               }
@@ -4584,9 +4605,9 @@ function capNhatCotMoi() {
   if (sheetData) {
     const lastCol = sheetData.getLastColumn();
     let lopDayCol = -1;
-    if (lastCol &gt; 0) {
+    if (lastCol > 0) {
       const headerRow = sheetData.getRange(1, 1, 1, lastCol).getValues()[0];
-      for (let c = 0; c &lt; headerRow.length; c++) {
+      for (let c = 0; c < headerRow.length; c++) {
         const h = String(headerRow[c] || "").trim().toLowerCase();
         if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") {
           lopDayCol = c + 1; // 1-based column
@@ -4594,7 +4615,7 @@ function capNhatCotMoi() {
         }
       }
     }
-    const targetCol = (lopDayCol &gt; 0) ? lopDayCol : Math.max(6, lastCol + 1);
+    const targetCol = (lopDayCol > 0) ? lopDayCol : Math.max(6, lastCol + 1);
     sheetData.getRange(1, targetCol).setValue("Lớp Dạy");
     sheetData.getRange(1, targetCol).setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
     sheetData.setColumnWidth(targetCol, 220);
@@ -4605,14 +4626,14 @@ function capNhatCotMoi() {
     // Tự động đồng bộ các lớp từ HUB_SERVER sang Sheet DATA cho các trường
     try {
       const hubSheet = ss.getSheetByName(SHEET_HUB_SERVER);
-      if (hubSheet &amp;&amp; hubSheet.getLastRow() &gt;= 2) {
+      if (hubSheet && hubSheet.getLastRow() >= 2) {
         const hubLastRow = hubSheet.getLastRow();
         const numCols = Math.max(hubSheet.getLastColumn(), 5);
         const hubDisplay = hubSheet.getRange(2, 1, hubLastRow - 1, numCols).getDisplayValues();
         const colsData = getSheetDataCols(sheetData);
         const dataDisp = sheetData.getDataRange().getDisplayValues();
 
-        for (let h = 0; h &lt; hubDisplay.length; h++) {
+        for (let h = 0; h < hubDisplay.length; h++) {
           const hTk = String(hubDisplay[h][0] || "").trim();
           const col3 = String(hubDisplay[h][2] || "").trim();
           let kLop = col3.startsWith("http") ? "" : col3;
@@ -4621,11 +4642,11 @@ function capNhatCotMoi() {
             try {
               const p = JSON.parse(kLop);
               const a = [];
-              ['6', '7', '8', '9'].forEach(g =&gt; { if (Array.isArray(p[g])) a.push(...p[g]); });
-              if (a.length &gt; 0) str = a.join(", ");
+              ['6', '7', '8', '9'].forEach(g => { if (Array.isArray(p[g])) a.push(...p[g]); });
+              if (a.length > 0) str = a.join(", ");
             } catch(e) {}
             
-            for (let d = 1; d &lt; dataDisp.length; d++) {
+            for (let d = 1; d < dataDisp.length; d++) {
               const dTk = String(dataDisp[d][colsData.colTk] || "").trim();
               if (isUsernameMatch(dTk, hTk)) {
                 sheetData.getRange(d + 1, targetCol).setValue(str);
@@ -4714,7 +4735,7 @@ function initialSetup() {
   if (!sheetData) {
     // Nếu có Trang tính 1 / Sheet1 mặc định của Google Sheet mới, đổi tên thành DATA
     const sheets = ss.getSheets();
-    if (sheets.length === 1 &amp;&amp; (sheets[0].getName() === "Sheet1" || sheets[0].getName() === "Trang tính 1")) {
+    if (sheets.length === 1 && (sheets[0].getName() === "Sheet1" || sheets[0].getName() === "Trang tính 1")) {
       sheetData = sheets[0];
       sheetData.setName(SHEET_DATA);
     } else {
@@ -4748,7 +4769,7 @@ function initialSetup() {
 
   // 3. Khởi tạo Sheet HOA NHAP
   let sheetHN = initHoaNhapSheet(ss);
-  if (sheetHN.getLastRow() &lt;= 1) {
+  if (sheetHN.getLastRow() <= 1) {
     sheetHN.appendRow(["Nguyễn Văn An", "15/04/2012", "6A1", "Khuyết tật phát triển trí tuệ"]);
     sheetHN.appendRow(["Trần Thị Bình", "20/09/2011", "7A2", "Khuyết tật học tập"]);
     sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ"]);
@@ -4779,9 +4800,9 @@ function initialSetup() {
 
   // 6. Dọn dẹp sheet mặc định "Sheet1" hoặc "Trang tính 1" nếu còn thừa
   const defaultSheets = ["Sheet1", "Trang tính 1"];
-  defaultSheets.forEach(defName =&gt; {
+  defaultSheets.forEach(defName => {
     const s = ss.getSheetByName(defName);
-    if (s &amp;&amp; ss.getSheets().length &gt; 1) {
+    if (s && ss.getSheets().length > 1) {
       try {
         ss.deleteSheet(s);
       } catch (delErr) {}
@@ -4794,8 +4815,7 @@ function initialSetup() {
     message: "Khởi tạo thành công đầy đủ 4 Sheet: DATA, DULIEU, HOA NHAP, dulieu_hoanhap!"
   };
 }
-
-          </textarea>
+</textarea>
           </div>
         </div>
 
@@ -7516,6 +7536,28 @@ function initialSetup() {
 
     function isRoleAdmin(role) {
       return isSuperAdmin(role) || isRoleBgh(role);
+    }
+
+    function isRoleGv(teacherOrRole, username) {
+      let role = '';
+      let tk = '';
+      if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
+        role = teacherOrRole.quyen || teacherOrRole.vaiTro || '';
+        tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || '';
+      } else {
+        role = teacherOrRole || '';
+        tk = username || '';
+      }
+      const cleanTk = String(tk || '').trim().toLowerCase();
+      if (cleanTk === 'admin' || cleanTk === 'blt') return false;
+
+      const r = String(role || '').trim().toLowerCase();
+      if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
+      if (r.includes('admin') || r.includes('bgh') || r.includes('quản') || r.includes('giám hiệu')) return false;
+
+      if (r === 'gv' || r === 'giáo viên' || r === 'giaovien' || r === 'teacher') return true;
+      if (!r) return true;
+      return false;
     }
 
     // Chuẩn hóa tài khoản (Thêm số 0 vào đầu nếu là SĐT 9 chữ số)
@@ -11398,7 +11440,7 @@ function initialSetup() {
     }
 
     function updateAdminSummaryFilterButtons() {
-      const activeList = getEffectiveAdminTeachersList();
+      const activeList = getEffectiveAdminTeachersList().filter(t => isRoleGv(t));
       let countAll = activeList.length;
       let countOver = 0;
       let countNoOver = 0;
@@ -11488,7 +11530,7 @@ function initialSetup() {
 
       updateAdminSummaryFilterButtons();
 
-      const activeList = getEffectiveAdminTeachersList();
+      const activeList = getEffectiveAdminTeachersList().filter(t => isRoleGv(t));
       let totalTeachers = activeList.length;
       let filteredTeachers = activeList.filter(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
@@ -12564,7 +12606,8 @@ function initialSetup() {
     let currentSchoolSummaryPdfFileName = "";
 
     function previewSchoolSummaryReport() {
-      const filteredTeachers = adminTeachersList.filter(t => {
+      const baseTeachers = (adminTeachersList || []).filter(t => isRoleGv(t));
+      const filteredTeachers = baseTeachers.filter(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
         if (adminSummaryOvertimeFilter === 'overtime') return ov > 0;
         if (adminSummaryOvertimeFilter === 'no_overtime') return ov <= 0;
@@ -12989,8 +13032,9 @@ function initialSetup() {
         return;
       }
 
-      // Lọc danh sách giáo viên chính xác theo Học kỳ & Trạng thái phụ trội hiện tại của Admin
-      const filteredTeachers = adminTeachersList.filter(t => {
+      // Lọc danh sách giáo viên chính xác theo Học kỳ & Trạng thái phụ trội hiện tại của Admin (chỉ lấy quyền GV)
+      const baseTeachers = (adminTeachersList || []).filter(t => isRoleGv(t));
+      const filteredTeachers = baseTeachers.filter(t => {
         const ov = getTeacherOvertimeBySemester(t, adminSummarySemester);
         if (adminSummaryOvertimeFilter === 'overtime') return ov > 0;
         if (adminSummaryOvertimeFilter === 'no_overtime') return ov <= 0;
@@ -15045,15 +15089,12 @@ function initialSetup() {
       }
     }
 
-    // Danh sách giáo viên chuẩn của Phân hệ 2 (Bỏ qua hoàn toàn tài khoản Quản trị Admin)
+    // Danh sách giáo viên chuẩn của Phân hệ 2 (Chỉ lấy tài khoản có quyền GV, loại bỏ các quyền khác)
     function getHoaNhapTeachersList() {
       if (!Array.isArray(adminTeachersList)) return [];
       return adminTeachersList.filter(t => {
         if (!t) return false;
-        const tk = String(t.taiKhoan || "").trim().toLowerCase();
-        const quyen = String(t.quyen || t.vaiTro || "").trim().toLowerCase();
-        if (tk === 'admin' || isSuperAdmin(quyen)) return false;
-        return true;
+        return isRoleGv(t);
       });
     }
 
@@ -18376,10 +18417,7 @@ function initialSetup() {
 
     // Xuất Excel Thống kê danh sách giáo viên dạy hòa nhập toàn trường
     function exportHoaNhapTeachersStatusExcel() {
-      let list = adminTeachersList || [];
-      if (isRoleBgh(currentUser.quyen)) {
-        list = list.filter(t => !isSuperAdmin(t.quyen));
-      }
+      let list = getHoaNhapTeachersList();
 
       if (hoaNhapAdminSearchQuery) {
         list = list.filter(t => {
