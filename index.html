@@ -2984,6 +2984,10 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
     const rawTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
     if (!rawTk) continue;
     const normTk = normalizeUsername(rawTk);
+    const cleanTk = normTk.replace(/^'+/, "").toLowerCase();
+    const quyen = String(rowRaw[cols.colQuyen] || "").trim().toLowerCase();
+    // Bỏ qua tài khoản admin, không đưa vào danh sách kê khai dạy hòa nhập
+    if (cleanTk === "admin" || isSuperAdmin(quyen)) continue;
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
 
     // Lấy dữ liệu JSON hòa nhập đã kê khai trước đó (nếu có)
@@ -3141,9 +3145,11 @@ function handleGetAllHoaNhapData() {
         const hRawTk = String(hnVals[h][0] || "").trim();
         const hDispTk = String(hnDisp[h][0] || "").trim();
         const hNormTk = normalizeUsername(hDispTk || hRawTk);
-        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
         const cleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
         const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
+        // Bỏ qua tài khoản admin, không đưa vào danh sách giáo viên dạy hòa nhập
+        if (cleanRaw === 'admin' || cleanNorm === 'admin') continue;
+        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
         if (cleanRaw) map[cleanRaw] = hJsonStr;
         if (cleanNorm) map[cleanNorm] = hJsonStr;
         const stripped = cleanNorm.replace(/^0+/, "");
@@ -3159,41 +3165,76 @@ function handleGetAllHoaNhapData() {
 function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
 
+  const cleanTk = String(taiKhoan).trim().toLowerCase();
+  // Tài khoản Admin / Quản trị không lưu vào bảng kê khai dạy hòa nhập
+  if (cleanTk === "admin") {
+    return jsonResponse({ success: true, message: "Tài khoản Quản trị không tham gia kê khai tiết dạy." });
+  }
+
   // Kiểm tra nếu hệ thống đang bị khóa kê khai toàn trường (trừ tài khoản admin)
-  const isUserAdmin = isAdmin === true || String(taiKhoan).trim().toLowerCase() === "admin";
+  const isUserAdmin = isAdmin === true;
   if (isSystemLocked() &amp;&amp; !isUserAdmin) {
     return jsonResponse({
       success: false,
       message: "Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban giám hiệu nhà trường. Quý thầy cô chỉ có thể xem số liệu, không thể lưu dữ liệu mới lúc này!"
     });
   }
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
   if (!sheetDuLieuHN) {
     syncDuLieuHoaNhapWithData(true);
     sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
   }
-  let targetRow = -1;
+
   const lastRow = sheetDuLieuHN.getLastRow();
+  const matchingRows = [];
   if (lastRow &gt; 1) {
     const vals = sheetDuLieuHN.getRange(2, 1, lastRow - 1, 1).getValues();
     const disp = sheetDuLieuHN.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
     for (let i = 0; i &lt; vals.length; i++) {
       const tk = String(disp[i][0] || vals[i][0] || "").trim();
       if (isUsernameMatch(tk, taiKhoan)) {
-        targetRow = i + 2;
-        break;
+        matchingRows.push(i + 2); // Chỉ số dòng thực tế trong sheet
       }
     }
   }
-  if (targetRow === -1) {
-    const cellTk = /^\d+$/.test(taiKhoan) ? "'" + taiKhoan : taiKhoan;
-    sheetDuLieuHN.appendRow([cellTk, "", dataJson]);
-    targetRow = sheetDuLieuHN.getLastRow();
-    sheetDuLieuHN.getRange(targetRow, 1).setNumberFormat("@");
+
+  const normTk = normalizeUsername(taiKhoan);
+  const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
+
+  if (matchingRows.length === 0) {
+    // Tìm tên giáo viên từ Sheet DATA để điền vào Cột B
+    let tenGv = "";
+    const sheetData = ss.getSheetByName(SHEET_DATA);
+    if (sheetData) {
+      const dVals = sheetData.getDataRange().getValues();
+      const dDisp = sheetData.getDataRange().getDisplayValues();
+      const cols = getSheetDataCols(sheetData);
+      for (let r = 1; r &lt; dVals.length; r++) {
+        const sTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
+        if (isUsernameMatch(sTk, taiKhoan)) {
+          tenGv = String(dDisp[r][cols.colTenGv] || dVals[r][cols.colTenGv] || "").trim();
+          break;
+        }
+      }
+    }
+    sheetDuLieuHN.appendRow([cellTk, tenGv, dataJson]);
+    const newRow = sheetDuLieuHN.getLastRow();
+    sheetDuLieuHN.getRange(newRow, 1).setNumberFormat("@");
   } else {
+    // Cập nhật dòng đầu tiên với dữ liệu JSON mới nhất
+    const targetRow = matchingRows[0];
+    sheetDuLieuHN.getRange(targetRow, 1).setNumberFormat("@").setValue(cellTk);
     sheetDuLieuHN.getRange(targetRow, 3).setValue(dataJson);
+
+    // XÓA TẤT CẢ các dòng cũ trùng lặp của cùng tài khoản này (nếu có)
+    // Duyệt ngược từ dưới lên để không làm xáo trộn số hàng
+    for (let m = matchingRows.length - 1; m &gt;= 1; m--) {
+      sheetDuLieuHN.deleteRow(matchingRows[m]);
+    }
   }
+
   return jsonResponse({ success: true, message: "Đã lưu dữ liệu dạy hòa nhập thành công!" });
 }
 
@@ -3941,6 +3982,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
                   duLieuMap[cleanNormTk.replace(/^0+/, "")] || null;
 
     const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
+    const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || isSuperAdmin(quyen)) ? null : dDataHn;
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,
@@ -3951,7 +3993,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
       hasData: !!dData,
       dataJson: dData ? dData.dataJson : null,
       lopDay: dData ? (dData.lopDay || "") : "",
-      dataHoaNhapJson: dDataHn || null
+      dataHoaNhapJson: finalDataHn || null
     });
   }
 
@@ -14867,6 +14909,18 @@ function initialSetup() {
       }
     }
 
+    // Danh sách giáo viên chuẩn của Phân hệ 2 (Bỏ qua hoàn toàn tài khoản Quản trị Admin)
+    function getHoaNhapTeachersList() {
+      if (!Array.isArray(adminTeachersList)) return [];
+      return adminTeachersList.filter(t => {
+        if (!t) return false;
+        const tk = String(t.taiKhoan || "").trim().toLowerCase();
+        const quyen = String(t.quyen || t.vaiTro || "").trim().toLowerCase();
+        if (tk === 'admin' || isSuperAdmin(quyen)) return false;
+        return true;
+      });
+    }
+
     // Chuyển đổi giữa Sổ Cá Nhân và Cổng Quản Trị
     async function toggleHoaNhapRoleView() {
       if (isHoaNhapAdminView) {
@@ -14909,15 +14963,6 @@ function initialSetup() {
         await loadAdminAllData(false);
       }
 
-      // Đảm bảo dữ liệu của currentUser được đồng bộ ngay vào adminTeachersList
-      if (currentUser && Array.isArray(adminTeachersList)) {
-        const myT = adminTeachersList.find(t => isUsernameMatch(t.taiKhoan, currentUser.taiKhoan));
-        if (myT) {
-          myT._hnStore = JSON.parse(JSON.stringify(hoaNhapDataStore));
-          myT.dataHoaNhapJson = JSON.stringify(hoaNhapDataStore);
-        }
-      }
-
       renderHoaNhapAdminView();
       syncAllTeachersHoaNhapFromCloud();
     }
@@ -14952,18 +14997,12 @@ function initialSetup() {
               t.dataHoaNhapJson = jsonStr;
               try {
                 t._hnStore = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
-              } catch (e) { }
+              } catch (e) { t._hnStore = null; }
+            } else {
+              t.dataHoaNhapJson = null;
+              t._hnStore = null;
             }
           });
-        }
-
-        // Luôn đảm bảo tài khoản currentUser hiện tại được sync từ hoaNhapDataStore
-        if (currentUser && Array.isArray(adminTeachersList)) {
-          const myT = adminTeachersList.find(t => isUsernameMatch(t.taiKhoan, currentUser.taiKhoan));
-          if (myT) {
-            myT._hnStore = JSON.parse(JSON.stringify(hoaNhapDataStore));
-            myT.dataHoaNhapJson = JSON.stringify(hoaNhapDataStore);
-          }
         }
 
         renderHoaNhapAdminView();
@@ -16885,35 +16924,19 @@ function initialSetup() {
 
     // Helper tính số tiết hòa nhập của giáo viên
     function getTeacherHoaNhapStats(t) {
-      let store = {};
+      let store = { hk1: [], hk2: [] };
 
-      // 1. Nếu t là tài khoản currentUser đang đăng nhập -> lấy trực tiếp từ hoaNhapDataStore!
-      if (currentUser && isUsernameMatch(t.taiKhoan, currentUser.taiKhoan)) {
-        if (hoaNhapDataStore && ((hoaNhapDataStore.hk1 && hoaNhapDataStore.hk1.length > 0) || (hoaNhapDataStore.hk2 && hoaNhapDataStore.hk2.length > 0))) {
-          store = hoaNhapDataStore;
-        }
-      }
-
-      // 2. Nếu đã có _hnStore cache trên đối tượng giáo viên
-      if (!store.hk1 && t._hnStore) store = t._hnStore;
-
-      // 3. Nếu có dataHoaNhapJson trả về từ backend Google Sheet
-      if (!store.hk1 && t.dataHoaNhapJson) {
+      // CHỈ LẤY DỮ LIỆU TỪ SHEET DULIEU_HOANHAP (Không lấy bản nháp tạm thời của tài khoản đang đăng nhập)
+      if (t && t._hnStore && (Array.isArray(t._hnStore.hk1) || Array.isArray(t._hnStore.hk2))) {
+        store = t._hnStore;
+      } else if (t && t.dataHoaNhapJson) {
         try {
-          store = typeof t.dataHoaNhapJson === 'string' ? JSON.parse(t.dataHoaNhapJson) : t.dataHoaNhapJson;
-        } catch (e) { store = { hk1: [], hk2: [] }; }
-      }
-
-      // 4. Nếu vẫn chưa có -> Thử tìm trong localStorage offline
-      if (!store.hk1 || (store.hk1.length === 0 && (!store.hk2 || store.hk2.length === 0))) {
-        const localKey1 = `offline_hoanhap_data_${t.taiKhoan}`;
-        const localKey2 = `offline_hoanhap_data_${normalizeUsername(t.taiKhoan)}`;
-        const localCached = localStorage.getItem(localKey1) || localStorage.getItem(localKey2);
-        if (localCached) {
-          try {
-            const p = JSON.parse(localCached);
-            if (p && (p.hk1 || p.hk2)) store = p;
-          } catch (e) { }
+          const parsed = typeof t.dataHoaNhapJson === 'string' ? JSON.parse(t.dataHoaNhapJson) : t.dataHoaNhapJson;
+          if (parsed && (Array.isArray(parsed.hk1) || Array.isArray(parsed.hk2))) {
+            store = parsed;
+          }
+        } catch (e) {
+          store = { hk1: [], hk2: [] };
         }
       }
 
@@ -16927,7 +16950,7 @@ function initialSetup() {
         if (rowClasses.size > 0) {
           tClasses = Array.from(rowClasses);
         } else {
-          tClasses = parseTeacherLopDay(t.lopDay || '');
+          tClasses = parseTeacherLopDay(t ? (t.lopDay || '') : '');
         }
       }
       const matchedClassesSet = new Set();
@@ -16965,11 +16988,10 @@ function initialSetup() {
 
       const yearTotal = hk1Total + hk2Total;
 
-      // Kiểm tra trạng thái đã kê khai:
-      // Có tiết HK1 hoặc HK2 > 0, hoặc có dòng đã nhập tiết tuần > 0, hoặc đã nhấn lưu
-      const hasHk1Declared = (store.hk1 && store.hk1.some(r => (parseFloat(r.tongTiet) || parseFloat(r.tietTuan)) > 0));
-      const hasHk2Declared = (store.hk2 && store.hk2.some(r => (parseFloat(r.tongTiet) || parseFloat(r.tietTuan)) > 0));
-      const isDeclared = hasHk1Declared || hasHk2Declared || yearTotal > 0 || !!store._isSaved;
+      // Giáo viên được tính là đã kê khai nếu thực sự có dữ liệu trên sheet dulieu_hoanhap và có tiết dạy > 0
+      const hasHk1Declared = !!(store.hk1 && store.hk1.some(r => (parseFloat(r.tongTiet) || parseFloat(r.tietTuan)) > 0));
+      const hasHk2Declared = !!(store.hk2 && store.hk2.some(r => (parseFloat(r.tongTiet) || parseFloat(r.tietTuan)) > 0));
+      const isDeclared = (hasHk1Declared || hasHk2Declared || yearTotal > 0) && !!(t && (t.dataHoaNhapJson || t._hnStore));
 
       return {
         hasHnClasses,
@@ -16990,12 +17012,7 @@ function initialSetup() {
       if (!tbody) return;
       tbody.innerHTML = "";
 
-      let list = adminTeachersList || [];
-
-      // Lọc BGH không nhìn thấy Admin
-      if (isRoleBgh(currentUser.quyen)) {
-        list = list.filter(t => !isSuperAdmin(t.quyen));
-      }
+      let list = getHoaNhapTeachersList();
 
       // Lọc tìm kiếm
       if (hoaNhapAdminSearchQuery) {
@@ -17033,10 +17050,7 @@ function initialSetup() {
       }
 
       // Cập nhật badge số lượng giáo viên hòa nhập ở Tab Quản lý GV
-      let baseList = adminTeachersList || [];
-      if (isRoleBgh(currentUser.quyen)) {
-        baseList = baseList.filter(t => !isSuperAdmin(t.quyen));
-      }
+      let baseList = getHoaNhapTeachersList();
       const hnGvTotal = baseList.filter(t => {
         const s = getTeacherHoaNhapStats(t);
         return s.hasHnClasses || s.isDeclared;
@@ -17194,18 +17208,18 @@ function initialSetup() {
     // 3. Với mỗi lớp: liệt kê từng dòng giáo viên dạy hòa nhập lớp đó (ghi rõ lớp đó trên từng dòng cho đến hết GV dạy lớp đó)
     // 4. Lớp có từ 2, 3 HS thì tên HS, dạng tật, mức độ được ghi xuống dòng riêng
     function buildHoaNhapSummaryRows(sem, mode = hoaNhapSummaryViewMode) {
-      let list = adminTeachersList || [];
-      if (isRoleBgh(currentUser.quyen)) {
-        list = list.filter(t => !isSuperAdmin(t.quyen));
-      }
-
+      let list = getHoaNhapTeachersList();
       const defaultSoTuan = sem === 'hk2' ? 17 : 18;
 
-      // Chế độ 1: Xem theo Giáo Viên (sắp xếp theo giáo viên như cũ)
+      // Chế độ 1: Xem theo Giáo Viên
+      // CHỈ HIỂN THỊ CÁC GIÁO VIÊN ĐÃ KÊ KHAI VÀ LƯU DỮ LIỆU TRÊN SHEET DULIEU_HOANHAP
       if (mode === 'by_teacher') {
         const rows = [];
         list.forEach(t => {
+          if (!t.dataHoaNhapJson && !t._hnStore) return;
           const stats = getTeacherHoaNhapStats(t);
+          if (!stats.isDeclared) return;
+
           const store = stats.store;
           const semRows = sem === 'all'
             ? (store.hk1 || []).concat(store.hk2 || [])
@@ -17213,6 +17227,9 @@ function initialSetup() {
 
           semRows.forEach(r => {
             const tietTuan = parseFloat(r.tietTuan) || 0;
+            // Chỉ hiển thị các dòng thực sự kê khai số tiết > 0
+            if (tietTuan <= 0 && (!r.tongTiet || parseFloat(r.tongTiet) <= 0)) return;
+
             const normLop = normalizeClassName(r.lop);
             const matchedStudents = (hoaNhapStudentsList || []).filter(s => normalizeClassName(s.lop) === normLop);
             const sourceStudents = matchedStudents.length > 0 ? matchedStudents : (r.students || []);
@@ -17234,7 +17251,7 @@ function initialSetup() {
               tenHs: r.tenHs,
               dangKhuyetTat: r.dangKhuyetTat,
               mucDo: r.mucDo || "Nhẹ",
-              students: r.students,
+              students: sourceStudents,
               tietTuan: tietTuan,
               soTuan: soTuan,
               tongTiet: tongTiet,
@@ -17242,11 +17259,12 @@ function initialSetup() {
             });
           });
         });
+
+        rows.sort((a, b) => (a.teacherName || '').localeCompare(b.teacherName || ''));
         return rows;
       }
 
-      // Chế độ Mặc định: mode === 'by_class' (theo lớp từ 6A1 -> 9A14)
-      // 1. Gom nhóm danh sách học sinh theo từng lớp
+      // Chế độ 2: Sắp xếp theo lớp (từ 6A1 đến 9A14)
       const classMap = new Map();
       (hoaNhapStudentsList || []).forEach(s => {
         const rawClass = (s.lop || '').trim();
@@ -17258,23 +17276,24 @@ function initialSetup() {
         classMap.get(key).students.push(s);
       });
 
-      // 2. Sắp xếp thứ tự các lớp tự nhiên từ 6A1 đến 9A14
       const sortedClasses = Array.from(classMap.values()).sort((a, b) => compareSchoolClasses(a.rawClass, b.rawClass));
-
       const resultRows = [];
 
       sortedClasses.forEach((clsItem, clsIdx) => {
         const teacherRowsInClass = [];
 
         list.forEach(t => {
+          if (!t.dataHoaNhapJson && !t._hnStore) return;
           const stats = getTeacherHoaNhapStats(t);
+          if (!stats.isDeclared) return;
+
           const store = stats.store;
           const semRows = sem === 'all'
             ? (store.hk1 || []).concat(store.hk2 || [])
             : (store[sem] || []);
 
-          // Dò xem giáo viên có dòng kê khai cho lớp này không
-          const matchingRows = semRows.filter(r => isSameClass(r.lop, clsItem.rawClass));
+          // Dò xem giáo viên có dòng kê khai cho lớp này với số tiết > 0 không
+          const matchingRows = semRows.filter(r => isSameClass(r.lop, clsItem.rawClass) && ((parseFloat(r.tietTuan) || 0) > 0 || (parseFloat(r.tongTiet) || 0) > 0));
           if (matchingRows.length > 0) {
             matchingRows.forEach(r => {
               const tietTuan = parseFloat(r.tietTuan) || 0;
@@ -17296,41 +17315,6 @@ function initialSetup() {
                 isClassFirstRow: false
               });
             });
-          } else {
-            // Kiểm tra xem giáo viên có dạy lớp này theo phân công (ưu tiên Phân hệ 2)
-            let tClasses = [];
-            if (store && Array.isArray(store.classes) && store.classes.length > 0) {
-              tClasses = store.classes;
-            } else {
-              tClasses = parseTeacherLopDay(t.lopDay || '');
-            }
-            const teachesThisClass = tClasses.some(c => {
-              if (isSameClass(c, clsItem.rawClass)) return true;
-              const m = String(c).trim().match(/^(?:khối|k)\s*([6-9])/i);
-              if (m) {
-                const sm = clsItem.rawClass.match(/^([6-9])/);
-                if (sm && m[1] === sm[1]) return true;
-              }
-              return false;
-            });
-
-            if (teachesThisClass) {
-              const classWeeksList = (clsItem.students || []).map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
-              const autoClassWeeks = classWeeksList.length > 0 ? Math.max(...classWeeksList) : defaultSoTuan;
-
-              teacherRowsInClass.push({
-                teacherTk: t.taiKhoan,
-                teacherName: t.tenGv,
-                monGv: t.monGv || t.subject || "Tin học",
-                lop: clsItem.rawClass,
-                students: clsItem.students,
-                tietTuan: 0,
-                soTuan: autoClassWeeks,
-                tongTiet: 0,
-                isDeclared: false,
-                isClassFirstRow: false
-              });
-            }
           }
         });
 
@@ -17338,7 +17322,7 @@ function initialSetup() {
           teacherRowsInClass[0].isClassFirstRow = true;
           teacherRowsInClass.forEach(r => resultRows.push(r));
         } else {
-          // Chưa có GV nào kê khai hoặc phân công lớp này
+          // Lớp này có HS hòa nhập nhưng CHƯA CÓ giáo viên nào kê khai trên sheet dulieu_hoanhap
           resultRows.push({
             teacherTk: '',
             teacherName: 'Chưa có GV kê khai',
@@ -17384,10 +17368,7 @@ function initialSetup() {
         `;
       }
 
-      let list = adminTeachersList || [];
-      if (isRoleBgh(currentUser.quyen)) {
-        list = list.filter(t => !isSuperAdmin(t.quyen));
-      }
+      let list = getHoaNhapTeachersList();
 
       let totalTeachers = list.length;
       let hnTeachersCount = 0;
@@ -18022,10 +18003,7 @@ function initialSetup() {
       modal.classList.remove('hidden');
     }
     function exportHoaNhapTeachersStatusPdf() {
-      let list = adminTeachersList || [];
-      if (isRoleBgh(currentUser.quyen)) {
-        list = list.filter(t => !isSuperAdmin(t.quyen));
-      }
+      let list = getHoaNhapTeachersList();
 
       if (hoaNhapAdminSearchQuery) {
         list = list.filter(t => {

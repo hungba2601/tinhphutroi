@@ -586,6 +586,10 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
     const rawTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
     if (!rawTk) continue;
     const normTk = normalizeUsername(rawTk);
+    const cleanTk = normTk.replace(/^'+/, "").toLowerCase();
+    const quyen = String(rowRaw[cols.colQuyen] || "").trim().toLowerCase();
+    // Bỏ qua tài khoản admin, không đưa vào danh sách kê khai dạy hòa nhập
+    if (cleanTk === "admin" || isSuperAdmin(quyen)) continue;
     const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
 
     // Lấy dữ liệu JSON hòa nhập đã kê khai trước đó (nếu có)
@@ -743,9 +747,11 @@ function handleGetAllHoaNhapData() {
         const hRawTk = String(hnVals[h][0] || "").trim();
         const hDispTk = String(hnDisp[h][0] || "").trim();
         const hNormTk = normalizeUsername(hDispTk || hRawTk);
-        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
         const cleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
         const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
+        // Bỏ qua tài khoản admin, không đưa vào danh sách giáo viên dạy hòa nhập
+        if (cleanRaw === 'admin' || cleanNorm === 'admin') continue;
+        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
         if (cleanRaw) map[cleanRaw] = hJsonStr;
         if (cleanNorm) map[cleanNorm] = hJsonStr;
         const stripped = cleanNorm.replace(/^0+/, "");
@@ -761,41 +767,76 @@ function handleGetAllHoaNhapData() {
 function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
 
+  const cleanTk = String(taiKhoan).trim().toLowerCase();
+  // Tài khoản Admin / Quản trị không lưu vào bảng kê khai dạy hòa nhập
+  if (cleanTk === "admin") {
+    return jsonResponse({ success: true, message: "Tài khoản Quản trị không tham gia kê khai tiết dạy." });
+  }
+
   // Kiểm tra nếu hệ thống đang bị khóa kê khai toàn trường (trừ tài khoản admin)
-  const isUserAdmin = isAdmin === true || String(taiKhoan).trim().toLowerCase() === "admin";
+  const isUserAdmin = isAdmin === true;
   if (isSystemLocked() && !isUserAdmin) {
     return jsonResponse({
       success: false,
       message: "Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban giám hiệu nhà trường. Quý thầy cô chỉ có thể xem số liệu, không thể lưu dữ liệu mới lúc này!"
     });
   }
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
   if (!sheetDuLieuHN) {
     syncDuLieuHoaNhapWithData(true);
     sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
   }
-  let targetRow = -1;
+
   const lastRow = sheetDuLieuHN.getLastRow();
+  const matchingRows = [];
   if (lastRow > 1) {
     const vals = sheetDuLieuHN.getRange(2, 1, lastRow - 1, 1).getValues();
     const disp = sheetDuLieuHN.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
     for (let i = 0; i < vals.length; i++) {
       const tk = String(disp[i][0] || vals[i][0] || "").trim();
       if (isUsernameMatch(tk, taiKhoan)) {
-        targetRow = i + 2;
-        break;
+        matchingRows.push(i + 2); // Chỉ số dòng thực tế trong sheet
       }
     }
   }
-  if (targetRow === -1) {
-    const cellTk = /^\d+$/.test(taiKhoan) ? "'" + taiKhoan : taiKhoan;
-    sheetDuLieuHN.appendRow([cellTk, "", dataJson]);
-    targetRow = sheetDuLieuHN.getLastRow();
-    sheetDuLieuHN.getRange(targetRow, 1).setNumberFormat("@");
+
+  const normTk = normalizeUsername(taiKhoan);
+  const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
+
+  if (matchingRows.length === 0) {
+    // Tìm tên giáo viên từ Sheet DATA để điền vào Cột B
+    let tenGv = "";
+    const sheetData = ss.getSheetByName(SHEET_DATA);
+    if (sheetData) {
+      const dVals = sheetData.getDataRange().getValues();
+      const dDisp = sheetData.getDataRange().getDisplayValues();
+      const cols = getSheetDataCols(sheetData);
+      for (let r = 1; r < dVals.length; r++) {
+        const sTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
+        if (isUsernameMatch(sTk, taiKhoan)) {
+          tenGv = String(dDisp[r][cols.colTenGv] || dVals[r][cols.colTenGv] || "").trim();
+          break;
+        }
+      }
+    }
+    sheetDuLieuHN.appendRow([cellTk, tenGv, dataJson]);
+    const newRow = sheetDuLieuHN.getLastRow();
+    sheetDuLieuHN.getRange(newRow, 1).setNumberFormat("@");
   } else {
+    // Cập nhật dòng đầu tiên với dữ liệu JSON mới nhất
+    const targetRow = matchingRows[0];
+    sheetDuLieuHN.getRange(targetRow, 1).setNumberFormat("@").setValue(cellTk);
     sheetDuLieuHN.getRange(targetRow, 3).setValue(dataJson);
+
+    // XÓA TẤT CẢ các dòng cũ trùng lặp của cùng tài khoản này (nếu có)
+    // Duyệt ngược từ dưới lên để không làm xáo trộn số hàng
+    for (let m = matchingRows.length - 1; m >= 1; m--) {
+      sheetDuLieuHN.deleteRow(matchingRows[m]);
+    }
   }
+
   return jsonResponse({ success: true, message: "Đã lưu dữ liệu dạy hòa nhập thành công!" });
 }
 
@@ -1543,6 +1584,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
                   duLieuMap[cleanNormTk.replace(/^0+/, "")] || null;
 
     const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
+    const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || isSuperAdmin(quyen)) ? null : dDataHn;
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,
@@ -1553,7 +1595,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
       hasData: !!dData,
       dataJson: dData ? dData.dataJson : null,
       lopDay: dData ? (dData.lopDay || "") : "",
-      dataHoaNhapJson: dDataHn || null
+      dataHoaNhapJson: finalDataHn || null
     });
   }
 
