@@ -647,7 +647,14 @@
           </div>
 
           <!-- Nút tác vụ trên bảng -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="quickFillHoaNhapPeriodsPrompt()"
+              class="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-purple-200 active:scale-95"
+              title="Điền nhanh số tiết thực dạy/tuần cho tất cả các lớp">
+              <i class="fa-solid fa-bolt text-purple-600"></i>
+              <span>Điền nhanh tiết</span>
+            </button>
+
             <button type="button" onclick="quickFillHoaNhapWeeks()"
               class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-indigo-200 active:scale-95"
               title="Điền nhanh số tuần thực dạy (18 tuần cho HK1, 17 tuần cho HK2) cho tất cả các lớp">
@@ -676,8 +683,22 @@
                 <th class="py-3 px-3 text-left min-w-[170px] border-r border-slate-200">Dạng khuyết tật</th>
                 <th class="py-3 px-3 w-24 min-w-[85px] text-center border-r border-slate-200">Mức độ</th>
                 <th class="py-3 px-3 w-28 min-w-[100px] text-center border-r border-slate-200">Môn dạy</th>
-                <th class="py-3 px-3 w-28 min-w-[110px] bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
-                  Số tiết thực dạy /tuần
+                <th class="py-2 px-2 w-36 min-w-[135px] bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="leading-tight text-xs sm:text-sm font-bold">Số tiết thực dạy /tuần</span>
+                    <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-indigo-200 shadow-2xs">
+                      <input type="number" id="quick-fill-hn-tiet-input" min="0" step="0.5" placeholder="1"
+                        title="Nhập số tiết để điền nhanh cho tất cả các lớp"
+                        class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-indigo-500"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillHoaNhapPeriods(this.value);}">
+                      <button type="button" onclick="quickFillHoaNhapPeriods(document.getElementById('quick-fill-hn-tiet-input').value)"
+                        title="Điền nhanh số tiết thực dạy này cho tất cả các lớp"
+                        class="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer">
+                        <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
+                        <span>Điền all</span>
+                      </button>
+                    </div>
+                  </div>
                 </th>
                 <th class="py-3 px-3 w-28 min-w-[110px] bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
                   Số tuần thực dạy
@@ -15016,6 +15037,68 @@ function initialSetup() {
       }
       renderHoaNhapTeacherTable();
       showToast("Đã xóa dòng khỏi danh sách kê khai!", "info");
+    }
+
+    // Điền nhanh số tiết thực dạy/tuần cho tất cả các lớp trong học kỳ
+    function quickFillHoaNhapPeriods(val) {
+      if (hoaNhapActiveSem === 'all') {
+        showToast("Vui lòng chọn Học Kỳ 1 hoặc Học Kỳ 2 để điền nhanh số tiết!", "warning");
+        return;
+      }
+      const rows = hoaNhapDataStore[hoaNhapActiveSem] || [];
+      if (rows.length === 0) {
+        showToast("Chưa có lớp nào trong danh sách để điền số tiết!", "warning");
+        return;
+      }
+
+      let num = parseFloat(val);
+      if (val === undefined || val === null || val === "" || isNaN(num) || num < 0) {
+        const headerInput = document.getElementById('quick-fill-hn-tiet-input');
+        if (headerInput && headerInput.value && !isNaN(parseFloat(headerInput.value))) {
+          num = parseFloat(headerInput.value);
+        } else {
+          const userPrompt = prompt("Nhập số tiết thực dạy/tuần để điền nhanh cho tất cả các lớp:", "1");
+          if (userPrompt === null) return;
+          num = parseFloat(userPrompt);
+          if (isNaN(num) || num < 0) {
+            showToast("Số tiết nhập vào không hợp lệ!", "error");
+            return;
+          }
+        }
+      }
+
+      const headerInput = document.getElementById('quick-fill-hn-tiet-input');
+      if (headerInput) headerInput.value = num;
+
+      const defaultWeeks = hoaNhapActiveSem === 'hk2' ? 17 : 18;
+      rows.forEach(r => {
+        r.tietTuan = num;
+        const soTuan = parseFloat(r.soTuan) || defaultWeeks;
+        r.tongTiet = num * soTuan;
+      });
+
+      if (currentUser && currentUser.taiKhoan) {
+        localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
+      }
+
+      renderHoaNhapTeacherTable();
+      showToast(`Đã điền nhanh ${num} tiết thực dạy/tuần cho tất cả ${rows.length} lớp! Nhấn "Lưu Lên Google Sheet" để lưu lại.`, "success");
+    }
+
+    function quickFillHoaNhapPeriodsPrompt() {
+      const headerInput = document.getElementById('quick-fill-hn-tiet-input');
+      let defaultVal = "1";
+      if (headerInput && headerInput.value && !isNaN(parseFloat(headerInput.value))) {
+        defaultVal = headerInput.value;
+      }
+      const userPrompt = prompt("Nhập số tiết thực dạy/tuần để điền nhanh cho tất cả các lớp:", defaultVal);
+      if (userPrompt === null) return;
+      const num = parseFloat(userPrompt);
+      if (isNaN(num) || num < 0) {
+        showToast("Số tiết nhập vào không hợp lệ!", "error");
+        return;
+      }
+      quickFillHoaNhapPeriods(num);
     }
 
     // Điền nhanh số tuần (18 cho HK1, 17 cho HK2)
