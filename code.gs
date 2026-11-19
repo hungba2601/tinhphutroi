@@ -144,6 +144,18 @@ function doGet(e) {
       return handleGetHoaNhapStudents();
     }
 
+    if (action === "addHoaNhapStudent" || action === "createHoaNhapStudent") {
+      return handleAddHoaNhapStudent(params);
+    }
+
+    if (action === "updateHoaNhapStudent" || action === "editHoaNhapStudent") {
+      return handleUpdateHoaNhapStudent(params);
+    }
+
+    if (action === "deleteHoaNhapStudent") {
+      return handleDeleteHoaNhapStudent(params);
+    }
+
     if (action === "getHoaNhapData") {
       return handleGetHoaNhapData(params.taiKhoan || params.tai_khoan);
     }
@@ -308,6 +320,17 @@ function doPost(e) {
 
       case "getHoaNhapStudents":
         return handleGetHoaNhapStudents();
+
+      case "addHoaNhapStudent":
+      case "createHoaNhapStudent":
+        return handleAddHoaNhapStudent(payload);
+
+      case "updateHoaNhapStudent":
+      case "editHoaNhapStudent":
+        return handleUpdateHoaNhapStudent(payload);
+
+      case "deleteHoaNhapStudent":
+        return handleDeleteHoaNhapStudent(payload);
 
       case "getHoaNhapData":
         return handleGetHoaNhapData(payload.taiKhoan || payload.tai_khoan);
@@ -737,6 +760,209 @@ function handleGetHoaNhapStudents() {
     });
   }
   return jsonResponse({ success: true, list: list });
+}
+
+/**
+ * THÊM HỌC SINH HÒA NHẬP MỚI VÀO SHEET "HOA NHAP" (PHÂN HỆ 2)
+ * payload: { tenHs, lop, ngaySinh, dangKhuyetTat, mucDo, thoiGian, position }
+ */
+function handleAddHoaNhapStudent(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetHN = initHoaNhapSheet(ss);
+
+    const tenHs = String(payload.tenHs || payload.ten_hs || "").trim();
+    if (!tenHs) {
+      return jsonResponse({ success: false, message: "Họ và tên học sinh không được để trống!" });
+    }
+    const lop = String(payload.lop || "").trim().toUpperCase();
+    const ngaySinh = String(payload.ngaySinh || payload.namSinh || payload.ngay_sinh || "").trim();
+    const dangKhuyetTat = String(payload.dangKhuyetTat || payload.loaiHoaNhap || payload.khuyetTat || "Khuyết tật").trim();
+    const mucDo = String(payload.mucDo || payload.muc_do || "Nhẹ").trim();
+    const thoiGian = String(payload.thoiGian || payload.thoi_gian || "").trim();
+
+    const lastRow = sheetHN.getLastRow();
+    const totalStudents = Math.max(0, lastRow - 1);
+
+    // Vị trí chèn (position: số thứ tự STT, từ 1 đến totalStudents + 1)
+    let pos = parseInt(payload.position || payload.stt, 10);
+    let targetRow = lastRow + 1;
+
+    if (!isNaN(pos) && pos >= 1 && pos <= totalStudents) {
+      targetRow = pos + 1;
+      sheetHN.insertRowBefore(targetRow);
+    } else {
+      targetRow = lastRow + 1;
+    }
+
+    const rowData = [tenHs, ngaySinh, lop, dangKhuyetTat, mucDo, thoiGian];
+    sheetHN.getRange(targetRow, 1, 1, 6).setValues([rowData]);
+    sheetHN.getRange(targetRow, 2).setNumberFormat("@");
+
+    // Lấy lại danh sách mới nhất sau khi thêm
+    const freshRes = handleGetHoaNhapStudents();
+    let freshList = [];
+    try {
+      const parsed = JSON.parse(freshRes.getContent());
+      if (parsed && Array.isArray(parsed.list)) freshList = parsed.list;
+    } catch (e) {}
+
+    return jsonResponse({
+      success: true,
+      message: "Thêm học sinh hòa nhập vào Google Sheet thành công!",
+      list: freshList
+    });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi thêm học sinh: " + err.toString() });
+  }
+}
+
+/**
+ * CẬP NHẬT THÔNG TIN HỌC SINH HÒA NHẬP TRONG SHEET "HOA NHAP" (PHÂN HỆ 2)
+ * payload: { stt, index, oldTenHs, oldLop, tenHs, lop, ngaySinh, dangKhuyetTat, mucDo, thoiGian, newPosition }
+ */
+function handleUpdateHoaNhapStudent(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetHN = initHoaNhapSheet(ss);
+    const lastRow = sheetHN.getLastRow();
+    if (lastRow <= 1) {
+      return jsonResponse({ success: false, message: "Sheet HOA NHAP đang rỗng, không thể cập nhật!" });
+    }
+
+    const tenHs = String(payload.tenHs || payload.ten_hs || "").trim();
+    if (!tenHs) {
+      return jsonResponse({ success: false, message: "Họ và tên học sinh không được để trống!" });
+    }
+    const lop = String(payload.lop || "").trim().toUpperCase();
+    const ngaySinh = String(payload.ngaySinh || payload.namSinh || payload.ngay_sinh || "").trim();
+    const dangKhuyetTat = String(payload.dangKhuyetTat || payload.loaiHoaNhap || payload.khuyetTat || "Khuyết tật").trim();
+    const mucDo = String(payload.mucDo || payload.muc_do || "Nhẹ").trim();
+    const thoiGian = String(payload.thoiGian || payload.thoi_gian || "").trim();
+
+    let targetRow = -1;
+    let stt = parseInt(payload.stt !== undefined ? payload.stt : payload.index, 10);
+    if (!isNaN(stt) && stt >= 1 && (stt + 1) <= lastRow) {
+      targetRow = stt + 1;
+    }
+
+    const oldTen = String(payload.oldTenHs || "").trim().toLowerCase();
+    const oldLop = String(payload.oldLop || "").trim().toLowerCase();
+
+    if (targetRow === -1 || oldTen) {
+      const vals = sheetHN.getRange(2, 1, lastRow - 1, 3).getValues();
+      for (let i = 0; i < vals.length; i++) {
+        const rowTen = String(vals[i][0] || "").trim().toLowerCase();
+        const rowLop = String(vals[i][2] || "").trim().toLowerCase();
+        if (oldTen && rowTen === oldTen && (!oldLop || rowLop === oldLop)) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (targetRow < 2 || targetRow > lastRow) {
+      return jsonResponse({ success: false, message: "Không tìm thấy học sinh cần chỉnh sửa trong Sheet HOA NHAP!" });
+    }
+
+    const rowData = [tenHs, ngaySinh, lop, dangKhuyetTat, mucDo, thoiGian];
+    sheetHN.getRange(targetRow, 1, 1, 6).setValues([rowData]);
+    sheetHN.getRange(targetRow, 2).setNumberFormat("@");
+
+    // Nếu người dùng chọn đổi số thứ tự (newPosition):
+    let newPos = parseInt(payload.newPosition, 10);
+    const totalStudents = lastRow - 1;
+    if (!isNaN(newPos) && newPos >= 1 && newPos <= totalStudents && (newPos + 1) !== targetRow) {
+      const destRow = newPos + 1;
+      const moveVals = sheetHN.getRange(targetRow, 1, 1, 6).getValues();
+      sheetHN.deleteRow(targetRow);
+      if (destRow > targetRow) {
+        const actualDest = destRow - 1;
+        if (actualDest >= sheetHN.getLastRow()) {
+          sheetHN.appendRow(moveVals[0]);
+        } else {
+          sheetHN.insertRowBefore(actualDest + 1);
+          sheetHN.getRange(actualDest + 1, 1, 1, 6).setValues(moveVals);
+        }
+      } else {
+        sheetHN.insertRowBefore(destRow);
+        sheetHN.getRange(destRow, 1, 1, 6).setValues(moveVals);
+      }
+      sheetHN.getRange("B:B").setNumberFormat("@");
+    }
+
+    const freshRes = handleGetHoaNhapStudents();
+    let freshList = [];
+    try {
+      const parsed = JSON.parse(freshRes.getContent());
+      if (parsed && Array.isArray(parsed.list)) freshList = parsed.list;
+    } catch (e) {}
+
+    return jsonResponse({
+      success: true,
+      message: "Cập nhật thông tin học sinh hòa nhập thành công!",
+      list: freshList
+    });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi cập nhật học sinh: " + err.toString() });
+  }
+}
+
+/**
+ * XÓA HỌC SINH HÒA NHẬP KHỎI SHEET "HOA NHAP" (PHÂN HỆ 2)
+ * payload: { stt, index, tenHs, lop }
+ */
+function handleDeleteHoaNhapStudent(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetHN = initHoaNhapSheet(ss);
+    const lastRow = sheetHN.getLastRow();
+    if (lastRow <= 1) {
+      return jsonResponse({ success: false, message: "Sheet HOA NHAP đang rỗng!" });
+    }
+
+    let targetRow = -1;
+    let stt = parseInt(payload.stt !== undefined ? payload.stt : payload.index, 10);
+    if (!isNaN(stt) && stt >= 1 && (stt + 1) <= lastRow) {
+      targetRow = stt + 1;
+    }
+
+    const tenHs = String(payload.tenHs || "").trim().toLowerCase();
+    const lop = String(payload.lop || "").trim().toLowerCase();
+
+    if (targetRow === -1 || tenHs) {
+      const vals = sheetHN.getRange(2, 1, lastRow - 1, 3).getValues();
+      for (let i = 0; i < vals.length; i++) {
+        const rowTen = String(vals[i][0] || "").trim().toLowerCase();
+        const rowLop = String(vals[i][2] || "").trim().toLowerCase();
+        if (tenHs && rowTen === tenHs && (!lop || rowLop === lop)) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (targetRow < 2 || targetRow > lastRow) {
+      return jsonResponse({ success: false, message: "Không tìm thấy học sinh cần xóa trong danh sách!" });
+    }
+
+    sheetHN.deleteRow(targetRow);
+
+    const freshRes = handleGetHoaNhapStudents();
+    let freshList = [];
+    try {
+      const parsed = JSON.parse(freshRes.getContent());
+      if (parsed && Array.isArray(parsed.list)) freshList = parsed.list;
+    } catch (e) {}
+
+    return jsonResponse({
+      success: true,
+      message: "Đã xóa học sinh khỏi danh sách hòa nhập thành công!",
+      list: freshList
+    });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi xóa học sinh: " + err.toString() });
+  }
 }
 
 /**

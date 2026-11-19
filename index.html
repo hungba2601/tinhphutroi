@@ -1153,11 +1153,18 @@
             <p class="text-xs text-slate-500 mt-0.5">Dữ liệu nguồn được đọc trực tiếp từ Sheet "HOA NHAP" trên Google
               Sheet.</p>
           </div>
-          <button type="button" onclick="loadHoaNhapStudentsFromCloud(false)"
-            class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-indigo-200 active:scale-95">
-            <i class="fa-solid fa-rotate"></i>
-            <span>Đồng bộ từ Sheet HOA NHAP</span>
-          </button>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="openHoaNhapStudentModal(null)"
+              class="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 active:scale-95">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>Thêm HS Hòa Nhập</span>
+            </button>
+            <button type="button" onclick="loadHoaNhapStudentsFromCloud(false)"
+              class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-indigo-200 active:scale-95">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Đồng bộ từ Sheet HOA NHAP</span>
+            </button>
+          </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
@@ -1172,6 +1179,7 @@
                   <th class="py-3 px-4 text-left min-w-[220px]">Dạng khuyết tật</th>
                   <th class="py-3 px-3 text-center w-28">Mức độ</th>
                   <th class="py-3 px-3 text-center w-36">Thời gian (Tuần)</th>
+                  <th class="py-3 px-3 text-center w-28">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="hn-admin-students-tbody" class="divide-y divide-slate-100">
@@ -2567,6 +2575,18 @@ function doGet(e) {
       return handleGetHoaNhapStudents();
     }
 
+    if (action === "addHoaNhapStudent" || action === "createHoaNhapStudent") {
+      return handleAddHoaNhapStudent(params);
+    }
+
+    if (action === "updateHoaNhapStudent" || action === "editHoaNhapStudent") {
+      return handleUpdateHoaNhapStudent(params);
+    }
+
+    if (action === "deleteHoaNhapStudent") {
+      return handleDeleteHoaNhapStudent(params);
+    }
+
     if (action === "getHoaNhapData") {
       return handleGetHoaNhapData(params.taiKhoan || params.tai_khoan);
     }
@@ -2731,6 +2751,17 @@ function doPost(e) {
 
       case "getHoaNhapStudents":
         return handleGetHoaNhapStudents();
+
+      case "addHoaNhapStudent":
+      case "createHoaNhapStudent":
+        return handleAddHoaNhapStudent(payload);
+
+      case "updateHoaNhapStudent":
+      case "editHoaNhapStudent":
+        return handleUpdateHoaNhapStudent(payload);
+
+      case "deleteHoaNhapStudent":
+        return handleDeleteHoaNhapStudent(payload);
 
       case "getHoaNhapData":
         return handleGetHoaNhapData(payload.taiKhoan || payload.tai_khoan);
@@ -3160,6 +3191,209 @@ function handleGetHoaNhapStudents() {
     });
   }
   return jsonResponse({ success: true, list: list });
+}
+
+/**
+ * THÊM HỌC SINH HÒA NHẬP MỚI VÀO SHEET "HOA NHAP" (PHÂN HỆ 2)
+ * payload: { tenHs, lop, ngaySinh, dangKhuyetTat, mucDo, thoiGian, position }
+ */
+function handleAddHoaNhapStudent(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetHN = initHoaNhapSheet(ss);
+
+    const tenHs = String(payload.tenHs || payload.ten_hs || "").trim();
+    if (!tenHs) {
+      return jsonResponse({ success: false, message: "Họ và tên học sinh không được để trống!" });
+    }
+    const lop = String(payload.lop || "").trim().toUpperCase();
+    const ngaySinh = String(payload.ngaySinh || payload.namSinh || payload.ngay_sinh || "").trim();
+    const dangKhuyetTat = String(payload.dangKhuyetTat || payload.loaiHoaNhap || payload.khuyetTat || "Khuyết tật").trim();
+    const mucDo = String(payload.mucDo || payload.muc_do || "Nhẹ").trim();
+    const thoiGian = String(payload.thoiGian || payload.thoi_gian || "").trim();
+
+    const lastRow = sheetHN.getLastRow();
+    const totalStudents = Math.max(0, lastRow - 1);
+
+    // Vị trí chèn (position: số thứ tự STT, từ 1 đến totalStudents + 1)
+    let pos = parseInt(payload.position || payload.stt, 10);
+    let targetRow = lastRow + 1;
+
+    if (!isNaN(pos) && pos >= 1 && pos <= totalStudents) {
+      targetRow = pos + 1;
+      sheetHN.insertRowBefore(targetRow);
+    } else {
+      targetRow = lastRow + 1;
+    }
+
+    const rowData = [tenHs, ngaySinh, lop, dangKhuyetTat, mucDo, thoiGian];
+    sheetHN.getRange(targetRow, 1, 1, 6).setValues([rowData]);
+    sheetHN.getRange(targetRow, 2).setNumberFormat("@");
+
+    // Lấy lại danh sách mới nhất sau khi thêm
+    const freshRes = handleGetHoaNhapStudents();
+    let freshList = [];
+    try {
+      const parsed = JSON.parse(freshRes.getContent());
+      if (parsed && Array.isArray(parsed.list)) freshList = parsed.list;
+    } catch (e) {}
+
+    return jsonResponse({
+      success: true,
+      message: "Thêm học sinh hòa nhập vào Google Sheet thành công!",
+      list: freshList
+    });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi thêm học sinh: " + err.toString() });
+  }
+}
+
+/**
+ * CẬP NHẬT THÔNG TIN HỌC SINH HÒA NHẬP TRONG SHEET "HOA NHAP" (PHÂN HỆ 2)
+ * payload: { stt, index, oldTenHs, oldLop, tenHs, lop, ngaySinh, dangKhuyetTat, mucDo, thoiGian, newPosition }
+ */
+function handleUpdateHoaNhapStudent(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetHN = initHoaNhapSheet(ss);
+    const lastRow = sheetHN.getLastRow();
+    if (lastRow <= 1) {
+      return jsonResponse({ success: false, message: "Sheet HOA NHAP đang rỗng, không thể cập nhật!" });
+    }
+
+    const tenHs = String(payload.tenHs || payload.ten_hs || "").trim();
+    if (!tenHs) {
+      return jsonResponse({ success: false, message: "Họ và tên học sinh không được để trống!" });
+    }
+    const lop = String(payload.lop || "").trim().toUpperCase();
+    const ngaySinh = String(payload.ngaySinh || payload.namSinh || payload.ngay_sinh || "").trim();
+    const dangKhuyetTat = String(payload.dangKhuyetTat || payload.loaiHoaNhap || payload.khuyetTat || "Khuyết tật").trim();
+    const mucDo = String(payload.mucDo || payload.muc_do || "Nhẹ").trim();
+    const thoiGian = String(payload.thoiGian || payload.thoi_gian || "").trim();
+
+    let targetRow = -1;
+    let stt = parseInt(payload.stt !== undefined ? payload.stt : payload.index, 10);
+    if (!isNaN(stt) && stt >= 1 && (stt + 1) <= lastRow) {
+      targetRow = stt + 1;
+    }
+
+    const oldTen = String(payload.oldTenHs || "").trim().toLowerCase();
+    const oldLop = String(payload.oldLop || "").trim().toLowerCase();
+
+    if (targetRow === -1 || oldTen) {
+      const vals = sheetHN.getRange(2, 1, lastRow - 1, 3).getValues();
+      for (let i = 0; i < vals.length; i++) {
+        const rowTen = String(vals[i][0] || "").trim().toLowerCase();
+        const rowLop = String(vals[i][2] || "").trim().toLowerCase();
+        if (oldTen && rowTen === oldTen && (!oldLop || rowLop === oldLop)) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (targetRow < 2 || targetRow > lastRow) {
+      return jsonResponse({ success: false, message: "Không tìm thấy học sinh cần chỉnh sửa trong Sheet HOA NHAP!" });
+    }
+
+    const rowData = [tenHs, ngaySinh, lop, dangKhuyetTat, mucDo, thoiGian];
+    sheetHN.getRange(targetRow, 1, 1, 6).setValues([rowData]);
+    sheetHN.getRange(targetRow, 2).setNumberFormat("@");
+
+    // Nếu người dùng chọn đổi số thứ tự (newPosition):
+    let newPos = parseInt(payload.newPosition, 10);
+    const totalStudents = lastRow - 1;
+    if (!isNaN(newPos) && newPos >= 1 && newPos <= totalStudents && (newPos + 1) !== targetRow) {
+      const destRow = newPos + 1;
+      const moveVals = sheetHN.getRange(targetRow, 1, 1, 6).getValues();
+      sheetHN.deleteRow(targetRow);
+      if (destRow > targetRow) {
+        const actualDest = destRow - 1;
+        if (actualDest >= sheetHN.getLastRow()) {
+          sheetHN.appendRow(moveVals[0]);
+        } else {
+          sheetHN.insertRowBefore(actualDest + 1);
+          sheetHN.getRange(actualDest + 1, 1, 1, 6).setValues(moveVals);
+        }
+      } else {
+        sheetHN.insertRowBefore(destRow);
+        sheetHN.getRange(destRow, 1, 1, 6).setValues(moveVals);
+      }
+      sheetHN.getRange("B:B").setNumberFormat("@");
+    }
+
+    const freshRes = handleGetHoaNhapStudents();
+    let freshList = [];
+    try {
+      const parsed = JSON.parse(freshRes.getContent());
+      if (parsed && Array.isArray(parsed.list)) freshList = parsed.list;
+    } catch (e) {}
+
+    return jsonResponse({
+      success: true,
+      message: "Cập nhật thông tin học sinh hòa nhập thành công!",
+      list: freshList
+    });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi cập nhật học sinh: " + err.toString() });
+  }
+}
+
+/**
+ * XÓA HỌC SINH HÒA NHẬP KHỎI SHEET "HOA NHAP" (PHÂN HỆ 2)
+ * payload: { stt, index, tenHs, lop }
+ */
+function handleDeleteHoaNhapStudent(payload) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetHN = initHoaNhapSheet(ss);
+    const lastRow = sheetHN.getLastRow();
+    if (lastRow <= 1) {
+      return jsonResponse({ success: false, message: "Sheet HOA NHAP đang rỗng!" });
+    }
+
+    let targetRow = -1;
+    let stt = parseInt(payload.stt !== undefined ? payload.stt : payload.index, 10);
+    if (!isNaN(stt) && stt >= 1 && (stt + 1) <= lastRow) {
+      targetRow = stt + 1;
+    }
+
+    const tenHs = String(payload.tenHs || "").trim().toLowerCase();
+    const lop = String(payload.lop || "").trim().toLowerCase();
+
+    if (targetRow === -1 || tenHs) {
+      const vals = sheetHN.getRange(2, 1, lastRow - 1, 3).getValues();
+      for (let i = 0; i < vals.length; i++) {
+        const rowTen = String(vals[i][0] || "").trim().toLowerCase();
+        const rowLop = String(vals[i][2] || "").trim().toLowerCase();
+        if (tenHs && rowTen === tenHs && (!lop || rowLop === lop)) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (targetRow < 2 || targetRow > lastRow) {
+      return jsonResponse({ success: false, message: "Không tìm thấy học sinh cần xóa trong danh sách!" });
+    }
+
+    sheetHN.deleteRow(targetRow);
+
+    const freshRes = handleGetHoaNhapStudents();
+    let freshList = [];
+    try {
+      const parsed = JSON.parse(freshRes.getContent());
+      if (parsed && Array.isArray(parsed.list)) freshList = parsed.list;
+    } catch (e) {}
+
+    return jsonResponse({
+      success: true,
+      message: "Đã xóa học sinh khỏi danh sách hòa nhập thành công!",
+      list: freshList
+    });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi xóa học sinh: " + err.toString() });
+  }
 }
 
 /**
@@ -5017,6 +5251,180 @@ function initialSetup() {
       Trường THCS An Nhơn - Cổng Quản Trị Dành Cho Ban Giám Hiệu • Tác giả: Nguyễn Phi Hùng (Zalo: 0938750424)
     </footer>
 
+  </div>
+
+  <!-- ========================================================
+       MODAL THÊM / CHỈNH SỬA HỌC SINH HÒA NHẬP (Sheet HOA NHAP)
+       ======================================================== -->
+  <div id="hoanhap-student-modal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-3 sm:p-4 hidden">
+    <div
+      class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[95vh] flex flex-col border border-indigo-100 overflow-hidden animate-fade-in">
+
+      <!-- Header Modal -->
+      <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div id="hn-stu-modal-icon-wrap"
+            class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-lg font-bold">
+            <i id="hn-stu-modal-icon" class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h3 id="hn-stu-modal-title" class="font-black text-sm sm:text-base">Thêm Học Sinh Hòa Nhập Mới</h3>
+            <p id="hn-stu-modal-subtitle" class="text-xs text-slate-400">Ghi trực tiếp vào Sheet "HOA NHAP" trên Google Sheet</p>
+          </div>
+        </div>
+
+        <button type="button" onclick="closeHoaNhapStudentModal()"
+          class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Thân Form Modal -->
+      <form id="form-hoanhap-student-modal" onsubmit="handleHoaNhapStudentModalSubmit(event)"
+        class="overflow-y-auto p-4 sm:p-6 flex-grow custom-scrollbar space-y-4">
+        <input type="hidden" id="hn-stu-modal-mode" value="create">
+        <input type="hidden" id="hn-stu-modal-orig-index" value="-1">
+        <input type="hidden" id="hn-stu-modal-orig-ten" value="">
+        <input type="hidden" id="hn-stu-modal-orig-lop" value="">
+
+        <!-- STT / Vị trí chèn -->
+        <div id="wrap-hn-stu-position" class="bg-indigo-50/60 p-3.5 rounded-2xl border border-indigo-100 space-y-1.5">
+          <label class="block text-xs font-bold text-indigo-950 uppercase tracking-wider" for="hn-stu-modal-position">
+            <i class="fa-solid fa-arrow-down-1-9 text-indigo-600 mr-1"></i> Số Thứ Tự (STT) / Vị Trí Trong Sheet
+          </label>
+          <div class="flex items-center gap-2">
+            <input type="number" id="hn-stu-modal-position" min="1"
+              class="w-24 px-3 py-2 bg-white border border-indigo-200 rounded-xl font-black text-center text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="STT">
+            <span id="hn-stu-modal-pos-hint" class="text-xs text-slate-500 leading-tight">
+              (Mặc định ở cuối danh sách. Thầy/Cô có thể nhập số STT để chèn vào đúng vị trí mong muốn)
+            </span>
+          </div>
+        </div>
+
+        <!-- Họ và tên học sinh -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-name">
+            Họ và tên học sinh <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <input type="text" id="hn-stu-modal-name" required
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm pl-10"
+              placeholder="VD: Nguyễn Văn An">
+            <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+          </div>
+        </div>
+
+        <!-- Lớp & Ngày tháng năm sinh (2 cột) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-class">
+              Lớp <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative">
+              <input type="text" id="hn-stu-modal-class" required
+                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm pl-10 uppercase"
+                placeholder="VD: 6A10, 7A3...">
+              <i class="fa-solid fa-chalkboard-user absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-dob">
+              Ngày tháng năm sinh
+            </label>
+            <div class="relative">
+              <input type="text" id="hn-stu-modal-dob"
+                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm pl-10"
+                placeholder="VD: 15/04/2012 hoặc 2012">
+              <i class="fa-solid fa-calendar-day absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dạng khuyết tật -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-disability">
+            Dạng khuyết tật <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <input type="text" id="hn-stu-modal-disability" required list="list-disabilities"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm pl-10"
+              placeholder="VD: Trí tuệ, Nhìn nặng, Rối loạn phổ tự kỷ...">
+            <i class="fa-solid fa-wheelchair absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+            <datalist id="list-disabilities">
+              <option value="Trí tuệ">
+              <option value="Nghe, nói, vận động">
+              <option value="Nghe, nói, trí tuệ">
+              <option value="Rối loạn phổ tự kỷ">
+              <option value="Nhìn nặng">
+              <option value="Khuyết tật vận động nhẹ">
+              <option value="Khuyết tật học tập">
+              <option value="Thần kinh tâm thần">
+            </datalist>
+          </div>
+        </div>
+
+        <!-- Mức độ & Thời gian (Tuần) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-level">
+              Mức độ
+            </label>
+            <select id="hn-stu-modal-level"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm">
+              <option value="Nhẹ">Nhẹ</option>
+              <option value="Nặng">Nặng</option>
+              <option value="Đặc biệt nặng">Đặc biệt nặng</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-time">
+              Thời gian công nhận
+            </label>
+            <div class="relative">
+              <input type="text" id="hn-stu-modal-time" list="list-hn-weeks"
+                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm pl-10"
+                placeholder="VD: Từ tuần 1, Tuần 2, Tuần 8...">
+              <i class="fa-solid fa-clock absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+              <datalist id="list-hn-weeks">
+                <option value="Từ tuần 1">
+                <option value="Tuần 2">
+                <option value="Tuần 3">
+                <option value="Tuần 4">
+                <option value="Tuần 5">
+                <option value="Tuần 6">
+                <option value="Tuần 7">
+                <option value="Tuần 8">
+                <option value="Tuần 9">
+                <option value="Tuần 10">
+              </datalist>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thông báo lỗi (nếu có) -->
+        <div id="hn-stu-modal-error-box" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold hidden flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="hn-stu-modal-error-msg"></span>
+        </div>
+
+        <!-- Nút hành động -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeHoaNhapStudentModal()"
+            class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition text-xs sm:text-sm">
+            Hủy Bỏ
+          </button>
+          <button type="submit" id="btn-hn-stu-submit"
+            class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black transition flex items-center gap-2 text-xs sm:text-sm shadow-md shadow-indigo-600/20 active:scale-95">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span id="btn-hn-stu-submit-text">Lưu Vào Google Sheet</span>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- ========================================================
@@ -17789,7 +18197,7 @@ function initialSetup() {
       tbody.innerHTML = "";
 
       if (!hoaNhapStudentsList || hoaNhapStudentsList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 italic">Chưa có dữ liệu học sinh hòa nhập nào</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 italic">Chưa có dữ liệu học sinh hòa nhập nào</td></tr>`;
         return;
       }
 
@@ -17816,9 +18224,265 @@ function initialSetup() {
               ${thoiGianDisplay}
             </span>
           </td>
+          <td class="py-3 px-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button type="button" onclick="openHoaNhapStudentModal(${idx})"
+                class="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs transition active:scale-95 shadow-xs"
+                title="Chỉnh sửa học sinh">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button type="button" onclick="deleteHoaNhapStudent(${idx})"
+                class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center text-xs transition active:scale-95 shadow-xs"
+                title="Xóa học sinh khỏi Sheet HOA NHAP">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    // =========================================================================
+    // QUẢN LÝ HỌC SINH HÒA NHẬP (THÊM, SỬA, XÓA, ĐỔI VỊ TRÍ TRONG SHEET HOA NHAP)
+    // =========================================================================
+    function openHoaNhapStudentModal(index = null) {
+      const modal = document.getElementById('hoanhap-student-modal');
+      const errorBox = document.getElementById('hn-stu-modal-error-box');
+      if (errorBox) errorBox.classList.add('hidden');
+
+      const isEdit = (index !== null && index !== undefined && index >= 0 && hoaNhapStudentsList && hoaNhapStudentsList[index]);
+      const totalStudents = hoaNhapStudentsList ? hoaNhapStudentsList.length : 0;
+
+      const titleEl = document.getElementById('hn-stu-modal-title');
+      const subtitleEl = document.getElementById('hn-stu-modal-subtitle');
+      const iconWrap = document.getElementById('hn-stu-modal-icon-wrap');
+      const iconEl = document.getElementById('hn-stu-modal-icon');
+      const btnSubmitText = document.getElementById('btn-hn-stu-submit-text');
+      const posHint = document.getElementById('hn-stu-modal-pos-hint');
+
+      if (isEdit) {
+        const s = hoaNhapStudentsList[index];
+        document.getElementById('hn-stu-modal-mode').value = 'edit';
+        document.getElementById('hn-stu-modal-orig-index').value = index;
+        document.getElementById('hn-stu-modal-orig-ten').value = s.tenHs || '';
+        document.getElementById('hn-stu-modal-orig-lop').value = s.lop || '';
+
+        titleEl.textContent = 'Chỉnh Sửa Học Sinh Hòa Nhập';
+        subtitleEl.textContent = `Đang chỉnh sửa STT ${index + 1}: ${s.tenHs} (${s.lop})`;
+        if (iconWrap) iconWrap.className = 'w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-lg font-bold';
+        if (iconEl) iconEl.className = 'fa-solid fa-pen-to-square';
+        if (btnSubmitText) btnSubmitText.textContent = 'Cập Nhật Google Sheet';
+
+        document.getElementById('hn-stu-modal-position').value = index + 1;
+        if (posHint) posHint.textContent = `(STT hiện tại: ${index + 1}. Đổi số STT nếu muốn di chuyển học sinh sang vị trí khác)`;
+
+        document.getElementById('hn-stu-modal-name').value = s.tenHs || '';
+        document.getElementById('hn-stu-modal-class').value = s.lop || '';
+        document.getElementById('hn-stu-modal-dob').value = s.ngaySinh || s.namSinh || '';
+        document.getElementById('hn-stu-modal-disability').value = s.dangKhuyetTat || s.loaiHoaNhap || '';
+        document.getElementById('hn-stu-modal-level').value = s.mucDo || 'Nhẹ';
+        document.getElementById('hn-stu-modal-time').value = s.thoiGian || '';
+      } else {
+        document.getElementById('hn-stu-modal-mode').value = 'create';
+        document.getElementById('hn-stu-modal-orig-index').value = -1;
+        document.getElementById('hn-stu-modal-orig-ten').value = '';
+        document.getElementById('hn-stu-modal-orig-lop').value = '';
+
+        titleEl.textContent = 'Thêm Học Sinh Hòa Nhập Mới';
+        subtitleEl.textContent = 'Ghi trực tiếp vào Sheet "HOA NHAP" trên Google Sheet';
+        if (iconWrap) iconWrap.className = 'w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-lg font-bold';
+        if (iconEl) iconEl.className = 'fa-solid fa-user-plus';
+        if (btnSubmitText) btnSubmitText.textContent = 'Thêm Vào Google Sheet';
+
+        const defaultPos = totalStudents + 1;
+        document.getElementById('hn-stu-modal-position').value = defaultPos;
+        if (posHint) posHint.textContent = `(Mặc định thêm vào STT ${defaultPos}. Thầy/Cô có thể nhập số STT để chèn vào vị trí mong muốn)`;
+
+        document.getElementById('hn-stu-modal-name').value = '';
+        document.getElementById('hn-stu-modal-class').value = '';
+        document.getElementById('hn-stu-modal-dob').value = '';
+        document.getElementById('hn-stu-modal-disability').value = '';
+        document.getElementById('hn-stu-modal-level').value = 'Nhẹ';
+        document.getElementById('hn-stu-modal-time').value = '';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeHoaNhapStudentModal() {
+      const modal = document.getElementById('hoanhap-student-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function handleHoaNhapStudentModalSubmit(e) {
+      e.preventDefault();
+      const errorBox = document.getElementById('hn-stu-modal-error-box');
+      const errorMsg = document.getElementById('hn-stu-modal-error-msg');
+      if (errorBox) errorBox.classList.add('hidden');
+
+      const mode = document.getElementById('hn-stu-modal-mode').value;
+      const origIndex = parseInt(document.getElementById('hn-stu-modal-orig-index').value, 10);
+      const origTen = document.getElementById('hn-stu-modal-orig-ten').value.trim();
+      const origLop = document.getElementById('hn-stu-modal-orig-lop').value.trim();
+      const pos = parseInt(document.getElementById('hn-stu-modal-position').value, 10);
+      const tenHs = document.getElementById('hn-stu-modal-name').value.trim();
+      const lop = document.getElementById('hn-stu-modal-class').value.trim().toUpperCase();
+      const dob = document.getElementById('hn-stu-modal-dob').value.trim();
+      const disability = document.getElementById('hn-stu-modal-disability').value.trim();
+      const level = document.getElementById('hn-stu-modal-level').value;
+      const time = document.getElementById('hn-stu-modal-time').value.trim();
+
+      if (!tenHs) {
+        if (errorBox && errorMsg) {
+          errorMsg.textContent = 'Vui lòng nhập họ và tên học sinh!';
+          errorBox.classList.remove('hidden');
+        }
+        return;
+      }
+      if (!lop) {
+        if (errorBox && errorMsg) {
+          errorMsg.textContent = 'Vui lòng nhập lớp học của học sinh (VD: 6A10, 7A3)!';
+          errorBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btn-hn-stu-submit');
+      const btnSubmitText = document.getElementById('btn-hn-stu-submit-text');
+      const originalText = btnSubmitText ? btnSubmitText.textContent : 'Lưu';
+      if (btnSubmit) btnSubmit.disabled = true;
+      if (btnSubmitText) btnSubmitText.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang lưu lên Google Sheet...';
+
+      try {
+        let payload = {};
+        if (mode === 'create') {
+          payload = {
+            action: 'addHoaNhapStudent',
+            tenHs: tenHs,
+            lop: lop,
+            ngaySinh: dob,
+            dangKhuyetTat: disability || 'Khuyết tật',
+            mucDo: level || 'Nhẹ',
+            thoiGian: time || '',
+            position: pos || (hoaNhapStudentsList ? hoaNhapStudentsList.length + 1 : 1),
+            callerRole: currentUser.quyen
+          };
+        } else {
+          payload = {
+            action: 'updateHoaNhapStudent',
+            stt: origIndex + 1,
+            oldTenHs: origTen,
+            oldLop: origLop,
+            tenHs: tenHs,
+            lop: lop,
+            ngaySinh: dob,
+            dangKhuyetTat: disability || 'Khuyết tật',
+            mucDo: level || 'Nhẹ',
+            thoiGian: time || '',
+            newPosition: pos || (origIndex + 1),
+            callerRole: currentUser.quyen
+          };
+        }
+
+        let cloudUpdated = false;
+        if (GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes('REPLACE_WITH_YOUR_WEB_APP_URL_HERE')) {
+          const res = await callGasBackend(payload);
+          if (res && res.success) {
+            cloudUpdated = true;
+            if (Array.isArray(res.list)) {
+              hoaNhapStudentsList = res.list;
+              localStorage.setItem('school_hoanhap_students_cache', JSON.stringify(hoaNhapStudentsList));
+            }
+          } else {
+            throw new Error((res && res.message) ? res.message : 'Google Sheet phản hồi không thành công!');
+          }
+        }
+
+        if (!cloudUpdated) {
+          const newStudentObj = {
+            tenHs: tenHs,
+            lop: lop,
+            ngaySinh: dob,
+            namSinh: dob,
+            dangKhuyetTat: disability || 'Khuyết tật',
+            loaiHoaNhap: disability || 'Khuyết tật',
+            mucDo: level || 'Nhẹ',
+            thoiGian: time || ''
+          };
+          if (!hoaNhapStudentsList) hoaNhapStudentsList = [];
+          if (mode === 'create') {
+            let insertIdx = (pos && pos >= 1 && pos <= hoaNhapStudentsList.length) ? pos - 1 : hoaNhapStudentsList.length;
+            hoaNhapStudentsList.splice(insertIdx, 0, newStudentObj);
+          } else {
+            if (origIndex >= 0 && origIndex < hoaNhapStudentsList.length) {
+              hoaNhapStudentsList.splice(origIndex, 1);
+              let newIdx = (pos && pos >= 1 && pos <= hoaNhapStudentsList.length + 1) ? pos - 1 : hoaNhapStudentsList.length;
+              hoaNhapStudentsList.splice(newIdx, 0, newStudentObj);
+            }
+          }
+          localStorage.setItem('school_hoanhap_students_cache', JSON.stringify(hoaNhapStudentsList));
+        }
+
+        showToast(mode === 'create' ? 'Đã thêm học sinh hòa nhập vào Google Sheet thành công!' : 'Đã cập nhật học sinh hòa nhập thành công!', 'success');
+        closeHoaNhapStudentModal();
+
+        // Đồng bộ lại danh sách và giao diện
+        await loadHoaNhapStudentsFromCloud(true);
+        renderHoaNhapAdminView();
+      } catch (err) {
+        if (errorBox && errorMsg) {
+          errorMsg.textContent = 'Lỗi khi lưu lên Google Sheet: ' + err.message;
+          errorBox.classList.remove('hidden');
+        }
+        showToast('Lỗi lưu học sinh: ' + err.message, 'error');
+      } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+        if (btnSubmitText) btnSubmitText.textContent = originalText;
+      }
+    }
+
+    async function deleteHoaNhapStudent(index) {
+      if (!hoaNhapStudentsList || index < 0 || index >= hoaNhapStudentsList.length) return;
+      const s = hoaNhapStudentsList[index];
+      const confirmMsg = `Thầy/Cô có chắc chắn muốn xóa học sinh "${s.tenHs}" (Lớp ${s.lop}) khỏi danh sách học sinh hòa nhập trên Google Sheet không?\n\nThao tác này sẽ xóa dòng tương ứng trong Sheet HOA NHAP.`;
+      if (!confirm(confirmMsg)) return;
+
+      showToast(`Đang xóa học sinh "${s.tenHs}" khỏi Google Sheet...`, 'info');
+
+      try {
+        let cloudDeleted = false;
+        if (GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes('REPLACE_WITH_YOUR_WEB_APP_URL_HERE')) {
+          const payload = {
+            action: 'deleteHoaNhapStudent',
+            stt: index + 1,
+            tenHs: s.tenHs,
+            lop: s.lop,
+            callerRole: currentUser.quyen
+          };
+          const res = await callGasBackend(payload);
+          if (res && res.success) {
+            cloudDeleted = true;
+            if (Array.isArray(res.list)) {
+              hoaNhapStudentsList = res.list;
+              localStorage.setItem('school_hoanhap_students_cache', JSON.stringify(hoaNhapStudentsList));
+            }
+          } else {
+            throw new Error((res && res.message) ? res.message : 'Lỗi khi xóa trên Google Sheet!');
+          }
+        }
+
+        if (!cloudDeleted) {
+          hoaNhapStudentsList.splice(index, 1);
+          localStorage.setItem('school_hoanhap_students_cache', JSON.stringify(hoaNhapStudentsList));
+        }
+
+        showToast(`Đã xóa học sinh "${s.tenHs}" khỏi danh sách hòa nhập thành công!`, 'success');
+        await loadHoaNhapStudentsFromCloud(true);
+        renderHoaNhapAdminView();
+      } catch (err) {
+        showToast('Lỗi khi xóa học sinh: ' + err.message, 'error');
+      }
     }
 
     // Modal Admin xem chi tiết giáo viên
