@@ -45,6 +45,7 @@
       page-break-inside: avoid;
       box-sizing: border-box;
     }
+
     .pdf-page-portrait.pdf-last-page {
       page-break-after: avoid !important;
     }
@@ -60,6 +61,7 @@
         margin: 0 !important;
         padding: 0 !important;
       }
+
       .pdf-page-portrait.pdf-last-page {
         page-break-after: avoid !important;
       }
@@ -168,7 +170,8 @@
               <i class="fa-solid fa-school text-emerald-600 mr-1"></i>
               Chọn Trường / Cơ Sở <span class="text-rose-500">*</span>
             </label>
-            <button type="button" onclick="refreshHubSchools(true)" title="Tải lại danh sách trường từ máy chủ trung tâm"
+            <button type="button" onclick="refreshHubSchools(true)"
+              title="Tải lại danh sách trường từ máy chủ trung tâm"
               class="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 transition">
               <i id="btn-refresh-schools-icon" class="fa-solid fa-arrows-rotate text-[10px]"></i>
               <span>Làm mới</span>
@@ -180,10 +183,14 @@
             </span>
             <select id="login-school-select" onchange="onLoginSchoolChange(this.value)"
               class="w-full pl-10 pr-9 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-slate-800 font-bold text-xs sm:text-sm cursor-pointer appearance-none shadow-2xs">
-              <option value="https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec" data-name="THCS AN NHƠN ( TRỤ SỞ CHÍNH)">
+              <option
+                value="https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec"
+                data-name="THCS AN NHƠN ( TRỤ SỞ CHÍNH)">
                 THCS AN NHƠN ( TRỤ SỞ CHÍNH)
               </option>
-              <option value="https://script.google.com/macros/s/AKfycbztPW5ztiiV9omqnVP641EdnzxmkrZwOrbz9SpQ8TMtc_KZtfqgLRnLwpSv6utQUivK0A/exec" data-name="THCS BÌNH LỢI TRUNG">
+              <option
+                value="https://script.google.com/macros/s/AKfycbztPW5ztiiV9omqnVP641EdnzxmkrZwOrbz9SpQ8TMtc_KZtfqgLRnLwpSv6utQUivK0A/exec"
+                data-name="THCS BÌNH LỢI TRUNG">
                 THCS BÌNH LỢI TRUNG
               </option>
             </select>
@@ -247,7 +254,8 @@
         </button>
 
         <div class="pt-2 text-center text-[11px] text-slate-400">
-          <i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i>Hệ thống bảo mật nội bộ THCS An Nhơn • Tác giả: Nguyễn Phi Hùng • Zalo: 0938750424
+          <i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i>Hệ thống bảo mật nội bộ THCS An Nhơn • Tác giả:
+          Nguyễn Phi Hùng • Zalo: 0938750424
         </div>
       </form>
     </div>
@@ -324,7 +332,8 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 shrink-0">
+          <div
+            class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 shrink-0">
             <i class="fa-solid fa-school text-lg"></i>
           </div>
           <div>
@@ -336,13 +345,16 @@
         <!-- User Profile Pill & Logout -->
         <div class="flex items-center gap-2 sm:gap-3">
           <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-2xl">
-            <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold shrink-0">
+            <div
+              class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold shrink-0">
               <i class="fa-solid fa-user"></i>
             </div>
             <div class="text-left">
               <p class="font-extrabold text-xs text-slate-800 leading-tight" id="hub-user-name">Giáo Viên</p>
               <div class="flex items-center gap-1.5">
-                <span id="hub-user-role-badge" class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">Giáo Viên</span>
+                <span id="hub-user-role-badge"
+                  class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">Giáo
+                  Viên</span>
                 <span id="hub-user-dob" class="text-[10px] text-slate-400 font-medium hidden sm:inline"></span>
               </div>
             </div>
@@ -359,13 +371,15 @@
 
     <!-- Main Content: Chọn 1 trong 2 phân hệ -->
     <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-grow flex flex-col justify-center">
-      
+
       <div class="text-center mb-8 sm:mb-10">
-        <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 mb-3 shadow-2xs">
+        <span
+          class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 mb-3 shadow-2xs">
           <i class="fa-solid fa-circle-check text-emerald-600"></i>
           <span>Đăng nhập thành công • Vui lòng chọn phân hệ làm việc</span>
         </span>
-        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">HỆ THỐNG QUẢN LÝ TIẾT DẠY & PHỤ TRỘI</h2>
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">HỆ THỐNG QUẢN LÝ TIẾT DẠY & PHỤ TRỘI
+        </h2>
         <p class="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto mt-2">
           Quý Thầy/Cô vui lòng chọn 1 trong 2 phân hệ bên dưới để tiếp tục làm việc:
         </p>
@@ -379,10 +393,12 @@
           class="group bg-white rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl border-2 border-slate-200 hover:border-emerald-500 cursor-pointer transition-all duration-300 flex flex-col justify-between transform hover:-translate-y-1">
           <div>
             <div class="flex items-center justify-between gap-3 mb-5">
-              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition duration-300">
+              <div
+                class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition duration-300">
                 <i class="fa-solid fa-calculator"></i>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span
+                class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
                 Đang Hoạt Động
               </span>
             </div>
@@ -391,7 +407,8 @@
               PHÂN HỆ 1: TÍNH TIẾT DẠY VƯỢT ĐỊNH MỨC
             </h3>
             <p class="text-xs sm:text-sm text-slate-500 mt-2.5 leading-relaxed">
-              Kê khai số tiết dạy theo tuần, nghỉ dạy, bồi dưỡng HSG, dạy TS10; tự động tính toán số tiết thực dạy và tiết phụ trội vượt định mức học kỳ 1, học kỳ 2 và cả năm.
+              Kê khai số tiết dạy theo tuần, nghỉ dạy, bồi dưỡng HSG, dạy TS10; tự động tính toán số tiết thực dạy và
+              tiết phụ trội vượt định mức học kỳ 1, học kỳ 2 và cả năm.
             </p>
 
             <ul class="mt-4 space-y-2 text-xs text-slate-600 font-medium">
@@ -424,10 +441,12 @@
           class="group bg-white rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl border-2 border-slate-200 hover:border-indigo-500 cursor-pointer transition-all duration-300 flex flex-col justify-between transform hover:-translate-y-1">
           <div>
             <div class="flex items-center justify-between gap-3 mb-5">
-              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition duration-300">
+              <div
+                class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition duration-300">
                 <i class="fa-solid fa-hands-holding-child"></i>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1.5">
+              <span
+                class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1.5">
                 <i class="fa-solid fa-hammer text-[11px]"></i>
                 <span>Đang Xây Dựng</span>
               </span>
@@ -437,7 +456,8 @@
               PHÂN HỆ 2: TÍNH PHỤ TRỘI DẠY HÒA NHẬP
             </h3>
             <p class="text-xs sm:text-sm text-slate-500 mt-2.5 leading-relaxed">
-              Kê khai và tính toán chế độ tiết phụ trội giảng dạy cho học sinh khuyết tật học hòa nhập theo đúng thông tư quy định của Bộ Giáo dục & Đào tạo.
+              Kê khai và tính toán chế độ tiết phụ trội giảng dạy cho học sinh khuyết tật học hòa nhập theo đúng thông
+              tư quy định của Bộ Giáo dục & Đào tạo.
             </p>
 
             <ul class="mt-4 space-y-2 text-xs text-slate-600 font-medium">
@@ -480,11 +500,13 @@
        ======================================================== -->
   <div id="hoanhap-portal" class="flex-grow flex flex-col justify-between min-h-screen bg-slate-100 hidden">
     <!-- Header Phân Hệ 2 -->
-    <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl sticky top-0 z-30 border-b border-indigo-800/40">
+    <header
+      class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl sticky top-0 z-30 border-b border-indigo-800/40">
       <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-3">
         <!-- Logo & Title -->
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 shrink-0">
+          <div
+            class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 shrink-0">
             <i class="fa-solid fa-hands-holding-child text-lg"></i>
           </div>
           <div>
@@ -492,7 +514,8 @@
               <h1 class="font-black text-sm sm:text-base tracking-tight uppercase text-white" id="hoanhap-main-title">
                 Sổ Tính Phụ Trội Dạy Hòa Nhập
               </h1>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
+              <span
+                class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
                 Phân Hệ 2
               </span>
             </div>
@@ -505,10 +528,12 @@
         <!-- User Info & Action Buttons -->
         <div class="flex items-center gap-2 flex-wrap justify-end">
           <!-- User info chip -->
-          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs">
+          <div
+            class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs">
             <i class="fa-solid fa-user-check text-indigo-300"></i>
             <span class="font-bold text-white" id="hoanhap-user-name">Giáo viên</span>
-            <span id="hoanhap-user-role-badge" class="px-1.5 py-0.2 rounded text-[10px] bg-indigo-400 text-indigo-950 font-black uppercase">GV</span>
+            <span id="hoanhap-user-role-badge"
+              class="px-1.5 py-0.2 rounded text-[10px] bg-indigo-400 text-indigo-950 font-black uppercase">GV</span>
           </div>
 
           <!-- Nút đổi qua lại giữa Sổ Cá Nhân và Cổng Quản Trị (dành cho Admin / BGH) -->
@@ -562,7 +587,9 @@
               <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Giáo viên:</span>
               <span class="text-sm sm:text-base font-black text-slate-900" id="hn-teacher-name">Giáo viên</span>
               <span class="text-xs text-slate-500 font-semibold" id="hn-teacher-dob"></span>
-              <span class="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" id="hn-teacher-subject">Môn: Tin học</span>
+              <span
+                class="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"
+                id="hn-teacher-subject">Môn: Tin học</span>
             </div>
             <!-- Lớp dạy & Lớp hòa nhập -->
             <div class="flex items-center gap-2 flex-wrap text-xs">
@@ -594,7 +621,8 @@
         </div>
 
         <!-- Hàng chọn Học kỳ & Thống kê nhanh -->
-        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div
+          class="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <!-- Bộ nút chọn Học kỳ -->
           <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
             <button type="button" onclick="switchHoaNhapSemester('hk1')" id="btn-hn-sem-hk1"
@@ -624,7 +652,8 @@
               <span class="text-slate-500">Tổng HS hòa nhập:</span>
               <span class="font-black text-slate-800 ml-1" id="hn-stat-students-count">0 HS</span>
             </div>
-            <div class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold shadow-xs flex items-center gap-1.5">
+            <div
+              class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold shadow-xs flex items-center gap-1.5">
               <span>Tổng số tiết dạy hòa nhập:</span>
               <span class="text-sm font-black" id="hn-stat-total-periods">0 tiết</span>
             </div>
@@ -635,7 +664,8 @@
       <!-- 2. BẢNG KÊ KHAI TIẾT DẠY HÒA NHẬP (Chính xác 9 cột theo hình h1) -->
       <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
         <!-- Header bảng -->
-        <div class="p-4 sm:px-6 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div
+          class="p-4 sm:px-6 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 class="font-black text-sm sm:text-base text-slate-900 flex items-center gap-2" id="hn-table-title">
               <i class="fa-solid fa-table-list text-indigo-600"></i>
@@ -683,15 +713,18 @@
                 <th class="py-3 px-3 text-left min-w-[170px] border-r border-slate-200">Dạng khuyết tật</th>
                 <th class="py-3 px-3 w-24 min-w-[85px] text-center border-r border-slate-200">Mức độ</th>
                 <th class="py-3 px-3 w-28 min-w-[100px] text-center border-r border-slate-200">Môn dạy</th>
-                <th class="py-2 px-2 w-36 min-w-[135px] bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
+                <th
+                  class="py-2 px-2 w-36 min-w-[135px] bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
                   <div class="flex flex-col items-center justify-center gap-1">
                     <span class="leading-tight text-xs sm:text-sm font-bold">Số tiết thực dạy /tuần</span>
-                    <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-indigo-200 shadow-2xs">
+                    <div
+                      class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-indigo-200 shadow-2xs">
                       <input type="number" id="quick-fill-hn-tiet-input" min="0" step="0.5" placeholder="1"
                         title="Nhập số tiết để điền nhanh cho tất cả các lớp"
                         class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-indigo-500"
                         onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillHoaNhapPeriods(this.value);}">
-                      <button type="button" onclick="quickFillHoaNhapPeriods(document.getElementById('quick-fill-hn-tiet-input').value)"
+                      <button type="button"
+                        onclick="quickFillHoaNhapPeriods(document.getElementById('quick-fill-hn-tiet-input').value)"
                         title="Điền nhanh số tiết thực dạy này cho tất cả các lớp"
                         class="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer">
                         <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
@@ -700,10 +733,12 @@
                     </div>
                   </div>
                 </th>
-                <th class="py-3 px-3 w-28 min-w-[110px] bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
+                <th
+                  class="py-3 px-3 w-28 min-w-[110px] bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
                   Số tuần thực dạy
                 </th>
-                <th class="py-3 px-3 w-32 min-w-[120px] bg-purple-100/50 text-purple-950 font-black text-center border-r border-slate-200">
+                <th
+                  class="py-3 px-3 w-32 min-w-[120px] bg-purple-100/50 text-purple-950 font-black text-center border-r border-slate-200">
                   Tổng số tiết dạy
                 </th>
                 <th class="py-3 px-2 w-16 text-center">Thao tác</th>
@@ -712,18 +747,22 @@
             <tbody id="hn-teacher-table-tbody" class="divide-y divide-slate-100">
               <!-- Render từ JS -->
             </tbody>
-            <tfoot id="hn-teacher-table-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
+            <tfoot id="hn-admin-summary-tfoot"
+              class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
               <tr class="text-center">
-                <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
+                <td colspan="7"
+                  class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
                   TỔNG CỘNG
                 </td>
-                <td id="hn-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
+                <td id="hn-foot-periods-per-week"
+                  class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
                   0
                 </td>
                 <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">
                   --
                 </td>
-                <td id="hn-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">
+                <td id="hn-foot-total-periods"
+                  class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">
                   0 tiết
                 </td>
                 <td class="py-3 px-2"></td>
@@ -734,12 +773,14 @@
 
         <!-- Thông báo trống -->
         <div id="hn-empty-notice" class="hidden p-8 text-center">
-          <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-2xl mx-auto mb-3">
+          <div
+            class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-2xl mx-auto mb-3">
             <i class="fa-solid fa-inbox"></i>
           </div>
           <h4 class="font-bold text-slate-800 text-sm">Chưa có lớp nào có học sinh hòa nhập</h4>
           <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Các lớp Thầy/Cô được phân công giảng dạy hiện chưa có học sinh trong danh sách Sheet HOA NHAP của trường. Thầy/Cô có thể bấm "Thêm dòng" nếu có học sinh phát sinh.
+            Các lớp Thầy/Cô được phân công giảng dạy hiện chưa có học sinh trong danh sách Sheet HOA NHAP của trường.
+            Thầy/Cô có thể bấm "Thêm dòng" nếu có học sinh phát sinh.
           </p>
         </div>
       </div>
@@ -748,28 +789,32 @@
     <!-- ==========================================
          B. GIAO DIỆN QUẢN TRỊ / BGH: PHÂN HỆ 2
          ========================================== -->
-    <main id="hoanhap-admin-view" class="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 sm:py-6 w-full flex-grow space-y-4 hidden">
+    <main id="hoanhap-admin-view"
+      class="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 sm:py-6 w-full flex-grow space-y-4 hidden">
       <!-- 3 TAB QUẢN TRỊ HÒA NHẬP -->
       <div class="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex-wrap">
         <button type="button" onclick="switchHoaNhapAdminTab('teachers')" id="btn-hn-tab-teachers"
           class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
           <i class="fa-solid fa-chalkboard-user"></i>
           <span>1. Quản Lý Giáo Viên</span>
-          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white" id="hn-badge-admin-teachers-count">0</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white"
+            id="hn-badge-admin-teachers-count">0</span>
         </button>
 
         <button type="button" onclick="switchHoaNhapAdminTab('summary')" id="btn-hn-tab-summary"
           class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
           <i class="fa-solid fa-chart-column"></i>
           <span>2. Tổng Hợp Toàn Trường</span>
-          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700" id="hn-badge-admin-total-periods">0 tiết</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700"
+            id="hn-badge-admin-total-periods">0 tiết</span>
         </button>
 
         <button type="button" onclick="switchHoaNhapAdminTab('students')" id="btn-hn-tab-students"
           class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
           <i class="fa-solid fa-hands-holding-child text-indigo-500"></i>
           <span>3. Danh Sách HS Hòa Nhập (Sheet HOA NHAP)</span>
-          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 text-indigo-800 font-black" id="hn-badge-admin-students-count">0</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 text-indigo-800 font-black"
+            id="hn-badge-admin-students-count">0</span>
         </button>
       </div>
 
@@ -778,7 +823,8 @@
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="relative flex-1 max-w-md">
-              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <i
+                class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <input type="text" id="hn-admin-search-teachers" oninput="handleHoaNhapAdminSearch(this.value)"
                 placeholder="Tìm kiếm theo Tên giáo viên, Tài khoản, Môn dạy, Lớp..."
                 class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
@@ -928,7 +974,8 @@
               <span class="text-[11px] font-bold text-purple-700 uppercase block">HS hòa nhập toàn trường</span>
               <span class="text-xl font-black text-purple-900" id="hn-sum-stat-total-students">0</span>
             </div>
-            <div class="p-3.5 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-700 text-white shadow-md shadow-indigo-600/20">
+            <div
+              class="p-3.5 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-700 text-white shadow-md shadow-indigo-600/20">
               <span class="text-[11px] font-bold text-indigo-200 uppercase block">Tổng số tiết dạy hòa nhập</span>
               <span class="text-xl font-black text-white" id="hn-sum-stat-total-periods">0 tiết</span>
             </div>
@@ -945,26 +992,39 @@
                   <th class="py-3 px-3 text-left min-w-[150px] border-r border-slate-200">Tên Giáo Viên</th>
                   <th class="py-3 px-3 text-center w-24 border-r border-slate-200">Môn Dạy</th>
                   <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Lớp Dạy</th>
-                  <th class="py-3 px-3 text-left min-w-[180px] border-r border-slate-200">Danh Sách Học Sinh Hòa Nhập</th>
+                  <th class="py-3 px-3 text-left min-w-[180px] border-r border-slate-200">Danh Sách Học Sinh Hòa Nhập
+                  </th>
                   <th class="py-3 px-3 text-left min-w-[160px] border-r border-slate-200">Dạng Khuyết Tật</th>
                   <th class="py-3 px-3 text-center w-20 border-r border-slate-200">Mức Độ</th>
-                  <th class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tiết/tuần</th>
-                  <th class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">Số tuần</th>
-                  <th class="py-3 px-3 text-center w-28 bg-purple-100/50 text-purple-950 font-black border-r border-slate-200">Tổng tiết dạy</th>
+                  <th
+                    class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">
+                    Số tiết/tuần</th>
+                  <th
+                    class="py-3 px-3 text-center w-24 bg-indigo-100/40 text-indigo-950 font-black border-r border-slate-200">
+                    Số tuần</th>
+                  <th
+                    class="py-3 px-3 text-center w-28 bg-purple-100/50 text-purple-950 font-black border-r border-slate-200">
+                    Tổng tiết dạy</th>
                   <th class="py-3 px-2 w-20 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="hn-admin-summary-tbody" class="divide-y divide-slate-100">
                 <!-- Render từ JS -->
               </tbody>
-              <tfoot id="hn-admin-summary-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
+              <tfoot class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
                 <tr class="text-center">
-                  <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
+                  <td colspan="7"
+                    class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
                     TỔNG CỘNG TOÀN TRƯỜNG
                   </td>
-                  <td id="hn-admin-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">0</td>
-                  <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">--</td>
-                  <td id="hn-admin-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">0 tiết</td>
+                  <td id="hn-admin-foot-periods-per-week"
+                    class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
+                    0</td>
+                  <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">
+                    --</td>
+                  <td id="hn-admin-foot-total-periods"
+                    class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">
+                    0 tiết</td>
                   <td class="py-3 px-2"></td>
                 </tr>
               </tfoot>
@@ -975,13 +1035,15 @@
 
       <!-- TAB 3: DANH SÁCH HỌC SINH HÒA NHẬP (Sheet HOA NHAP) -->
       <section id="hn-admin-subtab-students" class="space-y-4 hidden">
-        <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div
+          class="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2">
               <i class="fa-solid fa-hands-holding-child text-indigo-600"></i>
               <span>Danh Sách Học Sinh Khuyết Tật Học Hòa Nhập Toàn Trường</span>
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">Dữ liệu nguồn được đọc trực tiếp từ Sheet "HOA NHAP" trên Google Sheet.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Dữ liệu nguồn được đọc trực tiếp từ Sheet "HOA NHAP" trên Google
+              Sheet.</p>
           </div>
           <button type="button" onclick="loadHoaNhapStudentsFromCloud(false)"
             class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-indigo-200 active:scale-95">
@@ -1015,7 +1077,8 @@
 
     <!-- Footer Phân Hệ 2 -->
     <footer class="max-w-[1600px] mx-auto px-4 text-center text-xs text-slate-400 py-3">
-      Trường THCS An Nhơn - Hệ thống Quản Lý & Tính Tiết Phụ Trội Dạy Hòa Nhập • Tác giả: Nguyễn Phi Hùng (Zalo: 0938750424)
+      Trường THCS An Nhơn - Hệ thống Quản Lý & Tính Tiết Phụ Trội Dạy Hòa Nhập • Tác giả: Nguyễn Phi Hùng (Zalo:
+      0938750424)
     </footer>
   </div>
 
@@ -1057,7 +1120,8 @@
           </div>
 
           <!-- Nút Tải lại dữ liệu cá nhân từ Google Sheet -->
-          <button type="button" onclick="syncTeacherDataFromCloud(false)" title="Tải lại dữ liệu mới nhất từ Google Sheet"
+          <button type="button" onclick="syncTeacherDataFromCloud(false)"
+            title="Tải lại dữ liệu mới nhất từ Google Sheet"
             class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition">
             <i class="fa-solid fa-arrows-rotate text-emerald-600"></i>
             <span class="hidden sm:inline">Tải Lại</span>
@@ -1177,7 +1241,7 @@
           <!-- HÀNG 2: KHỐI & LỚP GIẢNG DẠY (KHỐI 6, 7, 8, 9) -->
           <div class="mt-4 pt-3.5 border-t border-slate-100">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-              
+
               <!-- TIÊU ĐỀ & CÁC NÚT KHỐI 6, 7, 8, 9 -->
               <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap flex-1">
                 <div class="flex items-center gap-2">
@@ -1193,28 +1257,32 @@
                     class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
                     <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
                     <span>Khối 6</span>
-                    <span id="badge-count-k6" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                    <span id="badge-count-k6"
+                      class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
                   </button>
 
                   <button type="button" onclick="openSelectGradeClassesModal('7')" id="btn-grade-7"
                     class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
                     <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
                     <span>Khối 7</span>
-                    <span id="badge-count-k7" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                    <span id="badge-count-k7"
+                      class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
                   </button>
 
                   <button type="button" onclick="openSelectGradeClassesModal('8')" id="btn-grade-8"
                     class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
                     <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
                     <span>Khối 8</span>
-                    <span id="badge-count-k8" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                    <span id="badge-count-k8"
+                      class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
                   </button>
 
                   <button type="button" onclick="openSelectGradeClassesModal('9')" id="btn-grade-9"
                     class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center gap-1.5 shadow-sm active:scale-95">
                     <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
                     <span>Khối 9</span>
-                    <span id="badge-count-k9" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                    <span id="badge-count-k9"
+                      class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
                   </button>
                 </div>
 
@@ -1269,7 +1337,8 @@
             <thead>
               <tr class="bg-slate-100/90 text-slate-700 font-bold text-center border-b">
                 <th class="py-3 px-3 text-left w-28 min-w-[110px]">Tuần học</th>
-                <th class="py-3 px-2 text-center min-w-[170px] max-w-[280px] bg-emerald-50/60 text-emerald-950 font-bold">
+                <th
+                  class="py-3 px-2 text-center min-w-[170px] max-w-[280px] bg-emerald-50/60 text-emerald-950 font-bold">
                   <div class="flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-chalkboard-user text-emerald-600"></i>
                     <span>Lớp dạy</span>
@@ -1284,12 +1353,14 @@
                 <th class="py-2 px-2 min-w-[145px] text-center">
                   <div class="flex flex-col items-center justify-center gap-1">
                     <span class="text-xs font-bold text-slate-800">(1) Tiết dạy</span>
-                    <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
+                    <div
+                      class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
                       <input type="number" id="quick-fill-header-input" min="0" step="0.5" placeholder="19"
                         title="Nhập số tiết để điền nhanh cho tất cả các tuần"
                         class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
                         onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillAssignedWeeks(this.value);}">
-                      <button type="button" id="btn-quick-fill-all" onclick="quickFillAssignedWeeks(document.getElementById('quick-fill-header-input').value)"
+                      <button type="button" id="btn-quick-fill-all"
+                        onclick="quickFillAssignedWeeks(document.getElementById('quick-fill-header-input').value)"
                         title="Điền nhanh số tiết này cho tất cả các tuần trong học kỳ"
                         class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5">
                         <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
@@ -1301,12 +1372,14 @@
                 <th class="py-2 px-2 min-w-[145px] text-center">
                   <div class="flex flex-col items-center justify-center gap-1">
                     <span class="text-xs font-bold text-slate-800">(2) Kiêm nhiệm</span>
-                    <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
+                    <div
+                      class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
                       <input type="number" id="quick-fill-duty-input" min="0" step="0.5" placeholder="0"
                         title="Nhập số tiết kiêm nhiệm để điền nhanh cho tất cả các tuần"
                         class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
                         onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillDutyWeeks(this.value);}">
-                      <button type="button" id="btn-quick-fill-duty-all" onclick="quickFillDutyWeeks(document.getElementById('quick-fill-duty-input').value)"
+                      <button type="button" id="btn-quick-fill-duty-all"
+                        onclick="quickFillDutyWeeks(document.getElementById('quick-fill-duty-input').value)"
                         title="Điền nhanh số tiết kiêm nhiệm cho tất cả các tuần trong học kỳ"
                         class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5">
                         <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
@@ -1331,7 +1404,8 @@
                   id="foot-sem-title">
                   TỔNG CỘNG HỌC KỲ 1
                 </td>
-                <td id="foot-classes" class="py-3 px-2 text-center text-xs text-emerald-900 font-bold bg-emerald-50/40">--</td>
+                <td id="foot-classes" class="py-3 px-2 text-center text-xs text-emerald-900 font-bold bg-emerald-50/40">
+                  --</td>
                 <td id="foot-quota" class="py-3 px-2 text-slate-700 font-black bg-slate-100/80">342</td>
                 <td id="foot-t1" class="py-3 px-2 text-slate-800 font-bold">0</td>
                 <td id="foot-duty" class="py-3 px-2 text-slate-800 font-bold">0</td>
@@ -1406,7 +1480,8 @@
               <span id="admin-header-role-badge"
                 class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-500 text-white tracking-wider">Admin</span>
             </div>
-            <p id="admin-header-school-name" class="text-[11px] text-slate-400 font-medium">Trường THCS An Nhơn | Quản lý phụ trội toàn trường</p>
+            <p id="admin-header-school-name" class="text-[11px] text-slate-400 font-medium">Trường THCS An Nhơn | Quản
+              lý phụ trội toàn trường</p>
           </div>
         </div>
 
@@ -1541,17 +1616,22 @@
         </div>
 
         <!-- BANNER THÔNG BÁO TRẠNG THÁI KHÓA TOÀN TRƯỜNG TRONG ADMIN -->
-        <div id="admin-global-lock-banner" class="hidden p-3.5 sm:p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div id="admin-global-lock-banner"
+          class="hidden p-3.5 sm:p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
+            <div
+              class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
               <i class="fa-solid fa-lock"></i>
             </div>
             <div>
-              <p class="font-black text-xs sm:text-sm uppercase tracking-tight text-amber-900">HỆ THỐNG ĐANG KHÓA KÊ KHAI (TOÀN TRƯỜNG)</p>
-              <p class="text-[11px] sm:text-xs text-amber-800 font-medium mt-0.5">Tất cả giáo viên hiện chỉ có thể xem số liệu và xuất file PDF, không thể chỉnh sửa hoặc lưu dữ liệu mới.</p>
+              <p class="font-black text-xs sm:text-sm uppercase tracking-tight text-amber-900">HỆ THỐNG ĐANG KHÓA KÊ
+                KHAI (TOÀN TRƯỜNG)</p>
+              <p class="text-[11px] sm:text-xs text-amber-800 font-medium mt-0.5">Tất cả giáo viên hiện chỉ có thể xem
+                số liệu và xuất file PDF, không thể chỉnh sửa hoặc lưu dữ liệu mới.</p>
             </div>
           </div>
-          <button type="button" onclick="toggleGlobalDeclarationLock()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl text-xs transition shrink-0 flex items-center gap-1.5 shadow-sm">
+          <button type="button" onclick="toggleGlobalDeclarationLock()"
+            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl text-xs transition shrink-0 flex items-center gap-1.5 shadow-sm">
             <i class="fa-solid fa-lock-open"></i>
             <span>Mở Khóa Cho Toàn Trường</span>
           </button>
@@ -1599,7 +1679,8 @@
               </button>
 
               <!-- NÚT ĐỒNG BỘ THỨ TỰ SHEET DỮ LIỆU -->
-              <button type="button" onclick="syncDuLieuSheetOrder()" title="Đồng bộ danh sách toàn bộ giáo viên từ Sheet DATA sang Sheet DULIEU theo đúng thứ tự cố định"
+              <button type="button" onclick="syncDuLieuSheetOrder()"
+                title="Đồng bộ danh sách toàn bộ giáo viên từ Sheet DATA sang Sheet DULIEU theo đúng thứ tự cố định"
                 class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-indigo-600/20 transition flex items-center gap-2">
                 <i class="fa-solid fa-arrows-rotate"></i>
                 <span>Đồng Bộ Thứ Tự DULIEU</span>
@@ -1617,9 +1698,12 @@
                   <th class="py-2.5 px-1 text-center min-w-[80px]">Ngày Sinh</th>
                   <th class="py-2.5 px-1 text-center min-w-[85px]">Mật Khẩu</th>
                   <th class="py-2.5 px-1 text-center min-w-[105px]">Môn Giảng Dạy</th>
-                  <th class="py-2.5 px-1 text-center min-w-[95px]" title="Định mức quy định chuẩn & Số tiết dạy thực tế theo tuần">Định Mức / Dạy</th>
+                  <th class="py-2.5 px-1 text-center min-w-[95px]"
+                    title="Định mức quy định chuẩn & Số tiết dạy thực tế theo tuần">Định Mức / Dạy</th>
                   <th class="py-2.5 px-1 text-center min-w-[130px]">Trạng Thái & Vượt Tiết</th>
-                  <th class="py-2.5 px-1.5 text-center min-w-[145px] sticky right-0 bg-slate-100 z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">Thao Tác</th>
+                  <th
+                    class="py-2.5 px-1.5 text-center min-w-[145px] sticky right-0 bg-slate-100 z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                    Thao Tác</th>
                 </tr>
               </thead>
               <tbody id="admin-teachers-tbody" class="divide-y divide-slate-100 font-medium">
@@ -1642,7 +1726,8 @@
           <div class="flex flex-wrap items-center gap-3">
             <!-- 1. Bộ nút chọn HK1, HK2, Cả Năm -->
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5 shrink-0">
+              <span
+                class="text-xs font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5 shrink-0">
                 <i class="fa-solid fa-filter text-emerald-600"></i>
                 <span>Chọn Kê Khai:</span>
               </span>
@@ -1679,7 +1764,8 @@
                   <option value="overtime">Vượt định mức (0)</option>
                   <option value="no_overtime">Không vượt định mức (0)</option>
                 </select>
-                <span class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 pointer-events-none text-xs">
+                <span
+                  class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 pointer-events-none text-xs">
                   <i class="fa-solid fa-chevron-down"></i>
                 </span>
               </div>
@@ -1791,16 +1877,19 @@
         <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3.5">
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xl shadow-md shadow-emerald-500/20 shrink-0">
+              <div
+                class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xl shadow-md shadow-emerald-500/20 shrink-0">
                 <i class="fa-solid fa-sliders"></i>
               </div>
               <div>
                 <h3 class="font-extrabold text-base sm:text-lg text-slate-800 flex items-center gap-2">
                   <span>Cấu Hình Hiển Thị Cột Kê Khai Phía Giáo Viên</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">Toàn Trường</span>
+                  <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">Toàn
+                    Trường</span>
                 </h3>
                 <p class="text-xs text-slate-500 mt-0.5">
-                  Tùy chỉnh Ẩn hoặc Hiện 2 cột: <strong>Dạy TS10/ B2</strong> và <strong>BD HSG</strong> trên bảng tính phụ trội và phiếu in cá nhân của giáo viên toàn trường.
+                  Tùy chỉnh Ẩn hoặc Hiện 2 cột: <strong>Dạy TS10/ B2</strong> và <strong>BD HSG</strong> trên bảng tính
+                  phụ trội và phiếu in cá nhân của giáo viên toàn trường.
                 </p>
               </div>
             </div>
@@ -1821,37 +1910,46 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           <!-- Card 1: Cột (3) BD HSG -->
-          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between transition-all hover:border-emerald-300">
+          <div
+            class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between transition-all hover:border-emerald-300">
             <div>
               <div class="flex items-center justify-between gap-3 mb-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-lg font-bold shrink-0">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-lg font-bold shrink-0">
                     <i class="fa-solid fa-award"></i>
                   </div>
                   <div>
                     <h4 class="font-extrabold text-sm sm:text-base text-slate-800">Cột (3) Bồi Dưỡng HSG</h4>
-                    <span class="text-[11px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-md">Bồi dưỡng Học sinh giỏi</span>
+                    <span class="text-[11px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-md">Bồi dưỡng
+                      Học sinh giỏi</span>
                   </div>
                 </div>
 
                 <!-- Custom Toggle Switch -->
                 <label class="relative inline-flex items-center cursor-pointer select-none">
-                  <input type="checkbox" id="admin-config-toggle-bdhsg" class="sr-only peer" onchange="onAdminConfigToggleChange()">
-                  <div class="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600"></div>
+                  <input type="checkbox" id="admin-config-toggle-bdhsg" class="sr-only peer"
+                    onchange="onAdminConfigToggleChange()">
+                  <div
+                    class="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600">
+                  </div>
                 </label>
               </div>
 
               <p class="text-xs text-slate-600 leading-relaxed">
-                Khi <strong>Bật</strong>: Giáo viên toàn trường sẽ thấy và được phép kê khai số tiết bồi dưỡng học sinh giỏi từng tuần.
+                Khi <strong>Bật</strong>: Giáo viên toàn trường sẽ thấy và được phép kê khai số tiết bồi dưỡng học sinh
+                giỏi từng tuần.
               </p>
               <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                Khi <strong>Tắt</strong>: Cột này sẽ bị ẩn hoàn toàn trên giao diện kê khai của giáo viên và không hiển thị trên phiếu in cá nhân PDF.
+                Khi <strong>Tắt</strong>: Cột này sẽ bị ẩn hoàn toàn trên giao diện kê khai của giáo viên và không hiển
+                thị trên phiếu in cá nhân PDF.
               </p>
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
               <span class="text-xs font-semibold text-slate-500">Trạng thái hiện tại:</span>
-              <span id="status-badge-col-bdhsg" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1.5">
+              <span id="status-badge-col-bdhsg"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1.5">
                 <i class="fa-solid fa-eye"></i>
                 <span>Đang Hiện Cột</span>
               </span>
@@ -1859,37 +1957,46 @@
           </div>
 
           <!-- Card 2: Cột (4) Dạy TS10 -->
-          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between transition-all hover:border-emerald-300">
+          <div
+            class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between transition-all hover:border-emerald-300">
             <div>
               <div class="flex items-center justify-between gap-3 mb-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center text-lg font-bold shrink-0">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center text-lg font-bold shrink-0">
                     <i class="fa-solid fa-graduation-cap"></i>
                   </div>
                   <div>
                     <h4 class="font-extrabold text-sm sm:text-base text-slate-800">Cột Dạy Tuyển Sinh 10 / Buổi 2</h4>
-                    <span class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">Dạy TS10/ B2</span>
+                    <span class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md">Dạy
+                      TS10/ B2</span>
                   </div>
                 </div>
 
                 <!-- Custom Toggle Switch -->
                 <label class="relative inline-flex items-center cursor-pointer select-none">
-                  <input type="checkbox" id="admin-config-toggle-dayts10" class="sr-only peer" onchange="onAdminConfigToggleChange()">
-                  <div class="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600"></div>
+                  <input type="checkbox" id="admin-config-toggle-dayts10" class="sr-only peer"
+                    onchange="onAdminConfigToggleChange()">
+                  <div
+                    class="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600">
+                  </div>
                 </label>
               </div>
 
               <p class="text-xs text-slate-600 leading-relaxed">
-                Khi <strong>Bật</strong>: Giáo viên toàn trường sẽ thấy và được phép kê khai số tiết dạy ôn thi tuyển sinh 10 từng tuần.
+                Khi <strong>Bật</strong>: Giáo viên toàn trường sẽ thấy và được phép kê khai số tiết dạy ôn thi tuyển
+                sinh 10 từng tuần.
               </p>
               <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                Khi <strong>Tắt</strong>: Cột này sẽ bị ẩn hoàn toàn trên giao diện kê khai của giáo viên và không hiển thị trên phiếu in cá nhân PDF.
+                Khi <strong>Tắt</strong>: Cột này sẽ bị ẩn hoàn toàn trên giao diện kê khai của giáo viên và không hiển
+                thị trên phiếu in cá nhân PDF.
               </p>
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
               <span class="text-xs font-semibold text-slate-500">Trạng thái hiện tại:</span>
-              <span id="status-badge-col-dayts10" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1.5">
+              <span id="status-badge-col-dayts10"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1.5">
                 <i class="fa-solid fa-eye"></i>
                 <span>Đang Hiện Cột</span>
               </span>
@@ -1905,7 +2012,8 @@
               <i class="fa-solid fa-table text-emerald-600"></i>
               <span>Xem Trước Trực Quan Bảng Kê Khai Của Giáo Viên</span>
             </h4>
-            <span class="text-xs text-slate-500 italic">* Bảng mô phỏng tự động cập nhật khi bạn gạt công tắc ở trên</span>
+            <span class="text-xs text-slate-500 italic">* Bảng mô phỏng tự động cập nhật khi bạn gạt công tắc ở
+              trên</span>
           </div>
 
           <div class="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
@@ -1917,8 +2025,12 @@
                     <th class="py-3 px-2 bg-slate-50 font-bold text-slate-800">Tiết định mức</th>
                     <th class="py-3 px-2">(1) Tiết dạy</th>
                     <th class="py-3 px-2">(2) Kiêm nhiệm</th>
-                    <th id="preview-col-dayts10-th" class="col-preview-dayts10 py-3 px-2 bg-indigo-50/70 text-indigo-900 border-x border-indigo-200/50">(3) Dạy TS10/ B2</th>
-                    <th id="preview-col-bdhsg-th" class="col-preview-bdhsg py-3 px-2 bg-amber-50/70 text-amber-900 border-x border-amber-200/50">(4) BD HSG</th>
+                    <th id="preview-col-dayts10-th"
+                      class="col-preview-dayts10 py-3 px-2 bg-indigo-50/70 text-indigo-900 border-x border-indigo-200/50">
+                      (3) Dạy TS10/ B2</th>
+                    <th id="preview-col-bdhsg-th"
+                      class="col-preview-bdhsg py-3 px-2 bg-amber-50/70 text-amber-900 border-x border-amber-200/50">(4)
+                      BD HSG</th>
                     <th class="py-3 px-2">(5) Nghỉ dạy</th>
                     <th class="py-3 px-2 bg-emerald-50 text-emerald-900">(6) Thực dạy</th>
                     <th class="py-3 px-2 bg-teal-50 text-teal-900">(7) Tiết vượt</th>
@@ -1930,10 +2042,15 @@
                     <td class="py-2.5 px-2 font-bold text-slate-700 bg-slate-50/50">19</td>
                     <td class="py-2.5 px-2">21</td>
                     <td class="py-2.5 px-2">0</td>
-                    <td id="preview-col-dayts10-td1" class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">0</td>
-                    <td id="preview-col-bdhsg-td1" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">2</td>
+                    <td id="preview-col-dayts10-td1"
+                      class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">
+                      0</td>
+                    <td id="preview-col-bdhsg-td1"
+                      class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">
+                      2</td>
                     <td class="py-2.5 px-2 text-rose-600">0</td>
-                    <td id="preview-col-actual-td1" class="py-2.5 px-2 font-bold text-emerald-700 bg-emerald-50/30">23</td>
+                    <td id="preview-col-actual-td1" class="py-2.5 px-2 font-bold text-emerald-700 bg-emerald-50/30">23
+                    </td>
                     <td id="preview-col-overtime-td1" class="py-2.5 px-2 font-black text-teal-800 bg-teal-50/40">+4</td>
                   </tr>
                   <tr class="bg-slate-50/60">
@@ -1941,10 +2058,15 @@
                     <td class="py-2.5 px-2 font-bold text-slate-700 bg-slate-50/50">19</td>
                     <td class="py-2.5 px-2">19</td>
                     <td class="py-2.5 px-2">0</td>
-                    <td id="preview-col-dayts10-td2" class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">2</td>
-                    <td id="preview-col-bdhsg-td2" class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">0</td>
+                    <td id="preview-col-dayts10-td2"
+                      class="col-preview-dayts10 py-2.5 px-2 font-bold text-indigo-800 bg-indigo-50/30 border-x border-indigo-200/30">
+                      2</td>
+                    <td id="preview-col-bdhsg-td2"
+                      class="col-preview-bdhsg py-2.5 px-2 font-bold text-amber-800 bg-amber-50/30 border-x border-amber-200/30">
+                      0</td>
                     <td class="py-2.5 px-2 text-rose-600">1</td>
-                    <td id="preview-col-actual-td2" class="py-2.5 px-2 font-bold text-emerald-700 bg-emerald-50/30">20</td>
+                    <td id="preview-col-actual-td2" class="py-2.5 px-2 font-bold text-emerald-700 bg-emerald-50/30">20
+                    </td>
                     <td id="preview-col-overtime-td2" class="py-2.5 px-2 font-black text-teal-800 bg-teal-50/40">+1</td>
                   </tr>
                 </tbody>
@@ -1960,7 +2082,8 @@
             </button>
 
             <span class="text-xs text-slate-500">
-              * Sau khi nhấn <strong>Lưu Cấu Hình</strong>, toàn bộ tài khoản giáo viên đăng nhập sẽ tự động áp dụng cài đặt mới.
+              * Sau khi nhấn <strong>Lưu Cấu Hình</strong>, toàn bộ tài khoản giáo viên đăng nhập sẽ tự động áp dụng cài
+              đặt mới.
             </span>
           </div>
         </div>
@@ -1975,34 +2098,44 @@
         <!-- Banner tiêu đề & Giới thiệu tính năng (Đã bỏ nút kiểm tra phía trên theo yêu cầu) -->
         <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
           <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl shadow-md shadow-indigo-500/20 shrink-0">
+            <div
+              class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl shadow-md shadow-indigo-500/20 shrink-0">
               <i class="fa-solid fa-server"></i>
             </div>
             <div>
               <h3 class="font-extrabold text-base sm:text-lg text-slate-800 flex items-center gap-2 flex-wrap">
                 <span>Cấu Hình Backend Google Sheet Riêng Của Trường</span>
-                <span id="badge-backend-mode-tag" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">Backend Trung Tâm</span>
+                <span id="badge-backend-mode-tag"
+                  class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">Backend Trung
+                  Tâm</span>
               </h3>
               <p class="text-xs text-slate-500 mt-0.5">
-                Cho phép các trường học khác sử dụng hệ thống một cách độc lập với cơ sở dữ liệu Google Sheet của riêng trường mình (chỉ cần cấu hình 1 lần duy nhất).
+                Cho phép các trường học khác sử dụng hệ thống một cách độc lập với cơ sở dữ liệu Google Sheet của riêng
+                trường mình (chỉ cần cấu hình 1 lần duy nhất).
               </p>
             </div>
           </div>
         </div>
 
         <!-- Thẻ Thông Báo Trạng Thái Kết Nối Hiện Tại (Đã bỏ nút Về Backend Trung Tâm theo yêu cầu) -->
-        <div id="backend-status-card" class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-5 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+        <div id="backend-status-card"
+          class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 p-5 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
           <div class="flex items-start sm:items-center gap-3">
-            <div id="backend-status-icon-wrap" class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0">
+            <div id="backend-status-icon-wrap"
+              class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0">
               <i class="fa-solid fa-database"></i>
             </div>
             <div>
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Cơ Sở Dữ Liệu Đang Kích Hoạt:</span>
-                <span id="backend-status-label" class="text-xs px-2.5 py-0.5 rounded-full font-black bg-emerald-200 text-emerald-900">Google Sheet Trung Tâm (Mặc định)</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Cơ Sở Dữ Liệu Đang Kích
+                  Hoạt:</span>
+                <span id="backend-status-label"
+                  class="text-xs px-2.5 py-0.5 rounded-full font-black bg-emerald-200 text-emerald-900">Google Sheet
+                  Trung Tâm (Mặc định)</span>
               </div>
               <p id="backend-status-desc" class="text-xs text-slate-600 mt-1 break-all font-mono">
-                URL: https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec
+                URL:
+                https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec
               </p>
             </div>
           </div>
@@ -2012,7 +2145,8 @@
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200">
           <div class="flex items-center justify-between gap-3 mb-5 border-b border-slate-100 pb-3">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-black">
+              <div
+                class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-black">
                 <i class="fa-solid fa-list-check"></i>
               </div>
               <h4 class="font-extrabold text-sm sm:text-base text-slate-800">
@@ -2026,14 +2160,18 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
 
             <!-- Bước 1 -->
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
+            <div
+              class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
               <div>
                 <div class="flex items-center gap-2.5 mb-2 font-bold text-slate-800">
-                  <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">1</span>
+                  <span
+                    class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">1</span>
                   <span>Tạo Bảng Tính Google Sheet Mới</span>
                 </div>
                 <p class="text-slate-600 leading-relaxed">
-                  Mở Google Drive của tài khoản trường bạn, tạo 1 file Google Sheet mới (hoặc truy cập <a href="https://sheets.new" target="_blank" class="text-indigo-600 font-bold underline">sheets.new</a>).
+                  Mở Google Drive của tài khoản trường bạn, tạo 1 file Google Sheet mới (hoặc truy cập <a
+                    href="https://sheets.new" target="_blank"
+                    class="text-indigo-600 font-bold underline">sheets.new</a>).
                 </p>
                 <p class="text-slate-500 mt-1 italic">
                   * Đặt tên file tùy ý, ví dụ: <code>TIẾT VƯỢT - THCS AN NHƠN</code>. Không cần tạo sẵn sheet gì cả.
@@ -2042,10 +2180,12 @@
             </div>
 
             <!-- Bước 2 -->
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
+            <div
+              class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
               <div>
                 <div class="flex items-center gap-2.5 mb-2 font-bold text-slate-800">
-                  <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">2</span>
+                  <span
+                    class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">2</span>
                   <span>Mở Trình Soạn Thảo Apps Script</span>
                 </div>
                 <p class="text-slate-600 leading-relaxed">
@@ -2058,39 +2198,50 @@
             </div>
 
             <!-- Bước 3 -->
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
+            <div
+              class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
               <div>
                 <div class="flex items-center gap-2.5 mb-2 font-bold text-slate-800">
-                  <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">3</span>
+                  <span
+                    class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">3</span>
                   <span>Dán Toàn Bộ Mã Nguồn user_code.gs</span>
                 </div>
                 <p class="text-slate-600 leading-relaxed">
-                  Trong Apps Script, xóa sạch vài dòng code mặc định. Nhấn nút <strong>"Sao Chép Mã Nguồn Backend"</strong> ở bên dưới, rồi bấm <kbd class="px-1.5 py-0.5 bg-slate-200 rounded font-mono font-bold">Ctrl + V</kbd> dán vào. Bấm <kbd class="px-1.5 py-0.5 bg-slate-200 rounded font-mono font-bold">Ctrl + S</kbd> để Lưu.
+                  Trong Apps Script, xóa sạch vài dòng code mặc định. Nhấn nút <strong>"Sao Chép Mã Nguồn
+                    Backend"</strong> ở bên dưới, rồi bấm <kbd
+                    class="px-1.5 py-0.5 bg-slate-200 rounded font-mono font-bold">Ctrl + V</kbd> dán vào. Bấm <kbd
+                    class="px-1.5 py-0.5 bg-slate-200 rounded font-mono font-bold">Ctrl + S</kbd> để Lưu.
                 </p>
               </div>
             </div>
 
             <!-- Bước 4 -->
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
+            <div
+              class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
               <div>
                 <div class="flex items-center gap-2.5 mb-2 font-bold text-slate-800">
-                  <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">4</span>
+                  <span
+                    class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">4</span>
                   <span>Chạy Hàm Khởi Tạo Tự Động</span>
                 </div>
                 <p class="text-slate-600 leading-relaxed">
-                  Tại ô danh sách hàm trên thanh công cụ Apps Script, chọn hàm <strong>initialSetup</strong> rồi bấm <strong>Chạy (Run)</strong>.
+                  Tại ô danh sách hàm trên thanh công cụ Apps Script, chọn hàm <strong>initialSetup</strong> rồi bấm
+                  <strong>Chạy (Run)</strong>.
                 </p>
                 <p class="text-slate-500 mt-1 italic">
-                  * Cấp quyền Google nếu được hỏi. File sẽ tự động sinh đầy đủ 4 sheet chuẩn: <code>DATA</code>, <code>DULIEU</code>, <code>HOA NHAP</code>, <code>dulieu_hoanhap</code>!
+                  * Cấp quyền Google nếu được hỏi. File sẽ tự động sinh đầy đủ 4 sheet chuẩn: <code>DATA</code>,
+                  <code>DULIEU</code>, <code>HOA NHAP</code>, <code>dulieu_hoanhap</code>!
                 </p>
               </div>
             </div>
 
             <!-- Bước 5 -->
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
+            <div
+              class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
               <div>
                 <div class="flex items-center gap-2.5 mb-2 font-bold text-slate-800">
-                  <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">5</span>
+                  <span
+                    class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">5</span>
                   <span>Triển Khai Ứng Dụng Web (Web App)</span>
                 </div>
                 <p class="text-slate-600 leading-relaxed">
@@ -2099,20 +2250,24 @@
                 <ul class="list-disc pl-4 mt-1 text-slate-600 space-y-0.5">
                   <li>Loại: Bấm bánh răng ⚙️ ➔ Chọn <strong>Ứng dụng web</strong></li>
                   <li>Thực thi dưới dạng: <strong>Tôi (Me)</strong></li>
-                  <li>Ai có quyền truy cập: <strong class="text-rose-600 font-black">Bất kỳ ai (Anyone)</strong> *(Bắt buộc)*</li>
+                  <li>Ai có quyền truy cập: <strong class="text-rose-600 font-black">Bất kỳ ai (Anyone)</strong> *(Bắt
+                    buộc)*</li>
                 </ul>
               </div>
             </div>
 
             <!-- Bước 6 -->
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
+            <div
+              class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between hover:border-indigo-300 transition">
               <div>
                 <div class="flex items-center gap-2.5 mb-2 font-bold text-slate-800">
-                  <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">6</span>
+                  <span
+                    class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">6</span>
                   <span>Sao Chép URL & Dán Vào Bên Dưới</span>
                 </div>
                 <p class="text-slate-600 leading-relaxed">
-                  Sao chép URL Web App vừa tạo (có đuôi <code>/exec</code>), dán vào ô nhập liệu bên dưới và nhấn <strong>"Lưu & Kích Hoạt Backend Riêng"</strong>.
+                  Sao chép URL Web App vừa tạo (có đuôi <code>/exec</code>), dán vào ô nhập liệu bên dưới và nhấn
+                  <strong>"Lưu & Kích Hoạt Backend Riêng"</strong>.
                 </p>
               </div>
             </div>
@@ -2124,7 +2279,8 @@
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center text-lg font-bold shrink-0">
+              <div
+                class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center text-lg font-bold shrink-0">
                 <i class="fa-solid fa-code"></i>
               </div>
               <div>
@@ -2132,7 +2288,8 @@
                   Mã Nguồn Google Apps Script Cho Các Trường (user_code.gs)
                 </h4>
                 <p class="text-xs text-slate-500">
-                  Bấm nút bên cạnh để sao chép toàn bộ mã nguồn file user_code.gs và dán trực tiếp vào Apps Script của trường bạn (chỉ tạo 4 sheet chuẩn, không có HUB_SERVER)
+                  Bấm nút bên cạnh để sao chép toàn bộ mã nguồn file user_code.gs và dán trực tiếp vào Apps Script của
+                  trường bạn (chỉ tạo 4 sheet chuẩn, không có HUB_SERVER)
                 </p>
               </div>
             </div>
@@ -2157,14 +2314,17 @@
           <!-- Khung xem code mở rộng (Mặc định ẩn) -->
           <div id="backend-code-viewer-container" class="hidden mt-4 pt-4 border-t border-slate-100">
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-bold text-slate-600">Nội dung đầy đủ file <code>user_code.gs</code> (Dành cho các trường - Tạo 4 sheet chuẩn, không có sheet HUB_SERVER):</span>
-              <button type="button" onclick="selectAndCopyFromTextarea()" class="text-xs text-indigo-600 hover:underline font-bold flex items-center gap-1">
+              <span class="text-xs font-bold text-slate-600">Nội dung đầy đủ file <code>user_code.gs</code> (Dành cho
+                các trường - Tạo 4 sheet chuẩn, không có sheet HUB_SERVER):</span>
+              <button type="button" onclick="selectAndCopyFromTextarea()"
+                class="text-xs text-indigo-600 hover:underline font-bold flex items-center gap-1">
                 <i class="fa-solid fa-arrow-pointer"></i> Chọn tất cả & copy
               </button>
             </div>
             <textarea id="raw-backend-code" readonly
               class="w-full h-80 font-mono text-xs p-3.5 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed select-all"
-              placeholder="Đang tải mã nguồn user_code.gs...">/**
+              placeholder="Đang tải mã nguồn user_code.gs...">
+/**
  * =========================================================================
  * BACKEND GOOGLE APPS SCRIPT: SỔ TÍNH TIẾT DẠY VƯỢT ĐỊNH MỨC - THCS AN NHƠN
  * Tác giả: Nguyễn Phi Hùng | Zalo: 0938750424
@@ -2655,26 +2815,45 @@ function initHoaNhapSheet(ss) {
     sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ", "Nhẹ", "Tuần 8"]);
     sheetHN.getRange(2, 2, 3, 1).setNumberFormat("@");
   } else {
-    // Tự động kiểm tra và thêm cột MỨC ĐỘ & THỜI GIAN nếu sheet đã tồn tại nhưng còn thiếu
-    const curCols = sheetHN.getLastColumn();
-    if (curCols < 6) {
-      const headerVals = sheetHN.getRange(1, 1, 1, Math.max(1, curCols)).getValues()[0].map(h => String(h || "").trim().toLowerCase());
-      const hasMucDo = headerVals.some(h => h.includes("mức") || h.includes("muc"));
-      const hasThoiGian = headerVals.some(h => h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
+    // Tự động kiểm tra tiêu đề dòng 1 và thêm cột MỨC ĐỘ & THỜI GIAN nếu còn thiếu
+    const maxCols = Math.max(4, sheetHN.getLastColumn());
+    const headerVals = sheetHN.getRange(1, 1, 1, maxCols).getValues()[0].map(h => String(h || "").trim().toLowerCase());
+    const hasMucDo = headerVals.some(h => h.includes("mức") || h.includes("muc"));
+    const hasThoiGian = headerVals.some(h => h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
 
-      let nextCol = curCols + 1;
-      if (!hasMucDo) {
-        sheetHN.getRange(1, nextCol).setValue("MỨC ĐỘ").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
-        sheetHN.setColumnWidth(nextCol, 110);
-        nextCol++;
+    if (!hasMucDo) {
+      let colIdx = 5;
+      while (colIdx <= sheetHN.getLastColumn() && sheetHN.getRange(1, colIdx).getValue()) {
+        colIdx++;
       }
-      if (!hasThoiGian) {
-        sheetHN.getRange(1, nextCol).setValue("THỜI GIAN").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
-        sheetHN.setColumnWidth(nextCol, 130);
+      sheetHN.getRange(1, colIdx).setValue("MỨC ĐỘ").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+      sheetHN.setColumnWidth(colIdx, 110);
+    }
+    if (!hasThoiGian) {
+      let colIdx = 6;
+      while (colIdx <= sheetHN.getLastColumn() && sheetHN.getRange(1, colIdx).getValue()) {
+        colIdx++;
       }
+      sheetHN.getRange(1, colIdx).setValue("THỜI GIAN").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+      sheetHN.setColumnWidth(colIdx, 130);
     }
   }
   return sheetHN;
+}
+
+/**
+ * ⭐️ HÀM TẠO HOẶC CẬP NHẬT CỘT MỨC ĐỘ & THỜI GIAN CHO SHEET "HOA NHAP" ⭐️
+ * 👉 Trong giao diện Google Apps Script:
+ * 1. Ở thanh công cụ trên cùng, chọn tên hàm: "capNhatCotSheetHoaNhap" (hoặc "initHoaNhapSheet")
+ * 2. Nhấn nút "Chạy" (Run ▶️)
+ * => Hệ thống sẽ tự động thêm 2 cột: Cột E (MỨC ĐỘ) và Cột F (THỜI GIAN) vào dòng 1 của sheet HOA NHAP
+ * => Bảo toàn 100% dữ liệu học sinh hiện có, không làm mất hay xáo trộn dữ liệu.
+ */
+function capNhatCotSheetHoaNhap() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = initHoaNhapSheet(ss);
+  SpreadsheetApp.flush();
+  Logger.log("✅ Đã cập nhật thành công các cột MỨC ĐỘ và THỜI GIAN cho sheet HOA NHAP!");
 }
 
 /**
@@ -4460,7 +4639,8 @@ function initialSetup() {
         <!-- Khung 3: GẮN URL WEB APP & KÍCH HOẠT BACKEND RIÊNG -->
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center text-lg font-bold shrink-0">
+            <div
+              class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center text-lg font-bold shrink-0">
               <i class="fa-solid fa-link"></i>
             </div>
             <div>
@@ -4468,7 +4648,9 @@ function initialSetup() {
                 Gắn URL Web App Của Trường & Kích Hoạt
               </h4>
               <p class="text-xs text-slate-500">
-                Dán URL Web App triển khai từ Google Apps Script của trường bạn vào ô bên dưới. Hệ thống tự động liên kết với tài khoản <b id="backend-target-admin-label" class="text-slate-800"></b> của trường <b id="backend-target-school-label" class="text-indigo-700"></b>.
+                Dán URL Web App triển khai từ Google Apps Script của trường bạn vào ô bên dưới. Hệ thống tự động liên
+                kết với tài khoản <b id="backend-target-admin-label" class="text-slate-800"></b> của trường <b
+                  id="backend-target-school-label" class="text-indigo-700"></b>.
               </p>
             </div>
           </div>
@@ -4484,8 +4666,7 @@ function initialSetup() {
                   <i class="fa-solid fa-globe"></i>
                 </span>
                 <input type="url" id="admin-custom-backend-input"
-                  placeholder="https://script.google.com/macros/s/AKfycb.../exec"
-                  oninput="onBackendUrlInputChange()"
+                  placeholder="https://script.google.com/macros/s/AKfycb.../exec" oninput="onBackendUrlInputChange()"
                   class="w-full pl-10 pr-24 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-xs sm:text-sm font-mono font-medium text-slate-800 transition">
                 <button type="button" onclick="pasteBackendUrlFromClipboard()"
                   class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1">
@@ -4493,9 +4674,12 @@ function initialSetup() {
                 </button>
               </div>
               <p class="text-[11px] text-slate-400 mt-1">
-                * URL phải bắt đầu bằng <code>https://script.google.com/macros/s/</code> và kết thúc bằng <code>/exec</code>.
+                * URL phải bắt đầu bằng <code>https://script.google.com/macros/s/</code> và kết thúc bằng
+                <code>/exec</code>.
                 <span class="block text-emerald-600 font-bold mt-1 text-xs">
-                  <i class="fa-solid fa-circle-check"></i> Lưu ý: Chỉ cần cấu hình 1 lần duy nhất. Hệ thống sẽ ghi nhớ vĩnh viễn và không phải cấu hình lại, trừ khi Thầy/Cô chủ động đổi sang Backend Google Sheet khác mới cần nhập và lưu URL mới.
+                  <i class="fa-solid fa-circle-check"></i> Lưu ý: Chỉ cần cấu hình 1 lần duy nhất. Hệ thống sẽ ghi nhớ
+                  vĩnh viễn và không phải cấu hình lại, trừ khi Thầy/Cô chủ động đổi sang Backend Google Sheet khác mới
+                  cần nhập và lưu URL mới.
                 </span>
               </p>
             </div>
@@ -4507,7 +4691,8 @@ function initialSetup() {
                 Khai Báo Danh Sách Khối & Lớp Của Trường (Đồng Bộ Lên Cột C - HUB_SERVER):
               </label>
               <p class="text-[11px] text-slate-500 mb-3">
-                Nhập danh sách các lớp cho từng khối của trường (ngăn cách bằng dấu phẩy). Dữ liệu này sẽ lưu lên cột C của Sheet HUB_SERVER để giáo viên của trường tích chọn lớp dạy.
+                Nhập danh sách các lớp cho từng khối của trường (ngăn cách bằng dấu phẩy). Dữ liệu này sẽ lưu lên cột C
+                của Sheet HUB_SERVER để giáo viên của trường tích chọn lớp dạy.
               </p>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -4577,14 +4762,17 @@ function initialSetup() {
             </div>
 
             <!-- Khung thông báo trạng thái kết nối chuyển xanh lá cây khi kết nối thành công -->
-            <div id="backend-connection-status-box" class="hidden mt-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-3 shadow-sm transition">
-              <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm shrink-0">
+            <div id="backend-connection-status-box"
+              class="hidden mt-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-3 shadow-sm transition">
+              <div
+                class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm shrink-0">
                 <i class="fa-solid fa-circle-check"></i>
               </div>
               <div class="flex-1">
                 <div class="font-extrabold text-emerald-900 flex items-center gap-2 flex-wrap">
                   <span>Trạng Thái: Đã Kết Nối Với URL Thành Công!</span>
-                  <span id="backend-connection-latency" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900"></span>
+                  <span id="backend-connection-latency"
+                    class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900"></span>
                 </div>
                 <div id="backend-connection-sheet-info" class="text-emerald-700 text-[11px] mt-0.5 font-medium"></div>
               </div>
@@ -4596,7 +4784,8 @@ function initialSetup() {
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200 space-y-4">
           <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 flex-wrap">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-black">
+              <div
+                class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-black">
                 <i class="fa-solid fa-network-wired"></i>
               </div>
               <div>
@@ -4604,7 +4793,8 @@ function initialSetup() {
                   Thông Tin URL Backend Đơn Vị Của Bạn (Đồng Bộ Lên HUB_SERVER)
                 </h4>
                 <p class="text-xs text-slate-500">
-                  Chỉ hiển thị thông tin máy chủ Google Apps Script riêng của đơn vị bạn đã kết nối trên hệ thống trung tâm.
+                  Chỉ hiển thị thông tin máy chủ Google Apps Script riêng của đơn vị bạn đã kết nối trên hệ thống trung
+                  tâm.
                 </p>
               </div>
             </div>
@@ -4803,22 +4993,29 @@ function initialSetup() {
               <i class="fa-solid fa-list-ol text-emerald-600 mr-1"></i>
               Vị Trí Chèn Trong Danh Sách (STT)
             </label>
-            <span id="acc-modal-position-hint" class="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+            <span id="acc-modal-position-hint"
+              class="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
               Hiện có ... giáo viên
             </span>
           </div>
           <div class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-emerald-600 font-bold text-xs">
+            <span
+              class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-emerald-600 font-bold text-xs">
               #
             </span>
-            <input type="number" id="acc-modal-position" min="1" step="1" placeholder="Nhập số thứ tự cần chèn (VD: 1, 5, 10...)"
+            <input type="number" id="acc-modal-position" min="1" step="1"
+              placeholder="Nhập số thứ tự cần chèn (VD: 1, 5, 10...)"
               class="w-full pl-8 pr-16 py-2.5 bg-white border border-emerald-300 rounded-xl text-emerald-950 font-black text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10.5px] pointer-events-none">
+            <span
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10.5px] pointer-events-none">
               STT chèn
             </span>
           </div>
           <p class="text-[11px] text-emerald-850 font-medium mt-1.5 leading-relaxed">
-            💡 <b class="font-bold text-emerald-950">Quy tắc chèn:</b> Giáo viên mới sẽ nằm đúng vị trí STT đã nhập. Toàn bộ danh sách giáo viên từ vị trí đó trở xuống trong Google Sheet sẽ <b class="font-bold text-emerald-950 underline decoration-emerald-500">tự động được đẩy xuống 1 dòng</b>. Nếu để trống, giáo viên sẽ được thêm vào cuối danh sách.
+            💡 <b class="font-bold text-emerald-950">Quy tắc chèn:</b> Giáo viên mới sẽ nằm đúng vị trí STT đã nhập.
+            Toàn bộ danh sách giáo viên từ vị trí đó trở xuống trong Google Sheet sẽ <b
+              class="font-bold text-emerald-950 underline decoration-emerald-500">tự động được đẩy xuống 1 dòng</b>. Nếu
+            để trống, giáo viên sẽ được thêm vào cuối danh sách.
           </p>
         </div>
 
@@ -4965,7 +5162,8 @@ function initialSetup() {
               <span id="admin-modal-teacher-tk"
                 class="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-emerald-400 font-bold border border-slate-700">TK</span>
             </div>
-            <p id="admin-modal-subtitle" class="text-xs text-slate-400">Chế độ xem chi tiết số liệu kê khai của giáo viên (Chỉ xem, không chỉnh sửa)</p>
+            <p id="admin-modal-subtitle" class="text-xs text-slate-400">Chế độ xem chi tiết số liệu kê khai của giáo
+              viên (Chỉ xem, không chỉnh sửa)</p>
           </div>
         </div>
 
@@ -5036,7 +5234,8 @@ function initialSetup() {
               <thead>
                 <tr class="bg-slate-100 text-slate-700 font-extrabold text-center border-b">
                   <th class="py-2.5 px-3 text-left min-w-[110px]">Tuần học</th>
-                  <th class="py-2 px-2 min-w-[150px] text-center bg-emerald-50/50 font-bold text-emerald-950">Lớp dạy</th>
+                  <th class="py-2 px-2 min-w-[150px] text-center bg-emerald-50/50 font-bold text-emerald-950">Lớp dạy
+                  </th>
                   <th class="py-2 px-2 min-w-[90px] text-center bg-slate-50 font-bold text-slate-800">
                     <div class="flex flex-col items-center justify-center">
                       <span>Tiết định mức</span>
@@ -5045,7 +5244,8 @@ function initialSetup() {
                   </th>
                   <th class="py-2.5 px-2 min-w-[110px] text-center font-bold text-slate-800">(1) Tiết dạy</th>
                   <th class="py-2.5 px-2 min-w-[110px] text-center font-bold text-slate-800">(2) Kiêm nhiệm</th>
-                  <th class="col-admin-day-ts10 py-2.5 px-2 min-w-[105px]" id="admin-modal-th-dayts10">(3) Dạy TS10/ B2</th>
+                  <th class="col-admin-day-ts10 py-2.5 px-2 min-w-[105px]" id="admin-modal-th-dayts10">(3) Dạy TS10/ B2
+                  </th>
                   <th class="col-admin-bd-hsg py-2.5 px-2 min-w-[95px]" id="admin-modal-th-bdhsg">(4) BD HSG</th>
                   <th class="py-2.5 px-2 min-w-[95px]">(5) Nghỉ dạy (tiết)</th>
                   <th class="py-2.5 px-2 min-w-[90px] bg-emerald-50 text-emerald-900">(6) Thực dạy</th>
@@ -5060,7 +5260,8 @@ function initialSetup() {
                   <td class="py-3 px-3 text-left uppercase text-emerald-950 font-black" id="admin-modal-foot-title">
                     TỔNG CỘNG HỌC KỲ
                   </td>
-                  <td id="admin-modal-foot-classes" class="py-3 px-2 text-center text-xs text-emerald-900 font-bold bg-emerald-50/40">--</td>
+                  <td id="admin-modal-foot-classes"
+                    class="py-3 px-2 text-center text-xs text-emerald-900 font-bold bg-emerald-50/40">--</td>
                   <td id="admin-modal-foot-quota" class="py-3 px-2 text-slate-700 font-black bg-slate-100">342</td>
                   <td id="admin-modal-foot-t1" class="py-3 px-2 text-slate-800 font-bold">0</td>
                   <td id="admin-modal-foot-duty" class="py-3 px-2 text-slate-800 font-bold">0</td>
@@ -5080,7 +5281,8 @@ function initialSetup() {
       <!-- Footer Modal: Chế độ chỉ xem, Xuất Phiếu PDF & Nút Đóng -->
       <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 font-bold select-none">
+          <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 font-bold select-none">
             <i class="fa-solid fa-lock text-slate-500"></i>
             <span>Chế độ chỉ xem</span>
           </span>
@@ -5160,7 +5362,8 @@ function initialSetup() {
             <i class="fa-solid fa-file-pdf text-rose-600"></i>
             <span>Bản In Báo Cáo Tổng Hợp Tiết Vượt (Khổ Dọc A4)</span>
           </h3>
-          <p class="text-xs text-slate-500 font-medium">Bản in khổ dọc A4 liền mạch (không trang trắng), mỗi trang tự động lặp lại tiêu đề.</p>
+          <p class="text-xs text-slate-500 font-medium">Bản in khổ dọc A4 liền mạch (không trang trắng), mỗi trang tự
+            động lặp lại tiêu đề.</p>
         </div>
         <div class="flex items-center gap-2">
           <button onclick="downloadSchoolSummaryPdfNow()"
@@ -5202,7 +5405,8 @@ function initialSetup() {
             <i class="fa-solid fa-file-pdf text-rose-600"></i>
             <span id="teachers-status-pdf-modal-title">Bản In Thống Kê Tiến Độ Kê Khai Giáo Viên (Khổ Dọc A4)</span>
           </h3>
-          <p class="text-xs text-slate-500 font-medium">Bản in khổ dọc liền mạch (không trang trắng), mỗi trang đều tự động lặp lại tiêu đề.</p>
+          <p class="text-xs text-slate-500 font-medium">Bản in khổ dọc liền mạch (không trang trắng), mỗi trang đều tự
+            động lặp lại tiêu đề.</p>
         </div>
         <div class="flex items-center gap-2">
           <button onclick="downloadTeachersStatusPdfNow()"
@@ -5247,7 +5451,7 @@ function initialSetup() {
     class="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
     <div
       class="bg-white rounded-3xl shadow-2xl max-w-lg w-full border border-slate-100 p-6 sm:p-7 relative overflow-hidden animate-fade-in">
-      
+
       <!-- Nút đóng X góc trên -->
       <button type="button" id="btn-close-reset-modal" onclick="closeResetDeclarationModal()"
         class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition">
@@ -5256,7 +5460,8 @@ function initialSetup() {
 
       <!-- Header modal -->
       <div class="flex items-center gap-3.5 mb-5 pb-4 border-b border-slate-100">
-        <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl shrink-0 shadow-xs">
+        <div
+          class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl shrink-0 shadow-xs">
           <i class="fa-solid fa-eraser"></i>
         </div>
         <div>
@@ -5296,46 +5501,60 @@ function initialSetup() {
           Chọn phạm vi xóa dữ liệu:
         </label>
         <div class="space-y-2.5">
-          <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:border-rose-400 bg-white hover:bg-rose-50/30 cursor-pointer transition">
-            <input type="radio" name="reset-scope" value="hk1" id="reset-scope-hk1" class="mt-1 text-rose-600 focus:ring-rose-500" checked />
+          <label
+            class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:border-rose-400 bg-white hover:bg-rose-50/30 cursor-pointer transition">
+            <input type="radio" name="reset-scope" value="hk1" id="reset-scope-hk1"
+              class="mt-1 text-rose-600 focus:ring-rose-500" checked />
             <div class="text-xs">
               <span class="font-extrabold text-slate-800 block">Chỉ xóa dữ liệu Học Kỳ 1</span>
-              <span class="text-slate-500">Đưa 18 tuần HK1 về 0, chuyển trạng thái HK1 thành Chưa kê khai (giữ nguyên HK2)</span>
+              <span class="text-slate-500">Đưa 18 tuần HK1 về 0, chuyển trạng thái HK1 thành Chưa kê khai (giữ nguyên
+                HK2)</span>
             </div>
           </label>
 
-          <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:border-rose-400 bg-white hover:bg-rose-50/30 cursor-pointer transition">
-            <input type="radio" name="reset-scope" value="hk2" id="reset-scope-hk2" class="mt-1 text-rose-600 focus:ring-rose-500" />
+          <label
+            class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:border-rose-400 bg-white hover:bg-rose-50/30 cursor-pointer transition">
+            <input type="radio" name="reset-scope" value="hk2" id="reset-scope-hk2"
+              class="mt-1 text-rose-600 focus:ring-rose-500" />
             <div class="text-xs">
               <span class="font-extrabold text-slate-800 block">Chỉ xóa dữ liệu Học Kỳ 2</span>
-              <span class="text-slate-500">Đưa 17 tuần HK2 về 0, chuyển trạng thái HK2 thành Chưa kê khai (giữ nguyên HK1)</span>
+              <span class="text-slate-500">Đưa 17 tuần HK2 về 0, chuyển trạng thái HK2 thành Chưa kê khai (giữ nguyên
+                HK1)</span>
             </div>
           </label>
 
-          <label class="flex items-start gap-3 p-3 rounded-2xl border border-rose-200 hover:border-rose-500 bg-rose-50/40 cursor-pointer transition">
-            <input type="radio" name="reset-scope" value="all" id="reset-scope-all" class="mt-1 text-rose-600 focus:ring-rose-500" />
+          <label
+            class="flex items-start gap-3 p-3 rounded-2xl border border-rose-200 hover:border-rose-500 bg-rose-50/40 cursor-pointer transition">
+            <input type="radio" name="reset-scope" value="all" id="reset-scope-all"
+              class="mt-1 text-rose-600 focus:ring-rose-500" />
             <div class="text-xs">
               <span class="font-extrabold text-rose-950 block">Xóa TOÀN BỘ Cả Năm (Cả HK1 & HK2)</span>
-              <span class="text-rose-700">Đưa toàn bộ 35 tuần về 0, xóa sạch toàn bộ trạng thái kê khai của cả năm</span>
+              <span class="text-rose-700">Đưa toàn bộ 35 tuần về 0, xóa sạch toàn bộ trạng thái kê khai của cả
+                năm</span>
             </div>
           </label>
         </div>
       </div>
 
       <!-- Cảnh báo -->
-      <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2 mb-4">
+      <div
+        class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2 mb-4">
         <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5 shrink-0"></i>
-        <span>Hành động này sẽ cập nhật trực tiếp lên Google Sheet (Sheet DULIEU). Sau khi xóa, giáo viên sẽ phải kê khai lại từ đầu.</span>
+        <span>Hành động này sẽ cập nhật trực tiếp lên Google Sheet (Sheet DULIEU). Sau khi xóa, giáo viên sẽ phải kê
+          khai lại từ đầu.</span>
       </div>
 
       <!-- Khối thông báo trạng thái đang xóa (hiển thị khi đang gửi yêu cầu) -->
-      <div id="reset-modal-processing-alert" class="hidden mb-4 p-3.5 bg-rose-50 border-2 border-rose-300 rounded-2xl flex items-center gap-3 text-xs text-rose-950 font-bold animate-pulse shadow-sm">
+      <div id="reset-modal-processing-alert"
+        class="hidden mb-4 p-3.5 bg-rose-50 border-2 border-rose-300 rounded-2xl flex items-center gap-3 text-xs text-rose-950 font-bold animate-pulse shadow-sm">
         <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
           <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>
         </div>
         <div>
-          <p class="font-black text-rose-950 uppercase tracking-tight">HỆ THỐNG ĐANG XÓA DỮ LIỆU KÊ KHAI TRÊN GOOGLE SHEET...</p>
-          <p class="text-[11px] text-rose-700 font-medium mt-0.5">Đang cập nhật bảng tính và đồng bộ sổ tiết. Thầy/Cô vui lòng đợi trong giây lát, không bấm nhiều lần hoặc tắt trang.</p>
+          <p class="font-black text-rose-950 uppercase tracking-tight">HỆ THỐNG ĐANG XÓA DỮ LIỆU KÊ KHAI TRÊN GOOGLE
+            SHEET...</p>
+          <p class="text-[11px] text-rose-700 font-medium mt-0.5">Đang cập nhật bảng tính và đồng bộ sổ tiết. Thầy/Cô
+            vui lòng đợi trong giây lát, không bấm nhiều lần hoặc tắt trang.</p>
         </div>
       </div>
 
@@ -5363,9 +5582,10 @@ function initialSetup() {
     class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
     <div
       class="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-indigo-100 p-6 sm:p-7 relative overflow-hidden animate-fade-in flex flex-col items-center text-center">
-      
+
       <!-- Icon bao ngoài -->
-      <div class="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl mb-4 shadow-sm bg-amber-100 text-amber-600 animate-bounce">
+      <div
+        class="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl mb-4 shadow-sm bg-amber-100 text-amber-600 animate-bounce">
         <i class="fa-solid fa-cloud-arrow-up"></i>
       </div>
 
@@ -5377,14 +5597,18 @@ function initialSetup() {
       <!-- Nội dung chính -->
       <div class="text-xs sm:text-sm text-slate-600 mb-5 leading-relaxed space-y-2.5 w-full">
         <p>
-          Xin chào Quản trị viên <strong id="notice-setup-school-name" class="text-indigo-700 font-extrabold">Trường của Thầy/Cô</strong>!
+          Xin chào Quản trị viên <strong id="notice-setup-school-name" class="text-indigo-700 font-extrabold">Trường của
+            Thầy/Cô</strong>!
         </p>
         <p>
-          Đây là lần đầu Thầy/Cô đăng nhập vào hệ thống. Để quản trị và xem dữ liệu danh sách giáo viên trường mình, Thầy/Cô cần <strong>khai báo đường dẫn URL Backend riêng</strong>.
+          Đây là lần đầu Thầy/Cô đăng nhập vào hệ thống. Để quản trị và xem dữ liệu danh sách giáo viên trường mình,
+          Thầy/Cô cần <strong>khai báo đường dẫn URL Backend riêng</strong>.
         </p>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-[11.5px] text-amber-900 font-semibold text-left flex items-start gap-2.5">
+        <div
+          class="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-[11.5px] text-amber-900 font-semibold text-left flex items-start gap-2.5">
           <i class="fa-solid fa-circle-check text-amber-600 mt-0.5 shrink-0 text-sm"></i>
-          <span>Thầy/Cô chỉ cần cài đặt <strong>1 lần duy nhất</strong>. Hệ thống sẽ tự động lưu và ghi nhớ trên máy cho các lần đăng nhập sau.</span>
+          <span>Thầy/Cô chỉ cần cài đặt <strong>1 lần duy nhất</strong>. Hệ thống sẽ tự động lưu và ghi nhớ trên máy cho
+            các lần đăng nhập sau.</span>
         </div>
       </div>
 
@@ -5408,7 +5632,7 @@ function initialSetup() {
     onclick="handleAppDialogBackdropClick(event)">
     <div
       class="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-100 p-6 sm:p-7 relative overflow-hidden animate-fade-in flex flex-col items-center text-center">
-      
+
       <!-- Nút X đóng góc trên -->
       <button type="button" onclick="closeAppDialog()"
         class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition">
@@ -5416,7 +5640,8 @@ function initialSetup() {
       </button>
 
       <!-- Icon bao ngoài -->
-      <div id="app-dialog-icon-wrap" class="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl mb-4 shadow-sm bg-emerald-100 text-emerald-600">
+      <div id="app-dialog-icon-wrap"
+        class="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl mb-4 shadow-sm bg-emerald-100 text-emerald-600">
         <i id="app-dialog-icon" class="fa-solid fa-circle-check"></i>
       </div>
 
@@ -5449,7 +5674,7 @@ function initialSetup() {
     class="fixed inset-0 z-[96] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
     <div
       class="bg-white rounded-3xl shadow-2xl max-w-lg w-full border border-emerald-100 p-6 sm:p-7 relative overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
-      
+
       <!-- Nút đóng X góc trên -->
       <button type="button" onclick="closeSelectGradeClassesModal()"
         class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition">
@@ -5458,7 +5683,8 @@ function initialSetup() {
 
       <!-- Header modal -->
       <div class="flex items-center gap-3.5 mb-4 pb-3 border-b border-slate-100">
-        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0 shadow-xs">
+        <div
+          class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0 shadow-xs">
           <i class="fa-solid fa-graduation-cap"></i>
         </div>
         <div>
@@ -5518,7 +5744,7 @@ function initialSetup() {
     class="fixed inset-0 z-[97] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
     <div
       class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-emerald-100 p-5 sm:p-6 relative overflow-hidden animate-fade-in flex flex-col max-h-[92vh]">
-      
+
       <!-- Nút đóng X góc trên -->
       <button type="button" onclick="closeEditWeekClassesModal()"
         class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition">
@@ -5527,7 +5753,8 @@ function initialSetup() {
 
       <!-- Header modal -->
       <div class="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100">
-        <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg shrink-0 shadow-xs">
+        <div
+          class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg shrink-0 shadow-xs">
           <i class="fa-solid fa-pen-to-square"></i>
         </div>
         <div>
@@ -5541,7 +5768,8 @@ function initialSetup() {
       </div>
 
       <!-- Live summary lớp đã chọn trong tuần -->
-      <div class="mb-3 p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-150 flex items-center justify-between flex-wrap gap-2 text-xs">
+      <div
+        class="mb-3 p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-150 flex items-center justify-between flex-wrap gap-2 text-xs">
         <div id="week-classes-selected-summary" class="flex items-center gap-1.5 flex-wrap">
           <!-- Render từ JS -->
         </div>
@@ -5565,18 +5793,17 @@ function initialSetup() {
       </div>
 
       <!-- Danh sách lớp theo từng Khối (cuộn được) -->
-      <div id="week-classes-checklist-container"
-        class="overflow-y-auto max-h-[46vh] custom-scrollbar pr-1 space-y-3">
+      <div id="week-classes-checklist-container" class="overflow-y-auto max-h-[46vh] custom-scrollbar pr-1 space-y-3">
         <!-- Render từ JS: khối 6, 7, 8, 9 -->
       </div>
 
       <!-- Ô nhập bổ sung thêm lớp ngoài danh sách -->
       <div class="mt-3 pt-2.5 border-t border-slate-100">
         <label class="block text-[11px] font-bold text-slate-600 mb-1">
-          <i class="fa-solid fa-plus-circle text-emerald-600 mr-1"></i>Nhập bổ sung lớp khác nếu chưa có ở trên (ngăn cách bằng dấu phẩy):
+          <i class="fa-solid fa-plus-circle text-emerald-600 mr-1"></i>Nhập bổ sung lớp khác nếu chưa có ở trên (ngăn
+          cách bằng dấu phẩy):
         </label>
-        <input type="text" id="week-custom-classes-input"
-          placeholder="Ví dụ: 8A10, 9A11..."
+        <input type="text" id="week-custom-classes-input" placeholder="Ví dụ: 8A10, 9A11..."
           oninput="updateWeekSelectedClassesPreview()"
           class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 transition">
       </div>
@@ -5614,8 +5841,10 @@ function initialSetup() {
        ======================================================== -->
 
   <!-- MODAL XEM CHI TIẾT KÊ KHAI DẠY HÒA NHẬP (DÀNH CHO ADMIN / BGH - CHẾ ĐỘ CHỈ XEM) -->
-  <div id="modal-admin-view-hoanhap" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-3 sm:p-4 hidden">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-4 sm:p-6 border border-indigo-100 max-h-[92vh] flex flex-col animate-fade-in">
+  <div id="modal-admin-view-hoanhap"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-3 sm:p-4 hidden">
+    <div
+      class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-4 sm:p-6 border border-indigo-100 max-h-[92vh] flex flex-col animate-fade-in">
       <div class="flex items-center justify-between pb-3 border-b border-slate-200">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
@@ -5625,7 +5854,8 @@ function initialSetup() {
             <h3 class="font-black text-slate-900 text-sm sm:text-base" id="modal-hn-admin-view-title">
               Chi Tiết Kê Khai Dạy Hòa Nhập
             </h3>
-            <p class="text-[11px] text-slate-500" id="modal-hn-admin-view-subtitle">Chế độ xem dành cho Quản Trị / Ban Giám Hiệu</p>
+            <p class="text-[11px] text-slate-500" id="modal-hn-admin-view-subtitle">Chế độ xem dành cho Quản Trị / Ban
+              Giám Hiệu</p>
           </div>
         </div>
         <button type="button" onclick="closeAdminViewTeacherHoaNhapModal()"
@@ -5637,7 +5867,8 @@ function initialSetup() {
       <!-- Thân modal cuộn được -->
       <div class="overflow-y-auto custom-scrollbar py-4 space-y-4 flex-grow">
         <!-- Thông tin giáo viên -->
-        <div class="bg-indigo-50/60 p-3.5 rounded-2xl border border-indigo-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div
+          class="bg-indigo-50/60 p-3.5 rounded-2xl border border-indigo-100 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
               <span class="text-slate-500 font-semibold">Giáo viên:</span>
@@ -5675,8 +5906,12 @@ function initialSetup() {
                 <th class="py-2.5 px-3 text-left min-w-[150px] border-r border-slate-200">Dạng khuyết tật</th>
                 <th class="py-2.5 px-2 w-20 text-center border-r border-slate-200">Mức độ</th>
                 <th class="py-2.5 px-2 w-24 text-center border-r border-slate-200">Môn dạy</th>
-                <th class="py-2.5 px-2 w-24 bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">Số tiết/tuần</th>
-                <th class="py-2.5 px-2 w-24 bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">Số tuần</th>
+                <th
+                  class="py-2.5 px-2 w-24 bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
+                  Số tiết/tuần</th>
+                <th
+                  class="py-2.5 px-2 w-24 bg-indigo-100/40 text-indigo-950 font-black text-center border-r border-slate-200">
+                  Số tuần</th>
                 <th class="py-2.5 px-3 w-28 bg-purple-100/50 text-purple-950 font-black text-center">Tổng số tiết</th>
               </tr>
             </thead>
@@ -5685,10 +5920,14 @@ function initialSetup() {
             </tbody>
             <tfoot class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
               <tr class="text-center font-black">
-                <td colspan="7" class="py-2.5 px-3 text-center uppercase text-indigo-950 text-xs border-r border-slate-200">TỔNG CỘNG</td>
-                <td id="modal-hn-admin-foot-tiet-tuan" class="py-2.5 px-2 text-indigo-950 bg-indigo-100/60 text-center border-r border-slate-200">0</td>
+                <td colspan="7"
+                  class="py-2.5 px-3 text-center uppercase text-indigo-950 text-xs border-r border-slate-200">TỔNG CỘNG
+                </td>
+                <td id="modal-hn-admin-foot-tiet-tuan"
+                  class="py-2.5 px-2 text-indigo-950 bg-indigo-100/60 text-center border-r border-slate-200">0</td>
                 <td class="py-2.5 px-2 text-slate-400 font-normal italic text-center border-r border-slate-200">--</td>
-                <td id="modal-hn-admin-foot-tong-tiet" class="py-2.5 px-3 text-purple-950 bg-purple-200/60 text-sm text-center">0 tiết</td>
+                <td id="modal-hn-admin-foot-tong-tiet"
+                  class="py-2.5 px-3 text-purple-950 bg-purple-200/60 text-sm text-center">0 tiết</td>
               </tr>
             </tfoot>
           </table>
@@ -5712,8 +5951,10 @@ function initialSetup() {
   </div>
 
   <!-- MODAL XEM TRƯỚC VÀ XUẤT FILE PDF PHIẾU KÊ KHAI DẠY HÒA NHẬP -->
-  <div id="modal-pdf-hoanhap" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-3 sm:p-4 hidden">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-4 sm:p-6 border border-slate-200 max-h-[92vh] flex flex-col animate-fade-in">
+  <div id="modal-pdf-hoanhap"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-3 sm:p-4 hidden">
+    <div
+      class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-4 sm:p-6 border border-slate-200 max-h-[92vh] flex flex-col animate-fade-in">
       <div class="flex items-center justify-between pb-3 border-b border-slate-200">
         <div class="flex items-center gap-2.5">
           <i class="fa-solid fa-file-pdf text-emerald-600 text-xl"></i>
@@ -5741,8 +5982,10 @@ function initialSetup() {
       </div>
 
       <!-- Khung hiển thị nội dung in (A4 Sheet) -->
-      <div class="overflow-y-auto custom-scrollbar p-3 sm:p-6 flex-grow bg-slate-50 rounded-2xl mt-3 border border-slate-200">
-        <div id="hoanhap-pdf-paper" class="bg-white p-6 sm:p-8 rounded-xl shadow-xs border border-slate-200 max-w-3xl mx-auto text-slate-900 text-xs">
+      <div
+        class="overflow-y-auto custom-scrollbar p-3 sm:p-6 flex-grow bg-slate-50 rounded-2xl mt-3 border border-slate-200">
+        <div id="hoanhap-pdf-paper"
+          class="bg-white p-6 sm:p-8 rounded-xl shadow-xs border border-slate-200 max-w-3xl mx-auto text-slate-900 text-xs">
           <!-- Render từ JS -->
         </div>
       </div>
@@ -5750,7 +5993,8 @@ function initialSetup() {
   </div>
 
   <!-- MODAL THÊM DÒNG KÊ KHAI LỚP HÒA NHẬP THỦ CÔNG -->
-  <div id="modal-add-hoanhap-row" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-3 sm:p-4 hidden">
+  <div id="modal-add-hoanhap-row"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-3 sm:p-4 hidden">
     <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-5 sm:p-6 border border-slate-200 animate-fade-in">
       <div class="flex items-center justify-between pb-3 border-b border-slate-200">
         <h3 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2">
@@ -5771,10 +6015,12 @@ function initialSetup() {
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Họ và tên học sinh <span class="text-rose-500">*</span></label>
+          <label class="block font-bold text-slate-700 mb-1">Họ và tên học sinh <span
+              class="text-rose-500">*</span></label>
           <input type="text" id="add-hn-ten-hs" placeholder="Ví dụ: Nguyễn Văn An (nếu 2 HS thì cách dấu phẩy)" required
             class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
-          <p class="text-[10px] text-slate-400 mt-0.5">Nếu lớp có từ 2-3 HS, ghi chung tên các em cách nhau dấu phẩy.</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Nếu lớp có từ 2-3 HS, ghi chung tên các em cách nhau dấu phẩy.
+          </p>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -5785,7 +6031,8 @@ function initialSetup() {
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Mức độ</label>
-            <select id="add-hn-muc-do" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
+            <select id="add-hn-muc-do"
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
               <option value="Nhẹ">Nhẹ</option>
               <option value="Vừa">Vừa</option>
               <option value="Nặng">Nặng</option>
@@ -5796,7 +6043,8 @@ function initialSetup() {
 
         <div>
           <label class="block font-bold text-slate-700 mb-1">Dạng khuyết tật</label>
-          <input type="text" id="add-hn-dang-kt" placeholder="Ví dụ: Khuyết tật phát triển trí tuệ, Khuyết tật học tập..."
+          <input type="text" id="add-hn-dang-kt"
+            placeholder="Ví dụ: Khuyết tật phát triển trí tuệ, Khuyết tật học tập..."
             class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
         </div>
 
@@ -5865,7 +6113,7 @@ function initialSetup() {
         if (val && val.trim().startsWith("https://script.google.com/macros/s/")) {
           return val.trim();
         }
-      } catch (e) {}
+      } catch (e) { }
       return "";
     }
 
@@ -5916,7 +6164,7 @@ function initialSetup() {
         if (select && select.selectedOptions && select.selectedOptions[0]) {
           return select.selectedOptions[0].getAttribute('data-name') || select.selectedOptions[0].textContent.trim();
         }
-      } catch (e) {}
+      } catch (e) { }
       return "Trường THCS An Nhơn (Trung Tâm)";
     }
 
@@ -5938,7 +6186,7 @@ function initialSetup() {
               renderAdminHubSchoolsTable(hubSchoolsList);
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // 2. Tải danh sách mới nhất trực tiếp từ Sheet HUB_SERVER của Máy chủ trung tâm
@@ -6071,7 +6319,7 @@ function initialSetup() {
               if (parsed[g] && parsed[g].length > 0) parts.push(`K${g}: ${parsed[g].join(",")}`);
             });
             khoiLopDisplay = parts.length > 0 ? parts.join(" | ") : String(s.khoiLop);
-          } catch(e) {
+          } catch (e) {
             khoiLopDisplay = String(s.khoiLop);
           }
         }
@@ -6265,8 +6513,8 @@ function initialSetup() {
         if (!isDefaultFallback) {
           const setInGrade = new Set(classesInGrade);
           return schoolGradeClasses.length >= 3 &&
-                 schoolGradeClasses.every(sc => setInGrade.has(sc)) &&
-                 classesInGrade.length >= schoolGradeClasses.length;
+            schoolGradeClasses.every(sc => setInGrade.has(sc)) &&
+            classesInGrade.length >= schoolGradeClasses.length;
         }
       }
 
@@ -6585,8 +6833,8 @@ function initialSetup() {
             </div>
             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2" data-grade-container="${g}">
               ${list.map(cls => {
-                const isChecked = currentSet.has(cls);
-                return `
+          const isChecked = currentSet.has(cls);
+          return `
                   <label class="week-class-card flex items-center gap-1.5 p-2 rounded-xl border cursor-pointer select-none transition text-xs ${isChecked ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}">
                     <input type="checkbox" name="week-class-cb" value="${escapeHtml(cls)}" data-grade="${g}" ${isChecked ? 'checked' : ''}
                       onchange="onWeekClassCheckboxChange(this)"
@@ -6594,7 +6842,7 @@ function initialSetup() {
                     <span class="truncate">${escapeHtml(cls)}</span>
                   </label>
                 `;
-              }).join("")}
+        }).join("")}
             </div>
           </div>
         `;
@@ -6615,8 +6863,8 @@ function initialSetup() {
             </div>
             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2" data-grade-container="other">
               ${list.map(cls => {
-                const isChecked = currentSet.has(cls);
-                return `
+          const isChecked = currentSet.has(cls);
+          return `
                   <label class="week-class-card flex items-center gap-1.5 p-2 rounded-xl border cursor-pointer select-none transition text-xs ${isChecked ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}">
                     <input type="checkbox" name="week-class-cb" value="${escapeHtml(cls)}" data-grade="other" ${isChecked ? 'checked' : ''}
                       onchange="onWeekClassCheckboxChange(this)"
@@ -6624,7 +6872,7 @@ function initialSetup() {
                     <span class="truncate">${escapeHtml(cls)}</span>
                   </label>
                 `;
-              }).join("")}
+        }).join("")}
             </div>
           </div>
         `;
@@ -7425,7 +7673,7 @@ function initialSetup() {
             try {
               const parsed = typeof me.dataJson === 'string' ? JSON.parse(me.dataJson) : me.dataJson;
               if (parsed) applyParsedTeacherDataToStore(parsed, dataStore);
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       }
@@ -8097,7 +8345,7 @@ function initialSetup() {
         const subMatch = stats.subject.toLowerCase().includes(searchVal);
 
         const statusStr = (stats.hasDeclaredHk1 ? "hk1 đã kê khai " : "hk1 chưa kê khai chưa nhập ") +
-                          (stats.hasDeclaredHk2 ? "hk2 đã kê khai" : "hk2 chưa kê khai chưa nhập");
+          (stats.hasDeclaredHk2 ? "hk2 đã kê khai" : "hk2 chưa kê khai chưa nhập");
         const statusMatch = statusStr.includes(searchVal);
 
         const matchText = nameMatch || tkMatch || dobMatch || subMatch || statusMatch;
@@ -8169,12 +8417,12 @@ function initialSetup() {
           <td class="py-2 px-2 font-mono font-bold text-slate-800 text-xs">
             ${normalizeUsername(teacher.taiKhoan)}
             ${isSuperAdmin(teacher.quyen)
-              ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9.5px] bg-purple-100 text-purple-800 font-sans font-bold">Admin</span>'
-              : (isRoleBgh(teacher.quyen)
-                  ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9.5px] bg-indigo-100 text-indigo-800 font-sans font-bold">BGH</span>'
-                  : ''
-                )
-            }
+            ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9.5px] bg-purple-100 text-purple-800 font-sans font-bold">Admin</span>'
+            : (isRoleBgh(teacher.quyen)
+              ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9.5px] bg-indigo-100 text-indigo-800 font-sans font-bold">BGH</span>'
+              : ''
+            )
+          }
           </td>
           <td class="py-2 px-2 font-bold text-slate-900 text-xs">
             ${teacher.tenGv || "Chưa đặt tên"}
@@ -8206,34 +8454,34 @@ function initialSetup() {
                 ĐM: <b>${stats.quota}t</b>/tuần
               </span>
               ${stats.hasDeclaredHk1
-                ? `<span class="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 font-black text-[10.5px] border border-emerald-300 shadow-2xs" title="Dạy thực tế theo phân công HK1 (Trung bình tuần)">
-                     Dạy: ${(stats.hk1Actual / 18).toFixed(1).replace('.0','')}t/t (${stats.hk1Overtime > 0 ? '+' : ''}${stats.hk1Overtime}t)
+            ? `<span class="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 font-black text-[10.5px] border border-emerald-300 shadow-2xs" title="Dạy thực tế theo phân công HK1 (Trung bình tuần)">
+                     Dạy: ${(stats.hk1Actual / 18).toFixed(1).replace('.0', '')}t/t (${stats.hk1Overtime > 0 ? '+' : ''}${stats.hk1Overtime}t)
                    </span>`
-                : (stats.hasDeclaredHk2
-                    ? `<span class="px-1.5 py-0.2 rounded bg-teal-50 text-teal-800 font-black text-[10.5px] border border-teal-300 shadow-2xs" title="Dạy thực tế theo phân công HK2 (Trung bình tuần)">
-                         Dạy: ${(stats.hk2Actual / 17).toFixed(1).replace('.0','')}t/t (${stats.hk2Overtime > 0 ? '+' : ''}${stats.hk2Overtime}t)
+            : (stats.hasDeclaredHk2
+              ? `<span class="px-1.5 py-0.2 rounded bg-teal-50 text-teal-800 font-black text-[10.5px] border border-teal-300 shadow-2xs" title="Dạy thực tế theo phân công HK2 (Trung bình tuần)">
+                         Dạy: ${(stats.hk2Actual / 17).toFixed(1).replace('.0', '')}t/t (${stats.hk2Overtime > 0 ? '+' : ''}${stats.hk2Overtime}t)
                        </span>`
-                    : '<span class="text-[10px] text-slate-400 italic">Chưa kê khai</span>'
-                  )
-              }
+              : '<span class="text-[10px] text-slate-400 italic">Chưa kê khai</span>'
+            )
+          }
             </div>
           </td>
           <td class="py-2 px-1 text-center whitespace-nowrap">
             <div class="inline-flex flex-col gap-0.5 items-center justify-center">
               ${missHk1.isMissing
-                ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK1 thiếu cột (1) Tiết dạy tại: ${missHk1.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK1: Thiếu ${missHk1.missingWeeks.length}t</span>`
-                : (stats.hasDeclaredHk1
-                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs" title="Tổng thực dạy HK1: ${stats.hk1Actual} tiết | Vượt định mức: ${stats.hk1Overtime} tiết"><i class="fa-solid fa-circle-check text-[9px] text-emerald-600"></i>HK1: Đã khai (${stats.hk1Overtime > 0 ? '+' : ''}${stats.hk1Overtime}t)</span>`
-                    : '<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200"><i class="fa-regular fa-circle text-[8px] text-slate-400"></i>HK1: Chưa kê khai</span>'
-                  )
-              }
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK1 thiếu cột (1) Tiết dạy tại: ${missHk1.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK1: Thiếu ${missHk1.missingWeeks.length}t</span>`
+            : (stats.hasDeclaredHk1
+              ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs" title="Tổng thực dạy HK1: ${stats.hk1Actual} tiết | Vượt định mức: ${stats.hk1Overtime} tiết"><i class="fa-solid fa-circle-check text-[9px] text-emerald-600"></i>HK1: Đã khai (${stats.hk1Overtime > 0 ? '+' : ''}${stats.hk1Overtime}t)</span>`
+              : '<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200"><i class="fa-regular fa-circle text-[8px] text-slate-400"></i>HK1: Chưa kê khai</span>'
+            )
+          }
               ${missHk2.isMissing
-                ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK2 thiếu cột (1) Tiết dạy tại: ${missHk2.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK2: Thiếu ${missHk2.missingWeeks.length}t</span>`
-                : (stats.hasDeclaredHk2
-                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-teal-100 text-teal-950 border border-teal-300 shadow-2xs" title="Tổng thực dạy HK2: ${stats.hk2Actual} tiết | Vượt định mức: ${stats.hk2Overtime} tiết"><i class="fa-solid fa-circle-check text-[9px] text-teal-600"></i>HK2: Đã khai (${stats.hk2Overtime > 0 ? '+' : ''}${stats.hk2Overtime}t)</span>`
-                    : '<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200"><i class="fa-regular fa-circle text-[8px] text-slate-400"></i>HK2: Chưa kê khai</span>'
-                  )
-              }
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs animate-pulse" title="HK2 thiếu cột (1) Tiết dạy tại: ${missHk2.missingWeekLabels.join(', ')}"><i class="fa-solid fa-triangle-exclamation text-[9px] text-amber-600"></i>HK2: Thiếu ${missHk2.missingWeeks.length}t</span>`
+            : (stats.hasDeclaredHk2
+              ? `<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold bg-teal-100 text-teal-950 border border-teal-300 shadow-2xs" title="Tổng thực dạy HK2: ${stats.hk2Actual} tiết | Vượt định mức: ${stats.hk2Overtime} tiết"><i class="fa-solid fa-circle-check text-[9px] text-teal-600"></i>HK2: Đã khai (${stats.hk2Overtime > 0 ? '+' : ''}${stats.hk2Overtime}t)</span>`
+              : '<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200"><i class="fa-regular fa-circle text-[8px] text-slate-400"></i>HK2: Chưa kê khai</span>'
+            )
+          }
             </div>
           </td>
           <td class="py-2 px-1.5 text-center sticky right-0 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">
@@ -8868,7 +9116,7 @@ function initialSetup() {
             return;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
       input.focus();
       showToast("Vui lòng nhấn Ctrl + V để dán URL vào ô!", "info");
     }
@@ -9084,7 +9332,7 @@ function initialSetup() {
     }
 
     // Ghi đè alert mặc định của trình duyệt để không bao giờ hiện hộp thoại xám của hệ điều hành
-    window.alert = function(msg) {
+    window.alert = function (msg) {
       if (typeof showAppDialog === 'function') {
         const text = String(msg || "");
         let type = "info";
@@ -9137,13 +9385,13 @@ function initialSetup() {
                 isLegacy: true
               };
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         const latency = Date.now() - startTime;
         // Bất kể res.success hay trả về "Hành động không xác định: ping", đều chứng minh máy chủ Google Apps Script đã nhận và phản hồi tốt
-        const isPingOk = (res && res.success) || 
-                         (res && res.message && (res.message.includes("Hành động không xác định") || res.message.includes("ping")));
+        const isPingOk = (res && res.success) ||
+          (res && res.message && (res.message.includes("Hành động không xác định") || res.message.includes("ping")));
 
         if (isPingOk) {
           setPingButtonState('connected', {
@@ -9654,7 +9902,7 @@ function initialSetup() {
         const subMatch = stats.subject.toLowerCase().includes(searchVal);
 
         const statusStr = (stats.hasDeclaredHk1 ? "hk1 đã kê khai " : "hk1 chưa kê khai ") +
-                          (stats.hasDeclaredHk2 ? "hk2 đã kê khai" : "hk2 chưa kê khai");
+          (stats.hasDeclaredHk2 ? "hk2 đã kê khai" : "hk2 chưa kê khai");
         const statusMatch = statusStr.includes(searchVal);
 
         const matchText = nameMatch || tkMatch || dobMatch || subMatch || statusMatch;
@@ -14236,7 +14484,7 @@ function initialSetup() {
     }
 
     // Gọi tải danh sách trường ngay khi tải script xong
-    setTimeout(function() { loadHubSchools(); }, 10);
+    setTimeout(function () { loadHubSchools(); }, 10);
 
 
     /* =======================================================
@@ -14389,7 +14637,7 @@ function initialSetup() {
                 matched.dataHoaNhapJson = item.dataHoaNhapJson;
                 try {
                   matched._hnStore = typeof item.dataHoaNhapJson === 'string' ? JSON.parse(item.dataHoaNhapJson) : item.dataHoaNhapJson;
-                } catch(e) {}
+                } catch (e) { }
               }
             });
           }
@@ -14404,7 +14652,7 @@ function initialSetup() {
               t.dataHoaNhapJson = jsonStr;
               try {
                 t._hnStore = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
-              } catch(e) {}
+              } catch (e) { }
             }
           });
         }
@@ -14434,7 +14682,7 @@ function initialSetup() {
             if (Array.isArray(parsed) && parsed.length > 0) {
               hoaNhapStudentsList = parsed;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         if (GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE")) {
@@ -14818,15 +15066,15 @@ function initialSetup() {
             <td class="py-2 px-3 border-r border-slate-200 align-middle">
               <div class="space-y-1">
                 ${details.names.map((name, i) => {
-                  const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
-                  const hasTimeBadge = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
-                  return `
+            const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
+            const hasTimeBadge = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+            return `
                     <div class="font-bold text-slate-800 leading-snug flex items-center gap-1.5 flex-wrap ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
                       <span>${escapeHtml(name)}</span>
                       ${hasTimeBadge ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">${escapeHtml(sTime)}</span>` : ''}
                     </div>
                   `;
-                }).join('')}
+          }).join('')}
               </div>
             </td>
             <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 align-middle">${escapeHtml(r.lop || '--')}</td>
@@ -14885,15 +15133,15 @@ function initialSetup() {
             <td class="py-2 px-3 border-r border-slate-200 align-middle">
               <div class="space-y-1">
                 ${details.names.map((name, i) => {
-                  const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
-                  const hasTimeBadge = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
-                  return `
+            const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
+            const hasTimeBadge = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+            return `
                     <div class="font-bold text-slate-800 leading-snug flex items-center gap-1.5 flex-wrap ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
                       <span>${escapeHtml(name)}</span>
                       ${hasTimeBadge ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">${escapeHtml(sTime)}</span>` : ''}
                     </div>
                   `;
-                }).join('')}
+          }).join('')}
               </div>
             </td>
             <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 align-middle">${escapeHtml(r.lop || '--')}</td>
@@ -14957,32 +15205,12 @@ function initialSetup() {
         tbody.appendChild(tr);
       });
 
-      // Cập nhật Footer tổng cộng của Giáo Viên
-      const tfootTeacher = document.getElementById('hn-teacher-table-tfoot');
-      if (tfootTeacher) {
-        tfootTeacher.innerHTML = `
-          <tr class="text-center">
-            <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
-              TỔNG CỘNG
-            </td>
-            <td id="hn-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
-              ${formatNumber(totalPeriodsPerWeek)}
-            </td>
-            <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">
-              --
-            </td>
-            <td id="hn-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">
-              ${formatNumber(totalPeriodsSum)} tiết
-            </td>
-            <td class="py-3 px-2"></td>
-          </tr>
-        `;
-      } else {
-        const footTietTuan = document.getElementById('hn-foot-periods-per-week');
-        if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
-        const footTongTiet = document.getElementById('hn-foot-total-periods');
-        if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
-      }
+      // Cập nhật Footer tổng cộng
+      const footTietTuan = document.getElementById('hn-foot-periods-per-week');
+      if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
+
+      const footTongTiet = document.getElementById('hn-foot-total-periods');
+      if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
 
       // Cập nhật các thẻ chỉ số
       const statClasses = document.getElementById('hn-stat-classes-count');
@@ -15033,31 +15261,11 @@ function initialSetup() {
         totalPeriodsSum += (parseFloat(r.tongTiet) || 0);
       });
 
-      const tfootTeacher = document.getElementById('hn-teacher-table-tfoot');
-      if (tfootTeacher) {
-        tfootTeacher.innerHTML = `
-          <tr class="text-center">
-            <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
-              TỔNG CỘNG
-            </td>
-            <td id="hn-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
-              ${formatNumber(totalPeriodsPerWeek)}
-            </td>
-            <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">
-              --
-            </td>
-            <td id="hn-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">
-              ${formatNumber(totalPeriodsSum)} tiết
-            </td>
-            <td class="py-3 px-2"></td>
-          </tr>
-        `;
-      } else {
-        const footTietTuan = document.getElementById('hn-foot-periods-per-week');
-        if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
-        const footTongTiet = document.getElementById('hn-foot-total-periods');
-        if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
-      }
+      const footTietTuan = document.getElementById('hn-foot-periods-per-week');
+      if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
+
+      const footTongTiet = document.getElementById('hn-foot-total-periods');
+      if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
 
       const statTotalPeriods = document.getElementById('hn-stat-total-periods');
       if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
@@ -15641,7 +15849,7 @@ function initialSetup() {
           try {
             const p = JSON.parse(cachedHs);
             if (Array.isArray(p) && p.length > 0) hoaNhapStudentsList = p;
-          } catch(e) {}
+          } catch (e) { }
         }
       }
 
@@ -15698,7 +15906,7 @@ function initialSetup() {
           try {
             const p = JSON.parse(localCached);
             if (p && (p.hk1 || p.hk2)) store = p;
-          } catch(e) {}
+          } catch (e) { }
         }
       }
 
@@ -17059,7 +17267,7 @@ function initialSetup() {
       showToast("Đã xuất file Excel báo cáo hòa nhập thành công!", "success");
     }
     // Tải lại toàn bộ dữ liệu Phân hệ 2
-    
+
     // Tải lại toàn bộ dữ liệu Phân hệ 2
     async function reloadHoaNhapData() {
       const icon = document.getElementById('btn-reload-hoanhap-icon');

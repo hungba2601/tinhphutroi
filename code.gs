@@ -489,26 +489,45 @@ function initHoaNhapSheet(ss) {
     sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ", "Nhẹ", "Tuần 8"]);
     sheetHN.getRange(2, 2, 3, 1).setNumberFormat("@");
   } else {
-    // Tự động kiểm tra và thêm cột MỨC ĐỘ & THỜI GIAN nếu sheet đã tồn tại nhưng còn thiếu
-    const curCols = sheetHN.getLastColumn();
-    if (curCols < 6) {
-      const headerVals = sheetHN.getRange(1, 1, 1, Math.max(1, curCols)).getValues()[0].map(h => String(h || "").trim().toLowerCase());
-      const hasMucDo = headerVals.some(h => h.includes("mức") || h.includes("muc"));
-      const hasThoiGian = headerVals.some(h => h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
+    // Tự động kiểm tra tiêu đề dòng 1 và thêm cột MỨC ĐỘ & THỜI GIAN nếu còn thiếu
+    const maxCols = Math.max(4, sheetHN.getLastColumn());
+    const headerVals = sheetHN.getRange(1, 1, 1, maxCols).getValues()[0].map(h => String(h || "").trim().toLowerCase());
+    const hasMucDo = headerVals.some(h => h.includes("mức") || h.includes("muc"));
+    const hasThoiGian = headerVals.some(h => h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
 
-      let nextCol = curCols + 1;
-      if (!hasMucDo) {
-        sheetHN.getRange(1, nextCol).setValue("MỨC ĐỘ").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
-        sheetHN.setColumnWidth(nextCol, 110);
-        nextCol++;
+    if (!hasMucDo) {
+      let colIdx = 5;
+      while (colIdx <= sheetHN.getLastColumn() && sheetHN.getRange(1, colIdx).getValue()) {
+        colIdx++;
       }
-      if (!hasThoiGian) {
-        sheetHN.getRange(1, nextCol).setValue("THỜI GIAN").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
-        sheetHN.setColumnWidth(nextCol, 130);
+      sheetHN.getRange(1, colIdx).setValue("MỨC ĐỘ").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+      sheetHN.setColumnWidth(colIdx, 110);
+    }
+    if (!hasThoiGian) {
+      let colIdx = 6;
+      while (colIdx <= sheetHN.getLastColumn() && sheetHN.getRange(1, colIdx).getValue()) {
+        colIdx++;
       }
+      sheetHN.getRange(1, colIdx).setValue("THỜI GIAN").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+      sheetHN.setColumnWidth(colIdx, 130);
     }
   }
   return sheetHN;
+}
+
+/**
+ * ⭐️ HÀM TẠO HOẶC CẬP NHẬT CỘT MỨC ĐỘ & THỜI GIAN CHO SHEET "HOA NHAP" ⭐️
+ * 👉 Trong giao diện Google Apps Script:
+ * 1. Ở thanh công cụ trên cùng, chọn tên hàm: "capNhatCotSheetHoaNhap" (hoặc "initHoaNhapSheet")
+ * 2. Nhấn nút "Chạy" (Run ▶️)
+ * => Hệ thống sẽ tự động thêm 2 cột: Cột E (MỨC ĐỘ) và Cột F (THỜI GIAN) vào dòng 1 của sheet HOA NHAP
+ * => Bảo toàn 100% dữ liệu học sinh hiện có, không làm mất hay xáo trộn dữ liệu.
+ */
+function capNhatCotSheetHoaNhap() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = initHoaNhapSheet(ss);
+  SpreadsheetApp.flush();
+  Logger.log("✅ Đã cập nhật thành công các cột MỨC ĐỘ và THỜI GIAN cho sheet HOA NHAP!");
 }
 
 /**
