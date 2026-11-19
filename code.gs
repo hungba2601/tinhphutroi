@@ -313,7 +313,7 @@ function doPost(e) {
         return handleGetHoaNhapData(payload.taiKhoan || payload.tai_khoan);
 
       case "saveHoaNhapData":
-        return handleSaveHoaNhapData(payload.taiKhoan || payload.tai_khoan, payload.dataJson);
+        return handleSaveHoaNhapData(payload.taiKhoan || payload.tai_khoan, payload.dataJson || payload.data_json, payload.isAdmin);
 
       default:
         return jsonResponse({ success: false, message: "Hành động không xác định: " + action });
@@ -707,9 +707,9 @@ function handleGetHoaNhapData(taiKhoan) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
-  if (!sheetDuLieuHN) return jsonResponse({ success: true, data: null });
+  if (!sheetDuLieuHN) return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
   const lastRow = sheetDuLieuHN.getLastRow();
-  if (lastRow <= 1) return jsonResponse({ success: true, data: null });
+  if (lastRow <= 1) return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
   const numCols = Math.max(2, sheetDuLieuHN.getLastColumn());
   const vals = sheetDuLieuHN.getRange(2, 1, lastRow - 1, numCols).getValues();
   const disp = sheetDuLieuHN.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
@@ -717,10 +717,10 @@ function handleGetHoaNhapData(taiKhoan) {
     const tk = String(disp[i][0] || vals[i][0] || "").trim();
     if (isUsernameMatch(tk, taiKhoan)) {
       const jsonVal = numCols >= 3 ? (vals[i][2] || vals[i][1] || null) : (vals[i][1] || null);
-      return jsonResponse({ success: true, data: jsonVal });
+      return jsonResponse({ success: true, data: jsonVal, isSystemLocked: isSystemLocked() });
     }
   }
-  return jsonResponse({ success: true, data: null });
+  return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
 }
 
 /**
@@ -752,14 +752,23 @@ function handleGetAllHoaNhapData() {
         if (stripped) map[stripped] = hJsonStr;
       }
     }
-    return jsonResponse({ success: true, data: map });
+    return jsonResponse({ success: true, data: map, isSystemLocked: isSystemLocked() });
   } catch (err) {
     return jsonResponse({ success: false, message: "Lỗi đọc dữ liệu hòa nhập: " + err.message });
   }
 }
 
-function handleSaveHoaNhapData(taiKhoan, dataJson) {
+function handleSaveHoaNhapData(taiKhoan, dataJson, isAdmin) {
   if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
+
+  // Kiểm tra nếu hệ thống đang bị khóa kê khai toàn trường (trừ tài khoản admin)
+  const isUserAdmin = isAdmin === true || String(taiKhoan).trim().toLowerCase() === "admin";
+  if (isSystemLocked() && !isUserAdmin) {
+    return jsonResponse({
+      success: false,
+      message: "Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban giám hiệu nhà trường. Quý thầy cô chỉ có thể xem số liệu, không thể lưu dữ liệu mới lúc này!"
+    });
+  }
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheetDuLieuHN = getSheetFlexible(ss, SHEET_DULIEU_HOA_NHAP, ["dulieu_hoanhap", "DULIEU_HOANHAP"]);
   if (!sheetDuLieuHN) {
