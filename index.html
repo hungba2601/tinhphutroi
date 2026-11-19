@@ -918,8 +918,7 @@
                 <option value="all">1. Tất cả GV có HS hòa nhập</option>
                 <option value="declared">2. GV đã kê khai</option>
                 <option value="not_declared">3. GV chưa kê khai</option>
-                <option value="all_school">4. Toàn bộ GV trong trường</option>
-              </select>
+                              </select>
 
               <button type="button" onclick="reloadHoaNhapData()"
                 class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-indigo-200 active:scale-95">
@@ -1010,8 +1009,7 @@
                 <option value="all">1. Tất cả GV có HS hòa nhập</option>
                 <option value="declared">2. GV đã kê khai</option>
                 <option value="not_declared">3. GV chưa kê khai</option>
-                <option value="all_school">4. Toàn bộ GV trong trường</option>
-              </select>
+                              </select>
 
               <button type="button" onclick="reloadHoaNhapData()"
                 class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-indigo-200 active:scale-95">
@@ -9944,7 +9942,55 @@ function initialSetup() {
           // Dòng tổng cộng ở cuối bảng
           aoa.push(excelSummaryRow);
 
+          // Khối ký tên giống file PDF
+          aoa.push([]);
+          aoa.push([]);
+
+          const signDateRow = new Array(excelHeaders.length).fill("");
+          const rightSignCol = excelHeaders.length >= 10 ? excelHeaders.length - 3 : excelHeaders.length - 2;
+          signDateRow[rightSignCol] = `Ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
+          aoa.push(signDateRow);
+
+          const signTitleRow = new Array(excelHeaders.length).fill("");
+          signTitleRow[1] = "PHÓ HIỆU TRƯỞNG";
+          signTitleRow[rightSignCol] = "NGƯỜI LẬP BIỂU";
+          aoa.push(signTitleRow);
+
+          const signSubRow = new Array(excelHeaders.length).fill("");
+          signSubRow[1] = "(Duyệt)";
+          signSubRow[rightSignCol] = "(Ký và ghi rõ họ tên)";
+          aoa.push(signSubRow);
+
+          aoa.push([]);
+          aoa.push([]);
+
+          const signNameRow = new Array(excelHeaders.length).fill("");
+          signNameRow[rightSignCol] = currentUser.tenGv || "";
+          aoa.push(signNameRow);
+
           const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+          // Merge ô cho tiêu đề, tổng cộng và khối ký tên
+          const lastColIdx = excelHeaders.length - 1;
+          const totalDataRows = listToExport.length;
+          const summaryRowIdx = 13 + totalDataRows;
+          const signTitleIdx = summaryRowIdx + 4;
+          const signSubIdx = summaryRowIdx + 5;
+          const signNameIdx = summaryRowIdx + 8;
+
+          ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, // UBND
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }, // THCS
+            { s: { r: 0, c: Math.max(5, lastColIdx - 3) }, e: { r: 0, c: lastColIdx } }, // Quốc hiệu
+            { s: { r: 1, c: Math.max(5, lastColIdx - 3) }, e: { r: 1, c: lastColIdx } }, // Độc lập...
+            { s: { r: 3, c: 0 }, e: { r: 3, c: lastColIdx } }, // Tiêu đề chính
+            { s: { r: 4, c: 0 }, e: { r: 4, c: lastColIdx } }, // Thời gian xuất
+            { s: { r: signTitleIdx, c: 1 }, e: { r: signTitleIdx, c: 3 } }, // PHÓ HIỆU TRƯỞNG
+            { s: { r: signTitleIdx, c: rightSignCol }, e: { r: signTitleIdx, c: lastColIdx } }, // NGƯỜI LẬP BIỂU
+            { s: { r: signSubIdx, c: 1 }, e: { r: signSubIdx, c: 3 } }, // (Duyệt)
+            { s: { r: signSubIdx, c: rightSignCol }, e: { r: signSubIdx, c: lastColIdx } }, // (Ký...)
+            { s: { r: signNameIdx, c: rightSignCol }, e: { r: signNameIdx, c: lastColIdx } } // Tên
+          ];
 
           // Cố định kiểu String (Text) cho cột SĐT (cột B = index 1) và Ngày sinh (cột D = index 3) để giữ số 0 ở đầu
           const range = XLSX.utils.decode_range(ws['!ref']);
@@ -13133,7 +13179,56 @@ function initialSetup() {
           // Thêm dòng tổng cộng
           aoa.push(excelSummaryRow);
 
+          // Khối ký tên giống file PDF
+          aoa.push([]);
+          aoa.push([]);
+
+          const signDateRow = new Array(excelHeaders.length).fill("");
+          const rightSignCol = excelHeaders.length >= 10 ? excelHeaders.length - 3 : excelHeaders.length - 2;
+          signDateRow[rightSignCol] = `Ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
+          aoa.push(signDateRow);
+
+          const signTitleRow = new Array(excelHeaders.length).fill("");
+          signTitleRow[1] = "PHÓ HIỆU TRƯỞNG";
+          signTitleRow[rightSignCol] = "NGƯỜI LẬP BIỂU";
+          aoa.push(signTitleRow);
+
+          const signSubRow = new Array(excelHeaders.length).fill("");
+          signSubRow[1] = "(Duyệt)";
+          signSubRow[rightSignCol] = "(Ký và ghi rõ họ tên)";
+          aoa.push(signSubRow);
+
+          aoa.push([]);
+          aoa.push([]);
+
+          const signNameRow = new Array(excelHeaders.length).fill("");
+          signNameRow[rightSignCol] = currentUser.tenGv || "";
+          aoa.push(signNameRow);
+
           const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+          // Merge ô cho tiêu đề, tổng cộng và khối ký tên
+          const lastColIdx = excelHeaders.length - 1;
+          const totalDataRows = filteredTeachers.length;
+          const summaryRowIdx = 8 + totalDataRows;
+          const signTitleIdx = summaryRowIdx + 4;
+          const signSubIdx = summaryRowIdx + 5;
+          const signNameIdx = summaryRowIdx + 8;
+
+          ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, // UBND
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }, // THCS
+            { s: { r: 0, c: Math.max(4, lastColIdx - 3) }, e: { r: 0, c: lastColIdx } }, // Quốc hiệu
+            { s: { r: 1, c: Math.max(4, lastColIdx - 3) }, e: { r: 1, c: lastColIdx } }, // Độc lập...
+            { s: { r: 3, c: 0 }, e: { r: 3, c: lastColIdx } }, // Tiêu đề chính
+            { s: { r: 4, c: 0 }, e: { r: 4, c: lastColIdx } }, // Năm học
+            { s: { r: 5, c: 0 }, e: { r: 5, c: lastColIdx } }, // Thời gian xuất
+            { s: { r: signTitleIdx, c: 1 }, e: { r: signTitleIdx, c: 3 } }, // PHÓ HIỆU TRƯỞNG
+            { s: { r: signTitleIdx, c: rightSignCol }, e: { r: signTitleIdx, c: lastColIdx } }, // NGƯỜI LẬP BIỂU
+            { s: { r: signSubIdx, c: 1 }, e: { r: signSubIdx, c: 3 } }, // (Duyệt)
+            { s: { r: signSubIdx, c: rightSignCol }, e: { r: signSubIdx, c: lastColIdx } }, // (Ký...)
+            { s: { r: signNameIdx, c: rightSignCol }, e: { r: signNameIdx, c: lastColIdx } } // Tên
+          ];
 
           // Cố định kiểu String cho cột Tài khoản/SĐT (cột B = index 1) và Ngày sinh (cột D = index 3)
           const range = XLSX.utils.decode_range(ws['!ref']);
@@ -17093,8 +17188,6 @@ function initialSetup() {
           const stats = getTeacherHoaNhapStats(t);
           return stats.hasHnClasses && !stats.isDeclared;
         });
-      } else if (hoaNhapAdminStatusFilter === 'all_school') {
-        // Toàn bộ giáo viên trong trường
       } else {
         // Mặc định hoặc 'all' / 'has_hn': Tất cả giáo viên có học sinh hòa nhập
         list = list.filter(t => {
@@ -17276,8 +17369,6 @@ function initialSetup() {
           const stats = getTeacherHoaNhapStats(t);
           return stats.hasHnClasses && !stats.isDeclared;
         });
-      } else if (hoaNhapSummaryStatusFilter === 'all_school') {
-        // Toàn bộ giáo viên trong trường
       } else {
         // 'all': Tất cả giáo viên có học sinh hòa nhập
         list = list.filter(t => {
@@ -17330,7 +17421,7 @@ function initialSetup() {
                 isDeclared: true
               });
             });
-          } else if (!stats.isDeclared && (hoaNhapSummaryStatusFilter === 'not_declared' || hoaNhapSummaryStatusFilter === 'all' || hoaNhapSummaryStatusFilter === 'all_school')) {
+          } else if (!stats.isDeclared && (hoaNhapSummaryStatusFilter === 'not_declared' || hoaNhapSummaryStatusFilter === 'all')) {
             // Giáo viên chưa kê khai -> nếu có lớp có HS hòa nhập, hiển thị dòng lớp đó với số tiết = 0
             if (stats.hnClassesList && stats.hnClassesList.length > 0) {
               stats.hnClassesList.forEach(c => {
@@ -18155,8 +18246,6 @@ function initialSetup() {
           const stats = getTeacherHoaNhapStats(t);
           return stats.hasHnClasses && !stats.isDeclared;
         });
-      } else if (hoaNhapAdminStatusFilter === 'all_school') {
-        // Toàn bộ giáo viên
       } else {
         // Mặc định hoặc 'all': Tất cả GV có HS hòa nhập
         list = list.filter(t => {
@@ -18311,8 +18400,6 @@ function initialSetup() {
           const stats = getTeacherHoaNhapStats(t);
           return stats.hasHnClasses && !stats.isDeclared;
         });
-      } else if (hoaNhapAdminStatusFilter === 'all_school') {
-        // Toàn bộ giáo viên
       } else {
         // Mặc định hoặc 'all': Tất cả GV có HS hòa nhập
         list = list.filter(t => {
@@ -18331,72 +18418,172 @@ function initialSetup() {
         return;
       }
 
-      showToast("Đang xuất file Excel thống kê giáo viên dạy hòa nhập...", "info");
+      showToast("Đang chuẩn bị file Excel thống kê giáo viên dạy hòa nhập...", "info");
 
-      const rows = [];
-      rows.push(["ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN - TRƯỜNG THCS AN NHƠN"]);
-      rows.push(["BẢNG THỐNG KÊ TÌNH HÌNH KÊ KHAI TIẾT DẠY HỌC SINH HÒA NHẬP"]);
-      rows.push([`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')} | Người lập: ${currentUser.tenGv || ''}`]);
-      rows.push([]); // dòng trống
-      rows.push([
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      const todayDay = String(now.getDate()).padStart(2, '0');
+      const todayMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const todayYear = now.getFullYear();
+
+      const excelTitle = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN DẠY HỌC SINH HÒA NHẬP";
+      const excelHeaders = [
         "STT",
-        "Tài Khoản",
-        "Họ Và Tên Giáo Viên",
+        "Tài Khoản (SĐT)",
+        "Họ và Tên Giáo Viên",
         "Môn Giảng Dạy",
         "Lớp Giảng Dạy",
         "Lớp Có HS Hòa Nhập",
-        "Số Lớp Hòa Nhập",
-        "Trạng Thái",
+        "Số Lớp HN",
+        "Trạng Thái Kê Khai",
         "Số Tiết HK1",
         "Số Tiết HK2",
         "Tổng Tiết Cả Năm"
-      ]);
+      ];
+
+      const aoa = [
+        ["ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", "", "", "", "", "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", "", "", "", ""],
+        ["TRƯỜNG THCS AN NHƠN", "", "", "", "", "", "Độc lập - Tự do - Hạnh phúc", "", "", "", ""],
+        [""],
+        [excelTitle],
+        ["NĂM HỌC 2024 - 2025"],
+        [`Thời gian xuất: ${dateStr} ${timeStr} | Người lập: ${currentUser.tenGv || ''}`],
+        [""],
+        excelHeaders
+      ];
+
+      let sumHk1 = 0, sumHk2 = 0, sumYear = 0;
+      let totalHnClassesCount = 0;
+      let declaredCount = 0;
 
       list.forEach((t, idx) => {
         const stats = getTeacherHoaNhapStats(t);
         const tClasses = parseTeacherLopDay(t.lopDay || '');
         const displayClasses = formatTeacherClassesSummary(tClasses) || tClasses.join(", ") || "--";
         const hnClassesText = stats.hnClassesList.join(", ") || "--";
+        const hnCount = stats.hnClassesList.length || 0;
+        const hk1 = stats.hk1Total || 0;
+        const hk2 = stats.hk2Total || 0;
+        const year = stats.yearTotal || 0;
 
-        rows.push([
+        sumHk1 += hk1;
+        sumHk2 += hk2;
+        sumYear += year;
+        totalHnClassesCount += hnCount;
+        if (stats.isDeclared) declaredCount++;
+
+        aoa.push([
           idx + 1,
-          t.taiKhoan || "",
+          normalizeUsername(t.taiKhoan),
           t.tenGv || "",
           t.monGv || t.subject || "Tin học",
           displayClasses,
           hnClassesText,
-          stats.hnClassesList.length || 0,
+          hnCount,
           stats.isDeclared ? "Đã kê khai" : "Chưa kê khai",
-          stats.hk1Total || 0,
-          stats.hk2Total || 0,
-          stats.yearTotal || 0
+          hk1,
+          hk2,
+          year
         ]);
       });
 
-      const ws = XLSX.utils.aoa_to_sheet(rows);
+      // Dòng tổng cộng
+      aoa.push([
+        "TỔNG CỘNG",
+        `${list.length} GIÁO VIÊN`,
+        "",
+        "",
+        "",
+        "",
+        totalHnClassesCount,
+        `${declaredCount}/${list.length} đã kê khai`,
+        sumHk1,
+        sumHk2,
+        sumYear
+      ]);
 
-      // Auto width columns
+      // Khối ký tên giống hệt file PDF
+      aoa.push([]);
+      aoa.push([]);
+
+      const signDateRow = new Array(excelHeaders.length).fill("");
+      signDateRow[8] = `Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      aoa.push(signDateRow);
+
+      const signTitleRow = new Array(excelHeaders.length).fill("");
+      signTitleRow[1] = "PHÓ HIỆU TRƯỞNG";
+      signTitleRow[8] = "NGƯỜI LẬP BIỂU";
+      aoa.push(signTitleRow);
+
+      const signSubRow = new Array(excelHeaders.length).fill("");
+      signSubRow[1] = "(Duyệt)";
+      signSubRow[8] = "(Ký và ghi rõ họ tên)";
+      aoa.push(signSubRow);
+
+      aoa.push([]);
+      aoa.push([]);
+
+      const signNameRow = new Array(excelHeaders.length).fill("");
+      signNameRow[8] = currentUser.tenGv || "";
+      aoa.push(signNameRow);
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      // Cố định kiểu String cho cột Tài khoản/SĐT (cột B = index 1) để giữ số 0 ở đầu
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = 7; R <= range.e.r; ++R) {
+        const cellPhoneAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
+        if (ws[cellPhoneAddr]) {
+          ws[cellPhoneAddr].t = 's';
+          ws[cellPhoneAddr].v = String(ws[cellPhoneAddr].v || '');
+        }
+      }
+
+      // Độ rộng cột chuẩn đẹp
       ws['!cols'] = [
-        { wch: 6 },
-        { wch: 15 },
-        { wch: 25 },
-        { wch: 15 },
-        { wch: 25 },
-        { wch: 20 },
-        { wch: 12 },
-        { wch: 15 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 14 }
+        { wch: 6 },  // STT
+        { wch: 16 }, // Tài Khoản
+        { wch: 25 }, // Tên Giáo Viên
+        { wch: 16 }, // Môn Giảng Dạy
+        { wch: 24 }, // Lớp Giảng Dạy
+        { wch: 24 }, // Lớp Có HS Hòa Nhập
+        { wch: 12 }, // Số Lớp HN
+        { wch: 18 }, // Trạng Thái
+        { wch: 14 }, // Số Tiết HK1
+        { wch: 14 }, // Số Tiết HK2
+        { wch: 16 }  // Tổng Tiết Cả Năm
+      ];
+
+      // Merge ô cho tiêu đề và chữ ký
+      const lastColIdx = excelHeaders.length - 1;
+      const totalDataRows = list.length;
+      const summaryRowIdx = 8 + totalDataRows;
+      const signTitleIdx = summaryRowIdx + 4;
+      const signSubIdx = summaryRowIdx + 5;
+      const signNameIdx = summaryRowIdx + 8;
+
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // UBND
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, // THCS
+        { s: { r: 0, c: 6 }, e: { r: 0, c: lastColIdx } }, // Quốc hiệu
+        { s: { r: 1, c: 6 }, e: { r: 1, c: lastColIdx } }, // Độc lập...
+        { s: { r: 3, c: 0 }, e: { r: 3, c: lastColIdx } }, // Tiêu đề chính
+        { s: { r: 4, c: 0 }, e: { r: 4, c: lastColIdx } }, // Năm học
+        { s: { r: 5, c: 0 }, e: { r: 5, c: lastColIdx } }, // Thời gian xuất
+        { s: { r: signTitleIdx, c: 1 }, e: { r: signTitleIdx, c: 3 } }, // PHÓ HIỆU TRƯỞNG
+        { s: { r: signTitleIdx, c: 8 }, e: { r: signTitleIdx, c: lastColIdx } }, // NGƯỜI LẬP BIỂU
+        { s: { r: signSubIdx, c: 1 }, e: { r: signSubIdx, c: 3 } }, // (Duyệt)
+        { s: { r: signSubIdx, c: 8 }, e: { r: signSubIdx, c: lastColIdx } }, // (Ký...)
+        { s: { r: signNameIdx, c: 8 }, e: { r: signNameIdx, c: lastColIdx } } // Tên người lập biểu
       ];
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "THONG_KE_HOA_NHAP");
+      XLSX.utils.book_append_sheet(wb, ws, "GiaoVienHoaNhap");
 
-      const now = new Date();
-      const fileDate = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+      const fileDate = `${todayYear}${todayMonth}${todayDay}`;
       XLSX.writeFile(wb, `Thong_Ke_Giao_Vien_Hoa_Nhap_THCS_An_Nhon_${fileDate}.xlsx`);
-      showToast("Đã tải xuống file Excel thống kê thành công!", "success");
+      showToast("Đã xuất file Excel thống kê giáo viên dạy hòa nhập thành công!", "success");
     }
 
     function exportHoaNhapAdminExcel() {
@@ -18407,18 +18594,49 @@ function initialSetup() {
 
       const sem = hoaNhapAdminActiveSem;
       const semLabel = sem === 'hk1' ? 'Học Kỳ 1' : (sem === 'hk2' ? 'Học Kỳ 2' : 'Cả Năm');
+      const semUpper = sem === 'hk1' ? 'HỌC KỲ 1 (18 TUẦN THỰC HỌC)' : (sem === 'hk2' ? 'HỌC KỲ 2 (17 TUẦN THỰC HỌC)' : 'CẢ NĂM HỌC');
       const summaryRows = getFilteredHoaNhapSummaryRows(sem, hoaNhapSummaryViewMode);
 
-      const excelData = [
-        ["STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Học và tên học sinh", "Ngày tháng năm sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"]
+      if (summaryRows.length === 0) {
+        showToast("Không có dữ liệu phù hợp để xuất Excel!", "warning");
+        return;
+      }
+
+      showToast("Đang chuẩn bị file Excel báo cáo tổng hợp hòa nhập...", "info");
+
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      const todayDay = String(now.getDate()).padStart(2, '0');
+      const todayMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const todayYear = now.getFullYear();
+
+      const excelTitle = `BÁO CÁO TỔNG HỢP SỐ TIẾT DẠY HÒA NHẬP TOÀN TRƯỜNG - ${semUpper}`;
+      const excelHeaders = [
+        "STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Họ và tên học sinh", "Ngày tháng năm sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"
+      ];
+
+      const aoa = [
+        ["ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", "", "", "", "", "", "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", "", "", ""],
+        ["TRƯỜNG THCS AN NHƠN", "", "", "", "", "", "", "Độc lập - Tự do - Hạnh phúc", "", "", ""],
+        [""],
+        [excelTitle],
+        [`Năm học 2024 - 2025 | Học kỳ: ${semLabel}`],
+        [`Thời gian xuất: ${dateStr} ${timeStr} | Người lập: ${currentUser.tenGv || ''}`],
+        [""],
+        excelHeaders
       ];
 
       let totalTietTuan = 0;
       let totalTongTiet = 0;
 
       summaryRows.forEach((r, idx) => {
-        totalTietTuan += r.tietTuan;
-        totalTongTiet += r.tongTiet;
+        const tietTuan = parseFloat(r.tietTuan) || 0;
+        const soTuan = parseFloat(r.soTuan) || 0;
+        const tongTiet = parseFloat(r.tongTiet) || (tietTuan * soTuan);
+
+        totalTietTuan += tietTuan;
+        totalTongTiet += tongTiet;
 
         let hsText = "";
         let birthText = "";
@@ -18446,7 +18664,7 @@ function initialSetup() {
           mucDoText = details.levels.join('\n');
         }
 
-        excelData.push([
+        aoa.push([
           idx + 1,
           r.teacherName || "",
           r.monGv || "Tin học",
@@ -18455,19 +18673,98 @@ function initialSetup() {
           birthText,
           ktText,
           mucDoText,
-          r.tietTuan,
-          r.soTuan,
-          r.tongTiet
+          tietTuan,
+          soTuan,
+          tongTiet
         ]);
       });
 
-      excelData.push(["", "TỔNG CỘNG TOÀN TRƯỜNG", "", "", "", "", "", "", totalTietTuan, "", totalTongTiet]);
+      // Dòng tổng cộng toàn trường
+      aoa.push([
+        "TỔNG CỘNG TOÀN TRƯỜNG",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        totalTietTuan,
+        "--",
+        totalTongTiet
+      ]);
 
-      const ws = XLSX.utils.aoa_to_sheet(excelData);
+      // Khối ký tên giống hệt file PDF
+      aoa.push([]);
+      aoa.push([]);
+
+      const signDateRow = new Array(excelHeaders.length).fill("");
+      signDateRow[8] = `Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      aoa.push(signDateRow);
+
+      const signTitleRow = new Array(excelHeaders.length).fill("");
+      signTitleRow[1] = "PHÓ HIỆU TRƯỞNG";
+      signTitleRow[8] = "NGƯỜI LẬP BIỂU";
+      aoa.push(signTitleRow);
+
+      const signSubRow = new Array(excelHeaders.length).fill("");
+      signSubRow[1] = "(Duyệt)";
+      signSubRow[8] = "(Ký và ghi rõ họ tên)";
+      aoa.push(signSubRow);
+
+      aoa.push([]);
+      aoa.push([]);
+
+      const signNameRow = new Array(excelHeaders.length).fill("");
+      signNameRow[8] = currentUser.tenGv || "";
+      aoa.push(signNameRow);
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      // Độ rộng cột chuẩn đẹp không bị cụt chữ
+      ws['!cols'] = [
+        { wch: 6 },  // STT
+        { wch: 25 }, // Tên giáo viên
+        { wch: 15 }, // Môn dạy
+        { wch: 12 }, // Lớp dạy
+        { wch: 26 }, // Họ và tên HS
+        { wch: 18 }, // Ngày tháng năm sinh
+        { wch: 25 }, // Dạng khuyết tật
+        { wch: 12 }, // Mức độ
+        { wch: 16 }, // Tiết/tuần
+        { wch: 14 }, // Số tuần
+        { wch: 18 }  // Tổng số tiết
+      ];
+
+      // Merge ô cho tiêu đề và chữ ký
+      const lastColIdx = excelHeaders.length - 1;
+      const totalDataRows = summaryRows.length;
+      const summaryRowIdx = 8 + totalDataRows;
+      const signTitleIdx = summaryRowIdx + 4;
+      const signSubIdx = summaryRowIdx + 5;
+      const signNameIdx = summaryRowIdx + 8;
+
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // UBND
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, // THCS
+        { s: { r: 0, c: 7 }, e: { r: 0, c: lastColIdx } }, // Quốc hiệu
+        { s: { r: 1, c: 7 }, e: { r: 1, c: lastColIdx } }, // Độc lập...
+        { s: { r: 3, c: 0 }, e: { r: 3, c: lastColIdx } }, // Tiêu đề chính
+        { s: { r: 4, c: 0 }, e: { r: 4, c: lastColIdx } }, // Năm học
+        { s: { r: 5, c: 0 }, e: { r: 5, c: lastColIdx } }, // Thời gian xuất
+        { s: { r: summaryRowIdx, c: 0 }, e: { r: summaryRowIdx, c: 7 } }, // TỔNG CỘNG TOÀN TRƯỜNG
+        { s: { r: signTitleIdx, c: 1 }, e: { r: signTitleIdx, c: 3 } }, // PHÓ HIỆU TRƯỞNG
+        { s: { r: signTitleIdx, c: 8 }, e: { r: signTitleIdx, c: lastColIdx } }, // NGƯỜI LẬP BIỂU
+        { s: { r: signSubIdx, c: 1 }, e: { r: signSubIdx, c: 3 } }, // (Duyệt)
+        { s: { r: signSubIdx, c: 8 }, e: { r: signSubIdx, c: lastColIdx } }, // (Ký...)
+        { s: { r: signNameIdx, c: 8 }, e: { r: signNameIdx, c: lastColIdx } } // Tên người lập biểu
+      ];
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "BaoCaoHoaNhap");
 
-      const fileName = `Bao_Cao_Tiet_Day_Hoa_Nhap_${semLabel.replace(/\s+/g, '_')}.xlsx`;
+      const fileDate = `${todayYear}${todayMonth}${todayDay}`;
+      const fileName = `Bao_Cao_Tong_Hop_Tiet_Day_Hoa_Nhap_THCS_An_Nhon_${semLabel.replace(/\s+/g, '_')}_${fileDate}.xlsx`;
       XLSX.writeFile(wb, fileName);
       showToast("Đã xuất file Excel báo cáo hòa nhập thành công!", "success");
     }
