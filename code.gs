@@ -78,7 +78,7 @@ function setColumnConfig(showBdHsg, showDayTs10) {
 // Tên các trang tính theo quy định
 const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | Cột C: Ngày sinh | Cột D: Quyền | Cột E: Mật khẩu
 const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
-const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP
+const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP | Cột E: MỨC ĐỘ | Cột F: THỜI GIAN
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
 const SHEET_HUB_SERVER = "HUB_SERVER"; // Cột A: TÊN TK | Cột B: TÊN TRƯỜNG | Cột C: KHỐI LỚP | Cột D: ĐỊA CHỈ URL | Cột E: NGÀY CẬP NHẬT
 
@@ -472,20 +472,41 @@ function initHoaNhapSheet(ss) {
   let sheetHN = getSheetFlexible(ss, SHEET_HOA_NHAP, ["HOA NHẬP", "HOANHAP", "Hoa Nhap", "Hòa Nhập"]);
   if (!sheetHN) {
     sheetHN = ss.insertSheet(SHEET_HOA_NHAP);
-    sheetHN.appendRow(["TÊN HỌC SINH", "NGÀY SINH", "LỚP", "LOẠI HÒA NHẬP"]);
-    const headerRange = sheetHN.getRange(1, 1, 1, 4);
+    sheetHN.appendRow(["TÊN HỌC SINH", "NGÀY SINH", "LỚP", "LOẠI HÒA NHẬP", "MỨC ĐỘ", "THỜI GIAN"]);
+    const headerRange = sheetHN.getRange(1, 1, 1, 6);
     headerRange.setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
-    sheetHN.setColumnWidth(1, 220);
-    sheetHN.setColumnWidth(2, 130);
-    sheetHN.setColumnWidth(3, 100);
-    sheetHN.setColumnWidth(4, 250);
+    sheetHN.setColumnWidth(1, 200);
+    sheetHN.setColumnWidth(2, 120);
+    sheetHN.setColumnWidth(3, 90);
+    sheetHN.setColumnWidth(4, 220);
+    sheetHN.setColumnWidth(5, 110);
+    sheetHN.setColumnWidth(6, 130);
     sheetHN.getRange("B:B").setNumberFormat("@");
 
-    // Thêm học sinh mẫu ban đầu
-    sheetHN.appendRow(["Nguyễn Văn An", "15/04/2012", "6A1", "Khuyết tật phát triển trí tuệ"]);
-    sheetHN.appendRow(["Trần Thị Bình", "20/09/2011", "7A2", "Khuyết tật học tập"]);
-    sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ"]);
+    // Thêm học sinh mẫu ban đầu: có cột Mức độ và Thời gian công nhận
+    sheetHN.appendRow(["Nguyễn Văn An", "15/04/2012", "6A1", "Khuyết tật phát triển trí tuệ", "Nhẹ", ""]);
+    sheetHN.appendRow(["Trần Thị Bình", "20/09/2011", "7A2", "Khuyết tật học tập", "Nhẹ", ""]);
+    sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ", "Nhẹ", "Tuần 8"]);
     sheetHN.getRange(2, 2, 3, 1).setNumberFormat("@");
+  } else {
+    // Tự động kiểm tra và thêm cột MỨC ĐỘ & THỜI GIAN nếu sheet đã tồn tại nhưng còn thiếu
+    const curCols = sheetHN.getLastColumn();
+    if (curCols < 6) {
+      const headerVals = sheetHN.getRange(1, 1, 1, Math.max(1, curCols)).getValues()[0].map(h => String(h || "").trim().toLowerCase());
+      const hasMucDo = headerVals.some(h => h.includes("mức") || h.includes("muc"));
+      const hasThoiGian = headerVals.some(h => h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
+
+      let nextCol = curCols + 1;
+      if (!hasMucDo) {
+        sheetHN.getRange(1, nextCol).setValue("MỨC ĐỘ").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+        sheetHN.setColumnWidth(nextCol, 110);
+        nextCol++;
+      }
+      if (!hasThoiGian) {
+        sheetHN.getRange(1, nextCol).setValue("THỜI GIAN").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+        sheetHN.setColumnWidth(nextCol, 130);
+      }
+    }
   }
   return sheetHN;
 }
@@ -614,10 +635,10 @@ function handleGetHoaNhapStudents() {
   if (lastRow <= 1) {
     return jsonResponse({ success: true, list: [] });
   }
-  const lastCol = Math.max(5, sheetHN.getLastColumn());
+  const lastCol = Math.max(6, sheetHN.getLastColumn());
   const header = sheetHN.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim().toLowerCase());
 
-  let colTen = 0, colNgaySinh = 1, colLop = 2, colLoai = 3, colMucDo = 4;
+  let colTen = 0, colNgaySinh = 1, colLop = 2, colLoai = 3, colMucDo = -1, colThoiGian = -1;
   for (let c = 0; c < header.length; c++) {
     const h = header[c];
     if (h.includes("tên") || h.includes("họ và tên") || h.includes("học sinh")) colTen = c;
@@ -625,7 +646,10 @@ function handleGetHoaNhapStudents() {
     else if (h.includes("năm sinh") || h.includes("ngày sinh") || h.includes("sinh") || h.includes("namsinh") || h.includes("ngaysinh")) colNgaySinh = c;
     else if (h.includes("khuyết tật") || h.includes("loại") || h.includes("dạng") || h.includes("hoa nhap")) colLoai = c;
     else if (h.includes("mức độ") || h.includes("muc do") || h.includes("mức")) colMucDo = c;
+    else if (h.includes("thời gian") || h.includes("thoi gian") || h.includes("tuần") || h.includes("tuan") || h.includes("công nhận")) colThoiGian = c;
   }
+  if (colMucDo === -1 && lastCol >= 5) colMucDo = 4;
+  if (colThoiGian === -1 && lastCol >= 6) colThoiGian = 5;
 
   const vals = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getValues();
   const disp = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
@@ -641,6 +665,8 @@ function handleGetHoaNhapStudents() {
       namSinh = yearMatch ? yearMatch[0] : birthStr;
     }
     const mucDoVal = (colMucDo >= 0 && colMucDo < lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
+    const thoiGianVal = (colThoiGian >= 0 && colThoiGian < lastCol) ? String(disp[i][colThoiGian] || vals[i][colThoiGian] || "").trim() : "";
+
     list.push({
       tenHs: tenHs,
       ngaySinh: formatBirthDate(rawBirth),
@@ -648,7 +674,8 @@ function handleGetHoaNhapStudents() {
       lop: String(disp[i][colLop] || vals[i][colLop] || "").trim(),
       loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
       dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
-      mucDo: mucDoVal || "Nhẹ"
+      mucDo: mucDoVal || "Nhẹ",
+      thoiGian: thoiGianVal
     });
   }
   return jsonResponse({ success: true, list: list });

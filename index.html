@@ -980,6 +980,7 @@
                   <th class="py-3 px-3 text-center w-28">Năm sinh</th>
                   <th class="py-3 px-4 text-left min-w-[220px]">Dạng khuyết tật</th>
                   <th class="py-3 px-3 text-center w-28">Mức độ</th>
+                  <th class="py-3 px-3 text-center w-36">Thời gian (Tuần)</th>
                 </tr>
               </thead>
               <tbody id="hn-admin-students-tbody" class="divide-y divide-slate-100">
@@ -2222,7 +2223,7 @@ function setColumnConfig(showBdHsg, showDayTs10) {
 // Tên các trang tính theo quy định
 const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | Cột C: Ngày sinh | Cột D: Quyền | Cột E: Mật khẩu
 const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
-const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP
+const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP | Cột E: MỨC ĐỘ | Cột F: THỜI GIAN
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
 const SHEET_HUB_SERVER = "HUB_SERVER"; // Cột A: TÊN TK | Cột B: TÊN TRƯỜNG | Cột C: KHỐI LỚP | Cột D: ĐỊA CHỈ URL | Cột E: NGÀY CẬP NHẬT
 
@@ -2616,20 +2617,41 @@ function initHoaNhapSheet(ss) {
   let sheetHN = getSheetFlexible(ss, SHEET_HOA_NHAP, ["HOA NHẬP", "HOANHAP", "Hoa Nhap", "Hòa Nhập"]);
   if (!sheetHN) {
     sheetHN = ss.insertSheet(SHEET_HOA_NHAP);
-    sheetHN.appendRow(["TÊN HỌC SINH", "NGÀY SINH", "LỚP", "LOẠI HÒA NHẬP"]);
-    const headerRange = sheetHN.getRange(1, 1, 1, 4);
+    sheetHN.appendRow(["TÊN HỌC SINH", "NGÀY SINH", "LỚP", "LOẠI HÒA NHẬP", "MỨC ĐỘ", "THỜI GIAN"]);
+    const headerRange = sheetHN.getRange(1, 1, 1, 6);
     headerRange.setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
-    sheetHN.setColumnWidth(1, 220);
-    sheetHN.setColumnWidth(2, 130);
-    sheetHN.setColumnWidth(3, 100);
-    sheetHN.setColumnWidth(4, 250);
+    sheetHN.setColumnWidth(1, 200);
+    sheetHN.setColumnWidth(2, 120);
+    sheetHN.setColumnWidth(3, 90);
+    sheetHN.setColumnWidth(4, 220);
+    sheetHN.setColumnWidth(5, 110);
+    sheetHN.setColumnWidth(6, 130);
     sheetHN.getRange("B:B").setNumberFormat("@");
 
-    // Thêm học sinh mẫu ban đầu
-    sheetHN.appendRow(["Nguyễn Văn An", "15/04/2012", "6A1", "Khuyết tật phát triển trí tuệ"]);
-    sheetHN.appendRow(["Trần Thị Bình", "20/09/2011", "7A2", "Khuyết tật học tập"]);
-    sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ"]);
+    // Thêm học sinh mẫu ban đầu: có cột Mức độ và Thời gian công nhận
+    sheetHN.appendRow(["Nguyễn Văn An", "15/04/2012", "6A1", "Khuyết tật phát triển trí tuệ", "Nhẹ", ""]);
+    sheetHN.appendRow(["Trần Thị Bình", "20/09/2011", "7A2", "Khuyết tật học tập", "Nhẹ", ""]);
+    sheetHN.appendRow(["Lê Hoàng Cường", "05/11/2010", "8A3", "Khuyết tật vận động nhẹ", "Nhẹ", "Tuần 8"]);
     sheetHN.getRange(2, 2, 3, 1).setNumberFormat("@");
+  } else {
+    // Tự động kiểm tra và thêm cột MỨC ĐỘ & THỜI GIAN nếu sheet đã tồn tại nhưng còn thiếu
+    const curCols = sheetHN.getLastColumn();
+    if (curCols < 6) {
+      const headerVals = sheetHN.getRange(1, 1, 1, Math.max(1, curCols)).getValues()[0].map(h => String(h || "").trim().toLowerCase());
+      const hasMucDo = headerVals.some(h => h.includes("mức") || h.includes("muc"));
+      const hasThoiGian = headerVals.some(h => h.includes("thời gian") || h.includes("tuần") || h.includes("tuan"));
+
+      let nextCol = curCols + 1;
+      if (!hasMucDo) {
+        sheetHN.getRange(1, nextCol).setValue("MỨC ĐỘ").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+        sheetHN.setColumnWidth(nextCol, 110);
+        nextCol++;
+      }
+      if (!hasThoiGian) {
+        sheetHN.getRange(1, nextCol).setValue("THỜI GIAN").setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+        sheetHN.setColumnWidth(nextCol, 130);
+      }
+    }
   }
   return sheetHN;
 }
@@ -2758,10 +2780,10 @@ function handleGetHoaNhapStudents() {
   if (lastRow <= 1) {
     return jsonResponse({ success: true, list: [] });
   }
-  const lastCol = Math.max(5, sheetHN.getLastColumn());
+  const lastCol = Math.max(6, sheetHN.getLastColumn());
   const header = sheetHN.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim().toLowerCase());
 
-  let colTen = 0, colNgaySinh = 1, colLop = 2, colLoai = 3, colMucDo = 4;
+  let colTen = 0, colNgaySinh = 1, colLop = 2, colLoai = 3, colMucDo = -1, colThoiGian = -1;
   for (let c = 0; c < header.length; c++) {
     const h = header[c];
     if (h.includes("tên") || h.includes("họ và tên") || h.includes("học sinh")) colTen = c;
@@ -2769,7 +2791,10 @@ function handleGetHoaNhapStudents() {
     else if (h.includes("năm sinh") || h.includes("ngày sinh") || h.includes("sinh") || h.includes("namsinh") || h.includes("ngaysinh")) colNgaySinh = c;
     else if (h.includes("khuyết tật") || h.includes("loại") || h.includes("dạng") || h.includes("hoa nhap")) colLoai = c;
     else if (h.includes("mức độ") || h.includes("muc do") || h.includes("mức")) colMucDo = c;
+    else if (h.includes("thời gian") || h.includes("thoi gian") || h.includes("tuần") || h.includes("tuan") || h.includes("công nhận")) colThoiGian = c;
   }
+  if (colMucDo === -1 && lastCol >= 5) colMucDo = 4;
+  if (colThoiGian === -1 && lastCol >= 6) colThoiGian = 5;
 
   const vals = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getValues();
   const disp = sheetHN.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
@@ -2785,6 +2810,8 @@ function handleGetHoaNhapStudents() {
       namSinh = yearMatch ? yearMatch[0] : birthStr;
     }
     const mucDoVal = (colMucDo >= 0 && colMucDo < lastCol) ? String(disp[i][colMucDo] || vals[i][colMucDo] || "").trim() : "";
+    const thoiGianVal = (colThoiGian >= 0 && colThoiGian < lastCol) ? String(disp[i][colThoiGian] || vals[i][colThoiGian] || "").trim() : "";
+
     list.push({
       tenHs: tenHs,
       ngaySinh: formatBirthDate(rawBirth),
@@ -2792,7 +2819,8 @@ function handleGetHoaNhapStudents() {
       lop: String(disp[i][colLop] || vals[i][colLop] || "").trim(),
       loaiHoaNhap: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
       dangKhuyetTat: String(disp[i][colLoai] || vals[i][colLoai] || "").trim(),
-      mucDo: mucDoVal || "Nhẹ"
+      mucDo: mucDoVal || "Nhẹ",
+      thoiGian: thoiGianVal
     });
   }
   return jsonResponse({ success: true, list: list });
@@ -14491,7 +14519,8 @@ function initialSetup() {
           names: r.students.map(s => s.tenHs || '--'),
           births: r.students.map(s => s.namSinh || '--'),
           disabilities: r.students.map(s => s.dangKhuyetTat || '--'),
-          levels: r.students.map(s => s.mucDo || 'Nhẹ')
+          levels: r.students.map(s => s.mucDo || 'Nhẹ'),
+          times: r.students.map(s => s.thoiGian || '')
         };
       }
 
@@ -14514,14 +14543,63 @@ function initialSetup() {
       const births = splitField(r.namSinh, ',');
       const disabilities = splitField(r.dangKhuyetTat, ';', ',');
       const levels = splitField(r.mucDo, ',', ';');
+      const times = splitField(r.thoiGian || '', ',', ';');
 
       const maxLen = Math.max(names.length, births.length, disabilities.length, levels.length, 1);
       while (names.length < maxLen) names.push(names[names.length - 1] || '--');
       while (births.length < maxLen) births.push(births[births.length - 1] || '--');
       while (disabilities.length < maxLen) disabilities.push(disabilities[disabilities.length - 1] || '--');
       while (levels.length < maxLen) levels.push(levels[levels.length - 1] || 'Nhẹ');
+      while (times.length < maxLen) times.push(times[times.length - 1] || '');
 
-      return { names, births, disabilities, levels };
+      return { names, births, disabilities, levels, times };
+    }
+    // 2. Nếu ghi tuần (ví dụ: "Tuần 8" hoặc "8"): bắt đầu tính từ tuần đó đến hết HK
+    //    Ở HK1 (18 tuần thực học): 18 - 8 + 1 = 11 tuần
+    //    Ở HK2 (17 tuần thực học): nếu học sinh đã được công nhận từ HK1 thì sang HK2 được tính đủ 17 tuần;
+    //                             nếu ghi tuần ở HK2 (ví dụ "HK2 tuần 5" hoặc tuần 23) thì tính từ tuần đó đến hết HK2.
+    function calculateHoaNhapStudentWeeks(thoiGianRaw, sem = 'hk1') {
+      const maxWeeks = sem === 'hk2' ? 17 : 18;
+      const tgStr = String(thoiGianRaw || '').trim();
+      if (!tgStr) {
+        return { startWeek: 1, weeks: maxWeeks, text: 'Tuần 1' };
+      }
+
+      const isHk2Explicit = /hk\s*2|kỳ\s*2|hoc\s*ky\s*2/i.test(tgStr);
+      const isHk1Explicit = /hk\s*1|kỳ\s*1|hoc\s*ky\s*1/i.test(tgStr);
+
+      const weekMatch = tgStr.match(/(?:tuần|tuan|t)\s*(\d+)/i) || tgStr.replace(/hk\s*[12]|kỳ\s*[12]|hoc\s*ky\s*[12]/gi, '').match(/\d+/);
+      if (!weekMatch) {
+        return { startWeek: 1, weeks: maxWeeks, text: tgStr };
+      }
+
+      const num = parseInt(weekMatch[1] || weekMatch[0], 10);
+
+      if (sem === 'hk1') {
+        if (isHk2Explicit || num > 18) {
+          // Học sinh chỉ được công nhận ở HK2 -> HK1 chưa có học sinh này
+          return { startWeek: 0, weeks: 0, text: tgStr, notInSem: true };
+        }
+        const startWeek = Math.max(1, Math.min(18, num));
+        const weeks = 18 - startWeek + 1;
+        return { startWeek: startWeek, weeks: weeks, text: `Tuần ${startWeek}` };
+      } else if (sem === 'hk2') {
+        if (num > 18) {
+          // Tuần dạng số cả năm (19..35)
+          const startInHk2 = Math.max(1, Math.min(17, num - 18));
+          const weeks = 17 - startInHk2 + 1;
+          return { startWeek: startInHk2, weeks: weeks, text: `Tuần ${startInHk2}` };
+        } else if (isHk2Explicit) {
+          const startWeek = Math.max(1, Math.min(17, num));
+          const weeks = 17 - startWeek + 1;
+          return { startWeek: startWeek, weeks: weeks, text: `Tuần ${startWeek}` };
+        } else {
+          // Đã công nhận từ HK1 (ví dụ tuần 8 HK1) -> sang HK2 học sinh đã có từ đầu kỳ -> đủ 17 tuần
+          return { startWeek: 1, weeks: 17, text: 'Đầu kỳ' };
+        }
+      }
+
+      return { startWeek: 1, weeks: maxWeeks, text: tgStr };
     }
 
     function syncTeacherHoaNhapRowsWithClasses(sem) {
@@ -14575,27 +14653,52 @@ function initialSetup() {
         }
       }
 
+      const defaultWeeks = sem === 'hk2' ? 17 : 18;
+      const defaultSubject = hoaNhapDataStore.monGv || currentUser.monGv || currentUser.subject || "Tin học";
+
       // Duyệt từng lớp có HS hòa nhập:
-      // Gộp tất cả học sinh trong lớp thành 1 DÒNG DUY NHẤT để nhập tiết tuần
+      // Tự động kiểm tra cột thời gian để cập nhật đúng số học sinh và số tuần thực dạy
       matchedClassNames.forEach(lop => {
         const studentsInClass = classGroups[lop];
+
+        // Lọc học sinh được tính trong học kỳ này
+        const activeStudents = studentsInClass.filter(s => {
+          const wInfo = calculateHoaNhapStudentWeeks(s.thoiGian, sem);
+          return wInfo.weeks > 0;
+        });
+
+        // Nếu trong học kỳ này chưa có học sinh nào được công nhận hòa nhập
+        if (activeStudents.length === 0 && studentsInClass.length > 0) {
+          return;
+        }
+
+        const effectiveStudents = activeStudents.length > 0 ? activeStudents : studentsInClass;
+
+        // Tính số tuần thực dạy của lớp:
+        // Lấy số tuần lớn nhất từ các học sinh trong lớp
+        const studentWeeksList = effectiveStudents.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
+        const calculatedClassWeeks = Math.max(...studentWeeksList);
+
+        // Chuẩn bị thông tin chi tiết từng học sinh (xuống dòng nếu có 2-3 HS)
+        const tenHsText = effectiveStudents.map(s => s.tenHs).join("\n");
+        const namSinhText = effectiveStudents.map(s => s.namSinh || s.ngaySinh).join("\n");
+        const dangKhuyetTatText = effectiveStudents.map(s => s.dangKhuyetTat || s.loaiHoaNhap).join("\n");
+        const mucDoText = effectiveStudents.map(s => s.mucDo || "Nhẹ").join("\n");
+
+        const studentsArray = effectiveStudents.map(s => {
+          const wInfo = calculateHoaNhapStudentWeeks(s.thoiGian, sem);
+          return {
+            tenHs: s.tenHs || "",
+            namSinh: s.namSinh || s.ngaySinh || "",
+            dangKhuyetTat: s.dangKhuyetTat || s.loaiHoaNhap || "",
+            mucDo: s.mucDo || "Nhẹ",
+            thoiGian: s.thoiGian || "",
+            soTuan: wInfo.weeks,
+            startWeek: wInfo.startWeek
+          };
+        });
+
         let existingRow = hoaNhapDataStore[sem].find(r => normalizeClassName(r.lop) === normalizeClassName(lop));
-
-        // Ghi xuống dòng nếu lớp có từ 2-3 HS khuyết tật
-        const tenHsText = studentsInClass.map(s => s.tenHs).join("\n");
-        const namSinhText = studentsInClass.map(s => s.namSinh || s.ngaySinh).join("\n");
-        const dangKhuyetTatText = studentsInClass.map(s => s.dangKhuyetTat || s.loaiHoaNhap).join("\n");
-        const mucDoText = studentsInClass.map(s => s.mucDo || "Nhẹ").join("\n");
-
-        const studentsArray = studentsInClass.map(s => ({
-          tenHs: s.tenHs || "",
-          namSinh: s.namSinh || s.ngaySinh || "",
-          dangKhuyetTat: s.dangKhuyetTat || s.loaiHoaNhap || "",
-          mucDo: s.mucDo || "Nhẹ"
-        }));
-
-        const defaultWeeks = sem === 'hk2' ? 17 : 18;
-        const defaultSubject = hoaNhapDataStore.monGv || currentUser.monGv || currentUser.subject || "Tin học";
 
         if (existingRow) {
           existingRow.tenHs = tenHsText;
@@ -14604,10 +14707,11 @@ function initialSetup() {
           existingRow.mucDo = mucDoText;
           existingRow.students = studentsArray;
           if (!existingRow.monDay) existingRow.monDay = defaultSubject;
-          if (existingRow.soTuan === undefined || existingRow.soTuan === null) existingRow.soTuan = defaultWeeks;
+          // Tự động cập nhật số tuần chuẩn xác theo đúng thời gian công nhận
+          existingRow.soTuan = calculatedClassWeeks;
           if (existingRow.tietTuan === undefined || existingRow.tietTuan === null) existingRow.tietTuan = 0;
           existingRow.tongTiet = (parseFloat(existingRow.tietTuan) || 0) * (parseFloat(existingRow.soTuan) || 0);
-          existingRow.studentsCount = studentsInClass.length;
+          existingRow.studentsCount = effectiveStudents.length;
         } else {
           hoaNhapDataStore[sem].push({
             id: 'hn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -14619,40 +14723,19 @@ function initialSetup() {
             students: studentsArray,
             monDay: defaultSubject,
             tietTuan: 0,
-            soTuan: defaultWeeks,
+            soTuan: calculatedClassWeeks,
             tongTiet: 0,
-            studentsCount: studentsInClass.length
+            studentsCount: effectiveStudents.length
           });
         }
       });
 
       // Sắp xếp các lớp theo thứ tự tự nhiên (6A1, 6A2...)
       hoaNhapDataStore[sem].sort((a, b) => (a.lop || '').localeCompare(b.lop || '', undefined, { numeric: true }));
-    }
 
-    // Chuyển đổi học kỳ trong giao diện Giáo viên
-    function switchHoaNhapSemester(sem) {
-      hoaNhapActiveSem = sem;
-
-      const btnHk1 = document.getElementById('btn-hn-sem-hk1');
-      const btnHk2 = document.getElementById('btn-hn-sem-hk2');
-      const btnAll = document.getElementById('btn-hn-sem-all');
-
-      if (btnHk1) btnHk1.className = sem === 'hk1' ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-indigo-900 shadow-xs' : 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
-      if (btnHk2) btnHk2.className = sem === 'hk2' ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-indigo-900 shadow-xs' : 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
-      if (btnAll) btnAll.className = sem === 'all' ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-indigo-900 shadow-xs' : 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
-
-      const titleEl = document.getElementById('hn-table-title');
-      if (titleEl) {
-        if (sem === 'hk1') titleEl.innerHTML = '<i class="fa-solid fa-table-list text-indigo-600"></i><span>Bảng Kê Khai Số Tiết Dạy Học Sinh Hòa Nhập - Học Kỳ 1 (18 tuần thực học)</span>';
-        else if (sem === 'hk2') titleEl.innerHTML = '<i class="fa-solid fa-table-list text-indigo-600"></i><span>Bảng Kê Khai Số Tiết Dạy Học Sinh Hòa Nhập - Học Kỳ 2 (17 tuần thực học)</span>';
-        else titleEl.innerHTML = '<i class="fa-solid fa-table-list text-indigo-600"></i><span>Bảng Tổng Hợp Số Tiết Dạy Học Sinh Hòa Nhập - CẢ NĂM HỌC</span>';
+      if (currentUser && currentUser.taiKhoan) {
+        localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
       }
-
-      if (sem !== 'all') {
-        syncTeacherHoaNhapRowsWithClasses(sem);
-      }
-      renderHoaNhapTeacherTable();
     }
 
     // Render bảng kê khai dạy hòa nhập của Giáo viên
@@ -14713,11 +14796,16 @@ function initialSetup() {
             <td class="py-2.5 px-2 text-center font-bold text-slate-500 border-r border-slate-200 align-middle">${idx + 1}</td>
             <td class="py-2 px-3 border-r border-slate-200 align-middle">
               <div class="space-y-1">
-                ${details.names.map((name, i) => `
-                  <div class="font-bold text-slate-800 leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
-                    ${escapeHtml(name)}
-                  </div>
-                `).join('')}
+                ${details.names.map((name, i) => {
+                  const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
+                  const hasTimeBadge = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+                  return `
+                    <div class="font-bold text-slate-800 leading-snug flex items-center gap-1.5 flex-wrap ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                      <span>${escapeHtml(name)}</span>
+                      ${hasTimeBadge ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">${escapeHtml(sTime)}</span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </td>
             <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 align-middle">${escapeHtml(r.lop || '--')}</td>
@@ -14775,11 +14863,16 @@ function initialSetup() {
             <td class="py-2.5 px-2 text-center font-bold text-slate-500 border-r border-slate-200 align-middle">${idx + 1}</td>
             <td class="py-2 px-3 border-r border-slate-200 align-middle">
               <div class="space-y-1">
-                ${details.names.map((name, i) => `
-                  <div class="font-bold text-slate-800 leading-snug ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
-                    ${escapeHtml(name)}
-                  </div>
-                `).join('')}
+                ${details.names.map((name, i) => {
+                  const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
+                  const hasTimeBadge = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+                  return `
+                    <div class="font-bold text-slate-800 leading-snug flex items-center gap-1.5 flex-wrap ${i > 0 ? 'pt-1 border-t border-slate-100' : ''}">
+                      <span>${escapeHtml(name)}</span>
+                      ${hasTimeBadge ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">${escapeHtml(sTime)}</span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </td>
             <td class="py-2.5 px-3 text-center font-black text-indigo-950 border-r border-slate-200 align-middle">${escapeHtml(r.lop || '--')}</td>
@@ -14938,14 +15031,19 @@ function initialSetup() {
         return;
       }
       rows.forEach(r => {
-        r.soTuan = defaultWeeks;
-        r.tongTiet = (parseFloat(r.tietTuan) || 0) * defaultWeeks;
+        let classWeeks = defaultWeeks;
+        if (r.students && Array.isArray(r.students) && r.students.length > 0) {
+          const weeksList = r.students.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, hoaNhapActiveSem).weeks);
+          classWeeks = Math.max(...weeksList);
+        }
+        r.soTuan = classWeeks;
+        r.tongTiet = (parseFloat(r.tietTuan) || 0) * classWeeks;
       });
       if (currentUser && currentUser.taiKhoan) {
         localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
       }
       renderHoaNhapTeacherTable();
-      showToast(`Đã điền nhanh ${defaultWeeks} tuần cho tất cả các lớp!`, "success");
+      showToast(`Đã điền số tuần tự động theo thời gian công nhận của từng lớp!`, "success");
     }
 
     // Modal thêm dòng lớp hòa nhập mới
@@ -14976,7 +15074,9 @@ function initialSetup() {
       const mucDo = document.getElementById('add-hn-muc-do')?.value || "Nhẹ";
       const monDay = (document.getElementById('add-hn-mon')?.value || "").trim() || (currentUser.monGv || "Tin học");
       const tietTuan = parseFloat(document.getElementById('add-hn-tiet-tuan')?.value) || 0;
-      const soTuan = parseFloat(document.getElementById('add-hn-so-tuan')?.value) || (sem === 'hk2' ? 17 : 18);
+      const thoiGian = (document.getElementById('add-hn-thoi-gian')?.value || "").trim();
+      const calculatedWk = calculateHoaNhapStudentWeeks(thoiGian, sem).weeks;
+      const soTuan = parseFloat(document.getElementById('add-hn-so-tuan')?.value) || calculatedWk;
 
       if (!lop || !tenHs) {
         showToast("Vui lòng nhập đầy đủ Lớp và Tên học sinh!", "warning");
@@ -16075,13 +16175,16 @@ function initialSetup() {
       tbody.innerHTML = "";
 
       if (!hoaNhapStudentsList || hoaNhapStudentsList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 italic">Chưa có dữ liệu học sinh hòa nhập nào</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 italic">Chưa có dữ liệu học sinh hòa nhập nào</td></tr>`;
         return;
       }
 
       hoaNhapStudentsList.forEach((s, idx) => {
         const tr = document.createElement('tr');
         tr.className = idx % 2 === 0 ? "bg-white hover:bg-slate-50 transition" : "bg-slate-50/70 hover:bg-slate-50 transition";
+
+        const thoiGianDisplay = s.thoiGian ? escapeHtml(s.thoiGian) : '<span class="text-slate-400 italic">Từ tuần 1</span>';
+        const hasSpecificWeek = !!s.thoiGian;
 
         tr.innerHTML = `
           <td class="py-3 px-3 text-center font-bold text-slate-500">${idx + 1}</td>
@@ -16092,6 +16195,11 @@ function initialSetup() {
           <td class="py-3 px-3 text-center">
             <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
               ${escapeHtml(s.mucDo || 'Nhẹ')}
+            </span>
+          </td>
+          <td class="py-3 px-3 text-center">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${hasSpecificWeek ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-600'}">
+              ${thoiGianDisplay}
             </span>
           </td>
         `;
@@ -16402,12 +16510,20 @@ function initialSetup() {
           let hsLevels = "";
 
           if (Array.isArray(r.students) && r.students.length > 0) {
-            hsNames = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.tenHs || '--')}</div>`).join('');
+            hsNames = r.students.map((s, i) => {
+              const sTime = s.thoiGian ? s.thoiGian.trim() : '';
+              const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+              return `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.tenHs || '--')}${hasTime ? ` (${escapeHtml(sTime)})` : ''}</div>`;
+            }).join('');
             hsKts = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.dangKhuyetTat || s.loaiHoaNhap || '--')}</div>`).join('');
             hsLevels = r.students.map((s, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(s.mucDo || 'Nhẹ')}</div>`).join('');
           } else {
             const details = getRowStudentDetails(r);
-            hsNames = details.names.map((name, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(name)}</div>`).join('');
+            hsNames = details.names.map((name, i) => {
+              const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
+              const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+              return `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(name)}${hasTime ? ` (${escapeHtml(sTime)})` : ''}</div>`;
+            }).join('');
             hsKts = details.disabilities.map((d, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(d)}</div>`).join('');
             hsLevels = details.levels.map((lvl, i) => `<div class="${i > 0 ? 'border-t border-slate-200 pt-0.5 mt-0.5' : ''}">${escapeHtml(lvl || 'Nhẹ')}</div>`).join('');
           }
@@ -16777,13 +16893,22 @@ function initialSetup() {
         let mucDoText = "";
 
         if (Array.isArray(r.students) && r.students.length > 0) {
-          hsText = r.students.map(s => s.tenHs || '').filter(Boolean).join('\n');
+          hsText = r.students.map(s => {
+            const sTime = s.thoiGian ? s.thoiGian.trim() : '';
+            const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+            return `${s.tenHs || ''}${hasTime ? ` (${sTime})` : ''}`;
+          }).filter(Boolean).join('\n');
           ktText = r.students.map(s => s.dangKhuyetTat || s.loaiHoaNhap || '').filter(Boolean).join('\n');
           mucDoText = r.students.map(s => s.mucDo || 'Nhẹ').filter(Boolean).join('\n');
         } else {
-          hsText = r.tenHs || "";
-          ktText = r.dangKhuyetTat || "";
-          mucDoText = r.mucDo || "Nhẹ";
+          const details = getRowStudentDetails(r);
+          hsText = details.names.map((name, i) => {
+            const sTime = details.times && details.times[i] ? details.times[i].trim() : '';
+            const hasTime = sTime && !sTime.toLowerCase().includes('tuần 1') && sTime !== '1';
+            return `${name}${hasTime ? ` (${sTime})` : ''}`;
+          }).filter(Boolean).join('\n');
+          ktText = details.disabilities.join('\n');
+          mucDoText = details.levels.join('\n');
         }
 
         excelData.push([
@@ -16810,6 +16935,8 @@ function initialSetup() {
       XLSX.writeFile(wb, fileName);
       showToast("Đã xuất file Excel báo cáo hòa nhập thành công!", "success");
     }
+    // Tải lại toàn bộ dữ liệu Phân hệ 2
+    
     // Tải lại toàn bộ dữ liệu Phân hệ 2
     async function reloadHoaNhapData() {
       const icon = document.getElementById('btn-reload-hoanhap-icon');
