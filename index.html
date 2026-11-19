@@ -581,25 +581,35 @@
       <!-- 1. Thẻ thông tin GV & Bộ chọn học kỳ & Nút hành động -->
       <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <!-- Thông tin GV & Lớp có HS hòa nhập -->
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Giáo viên:</span>
-              <span class="text-sm sm:text-base font-black text-slate-900" id="hn-teacher-name">Giáo viên</span>
-              <span class="text-xs text-slate-500 font-semibold" id="hn-teacher-dob"></span>
-              <span
-                class="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"
-                id="hn-teacher-subject">Môn: Tin học</span>
+          <!-- Thông tin GV & Chọn môn Phân hệ 2 -->
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap flex-1">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Giáo viên:</span>
+                <span class="text-sm sm:text-base font-black text-slate-900" id="hn-teacher-name">Giáo viên</span>
+                <span class="text-xs text-slate-500 font-semibold" id="hn-teacher-dob"></span>
+              </div>
+              <p class="text-[11px] text-slate-400">Kê khai độc lập theo môn và khối lớp của Phân hệ 2</p>
             </div>
-            <!-- Lớp dạy & Lớp hòa nhập -->
-            <div class="flex items-center gap-2 flex-wrap text-xs">
-              <span class="text-slate-500 font-semibold">Lớp dạy:</span>
-              <span class="font-bold text-slate-800" id="hn-teacher-classes-str">--</span>
-              <span class="text-slate-300">|</span>
-              <span class="text-indigo-900 font-bold flex items-center gap-1.5">
-                <i class="fa-solid fa-hands-holding-child text-indigo-600"></i>
-                <span id="hn-matched-classes-hint">Đang nhận diện lớp có HS hòa nhập...</span>
-              </span>
+
+            <!-- CHỌN MÔN GIẢNG DẠY (TÍCH CHỌN NHIỀU MÔN CHO PHÂN HỆ 2) -->
+            <div class="min-w-[220px] relative" id="hn-subject-multiselect-container">
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                <i class="fa-solid fa-book-bookmark text-indigo-600 mr-1"></i> Môn Kê Khai Hòa Nhập:
+                <span class="text-[10px] text-slate-400 font-normal lowercase">(chọn 1 hoặc nhiều)</span>
+              </label>
+              <div class="relative">
+                <button type="button" id="btn-hn-subject-dropdown" onclick="toggleSubjectDropdown('hn', event)"
+                  class="w-full pl-3 pr-8 py-2 bg-indigo-50/70 border border-indigo-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition text-indigo-950 font-bold text-xs sm:text-sm text-left flex items-center justify-between cursor-pointer shadow-2xs">
+                  <span id="hn-selected-subjects-text" class="truncate">Môn: Tin học</span>
+                  <span class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-indigo-700 pointer-events-none text-xs">
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </span>
+                </button>
+                <div id="hn-subject-dropdown-panel" class="hidden absolute left-0 right-0 z-40 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 max-h-64 overflow-y-auto custom-scrollbar animate-fade-in">
+                  <!-- Render từ JS -->
+                </div>
+              </div>
             </div>
           </div>
 
@@ -620,9 +630,74 @@
           </div>
         </div>
 
+        <!-- HÀNG KHỐI & LỚP GIẢNG DẠY CỦA PHÂN HỆ 2 (GIỐNG PHÂN HỆ 1, ĐỘC LẬP HOÀN TOÀN) -->
+        <div class="mt-4 pt-3.5 border-t border-slate-100">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <i class="fa-solid fa-chalkboard-user text-indigo-600"></i> Khối & Lớp Giảng Dạy:
+                </span>
+                <span class="text-[11px] text-slate-400 hidden sm:inline">(Tích chọn lớp)</span>
+              </div>
+
+              <!-- 4 NÚT KHỐI 6, 7, 8, 9 -->
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openSelectHoaNhapGradeClassesModal('6')" id="btn-hn-grade-6"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 flex items-center gap-1.5 shadow-xs active:scale-95">
+                  <i class="fa-solid fa-graduation-cap text-indigo-600"></i>
+                  <span>Khối 6</span>
+                  <span id="hn-badge-count-k6" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                </button>
+                <button type="button" onclick="openSelectHoaNhapGradeClassesModal('7')" id="btn-hn-grade-7"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 flex items-center gap-1.5 shadow-xs active:scale-95">
+                  <i class="fa-solid fa-graduation-cap text-indigo-600"></i>
+                  <span>Khối 7</span>
+                  <span id="hn-badge-count-k7" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                </button>
+                <button type="button" onclick="openSelectHoaNhapGradeClassesModal('8')" id="btn-hn-grade-8"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 flex items-center gap-1.5 shadow-xs active:scale-95">
+                  <i class="fa-solid fa-graduation-cap text-indigo-600"></i>
+                  <span>Khối 8</span>
+                  <span id="hn-badge-count-k8" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                </button>
+                <button type="button" onclick="openSelectHoaNhapGradeClassesModal('9')" id="btn-hn-grade-9"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 flex items-center gap-1.5 shadow-xs active:scale-95">
+                  <i class="fa-solid fa-graduation-cap text-indigo-600"></i>
+                  <span>Khối 9</span>
+                  <span id="hn-badge-count-k9" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold">0</span>
+                </button>
+              </div>
+
+              <!-- DANH SÁCH LỚP ĐÃ CHỌN (CHIPS) -->
+              <div id="hn-selected-classes-chips" class="flex flex-wrap items-center gap-1.5">
+                <span class="text-xs text-slate-400 italic">Chưa chọn lớp nào</span>
+              </div>
+            </div>
+
+            <!-- GỢI Ý LỚP CÓ HS HÒA NHẬP -->
+            <div class="flex items-center gap-2 shrink-0 text-xs">
+              <span class="text-indigo-900 font-bold flex items-center gap-1.5 bg-indigo-50/80 px-3 py-1.5 rounded-xl border border-indigo-100 shadow-2xs">
+                <i class="fa-solid fa-hands-holding-child text-indigo-600"></i>
+                <span id="hn-matched-classes-hint">Đang nhận diện lớp có HS hòa nhập...</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- THANH CHỌN MÔN KÊ KHAI (HIỂN THỊ KHI GV CHỌN TỪ 2 MÔN TRỞ LÊN) -->
+        <div id="hn-subject-tabs-container" class="mt-3.5 pt-3 border-t border-slate-100 flex items-center gap-2 flex-wrap hidden">
+          <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-book-open text-indigo-600"></i> Kê khai cho môn:
+          </span>
+          <div id="hn-subject-tabs" class="flex items-center gap-1.5 flex-wrap">
+            <!-- Render từ JS -->
+          </div>
+        </div>
+
         <!-- Hàng chọn Học kỳ & Thống kê nhanh -->
         <div
-          class="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          class="mt-3.5 pt-3 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <!-- Bộ nút chọn Học kỳ -->
           <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
             <button type="button" onclick="switchHoaNhapSemester('hk1')" id="btn-hn-sem-hk1"
@@ -1205,33 +1280,23 @@
           <!-- MÔN GIẢNG DẠY, ĐỊNH MỨC & NÚT LƯU CLOUD -->
           <div class="flex flex-wrap items-center gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
 
-            <!-- LIST XỔ XUỐNG CHỌN MÔN DẠY -->
-            <div class="min-w-[190px] flex-1 sm:flex-none">
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1"
-                for="subject-dropdown">
+            <!-- MÔN GIẢNG DẠY (TÍCH CHỌN NHIỀU MÔN) -->
+            <div class="min-w-[220px] flex-1 sm:flex-none relative" id="p1-subject-multiselect-container">
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                 <i class="fa-solid fa-book-bookmark text-emerald-600 mr-1"></i> Môn Giảng Dạy:
+                <span class="text-[10px] text-slate-400 font-normal lowercase">(chọn 1 hoặc nhiều môn)</span>
               </label>
               <div class="relative">
-                <select id="subject-dropdown" onchange="handleSubjectChange(this.value)"
-                  class="w-full pl-3 pr-8 py-2 bg-emerald-50/70 border border-emerald-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-emerald-950 font-bold text-xs sm:text-sm cursor-pointer appearance-none">
-                  <option value="Toán">Toán</option>
-                  <option value="Ngữ văn">Ngữ văn</option>
-                  <option value="Tiếng Anh">Tiếng Anh</option>
-                  <option value="Khoa học tự nhiên">Khoa học tự nhiên</option>
-                  <option value="Lịch sử và Địa lí">Lịch sử và Địa lí</option>
-                  <option value="Giáo dục thể chất">Giáo dục thể chất</option>
-                  <option value="Nghệ thuật (Âm nhạc)">Nghệ thuật (Âm nhạc)</option>
-                  <option value="Nghệ thuật (Mỹ thuật)">Nghệ thuật (Mỹ thuật)</option>
-                  <option value="Hoạt động TN, HN">Hoạt động TN, HN</option>
-                  <option value="Giáo dục địa phương">Giáo dục địa phương</option>
-                  <option value="Công nghệ">Công nghệ</option>
-                  <option value="Giáo dục công dân">Giáo dục công dân</option>
-                  <option value="Tin học">Tin học</option>
-                </select>
-                <span
-                  class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-emerald-700 pointer-events-none text-xs">
-                  <i class="fa-solid fa-chevron-down"></i>
-                </span>
+                <button type="button" id="btn-p1-subject-dropdown" onclick="toggleSubjectDropdown('p1', event)"
+                  class="w-full pl-3 pr-8 py-2 bg-emerald-50/70 border border-emerald-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition text-emerald-950 font-bold text-xs sm:text-sm text-left flex items-center justify-between cursor-pointer shadow-2xs">
+                  <span id="p1-selected-subjects-text" class="truncate">Toán</span>
+                  <span class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-emerald-700 pointer-events-none text-xs">
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </span>
+                </button>
+                <div id="p1-subject-dropdown-panel" class="hidden absolute left-0 right-0 z-40 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 max-h-64 overflow-y-auto custom-scrollbar animate-fade-in">
+                  <!-- Render từ JS -->
+                </div>
               </div>
             </div>
 
@@ -5673,6 +5738,76 @@ function initialSetup() {
        8B. MODAL CHỌN LỚP GIẢNG DẠY THEO KHỐI (GIÁO VIÊN)
        DỮ LIỆU LẤY TỪ HUB_SERVER CỦA TRƯỜNG
        ======================================================== -->
+  <!-- ========================================================
+       MODAL: CHỌN LỚP DẠY HÒA NHẬP (PHÂN HỆ 2 - ĐỘC LẬP)
+       ======================================================== -->
+  <div id="modal-select-hn-grade-classes"
+    class="fixed inset-0 z-[96] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
+    <div
+      class="bg-white rounded-3xl shadow-2xl max-w-lg w-full border border-indigo-100 p-6 sm:p-7 relative overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+
+      <!-- Nút đóng X góc trên -->
+      <button type="button" onclick="closeSelectHoaNhapGradeClassesModal()"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Header modal -->
+      <div class="flex items-center gap-3.5 mb-4 pb-3 border-b border-slate-100">
+        <div
+          class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xl shrink-0 shadow-xs">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <h3 id="select-hn-grade-modal-title" class="font-black text-lg text-slate-800 leading-snug">
+            Chọn Lớp Dạy Hòa Nhập - Khối 6
+          </h3>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">
+            Tích chọn các lớp dạy học sinh hòa nhập cho phân hệ 2
+          </p>
+        </div>
+      </div>
+
+      <!-- Thanh chọn nhanh -->
+      <div class="flex items-center justify-between gap-2 mb-3 px-1">
+        <span class="text-xs font-bold text-slate-600">
+          <i class="fa-solid fa-square-check text-indigo-600 mr-1"></i> Tích chọn các lớp Thầy/Cô giảng dạy:
+        </span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="toggleSelectAllHoaNhapGradeClasses(true)"
+            class="text-[11px] font-bold text-indigo-700 hover:text-indigo-800 underline">
+            Chọn tất cả
+          </button>
+          <span class="text-slate-300">|</span>
+          <button type="button" onclick="toggleSelectAllHoaNhapGradeClasses(false)"
+            class="text-[11px] font-bold text-slate-500 hover:text-slate-700 underline">
+            Bỏ chọn
+          </button>
+        </div>
+      </div>
+
+      <!-- Danh sách checkbox các lớp (cuộn được) -->
+      <div id="hn-grade-classes-checklist-container"
+        class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 overflow-y-auto max-h-64 custom-scrollbar">
+        <!-- Render từ JS -->
+      </div>
+
+      <!-- Nút hành động Footer -->
+      <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <button type="button" onclick="closeSelectHoaNhapGradeClassesModal()"
+          class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+          Hủy bỏ
+        </button>
+        <button type="button" onclick="confirmHoaNhapGradeClassesSelection()"
+          class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
+          <i class="fa-solid fa-check"></i>
+          <span>Xác Nhận & Cập Nhật</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <div id="modal-select-grade-classes"
     class="fixed inset-0 z-[96] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200">
     <div
@@ -13353,13 +13488,106 @@ function initialSetup() {
       noticeBox.classList.remove('hidden');
     }
 
-    function handleSubjectChange(newSubject) {
+    const AVAILABLE_SUBJECTS = [
+      "Toán",
+      "Ngữ văn",
+      "Tiếng Anh",
+      "Khoa học tự nhiên",
+      "Lịch sử và Địa lí",
+      "Giáo dục thể chất",
+      "Nghệ thuật (Âm nhạc)",
+      "Nghệ thuật (Mỹ thuật)",
+      "Hoạt động TN, HN",
+      "Giáo dục địa phương",
+      "Công nghệ",
+      "Giáo dục công dân",
+      "Tin học"
+    ];
+
+    function parseTeacherSubjects(subStr) {
+      if (!subStr) return [];
+      if (Array.isArray(subStr)) return subStr.map(s => String(s).trim()).filter(Boolean);
+      return String(subStr).split(/[,;+]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function toggleSubjectDropdown(type, e) {
+      if (e) e.stopPropagation();
+      const panelId = type === 'p1' ? 'p1-subject-dropdown-panel' : 'hn-subject-dropdown-panel';
+      const otherPanelId = type === 'p1' ? 'hn-subject-dropdown-panel' : 'p1-subject-dropdown-panel';
+      const otherPanel = document.getElementById(otherPanelId);
+      if (otherPanel) otherPanel.classList.add('hidden');
+
+      const panel = document.getElementById(panelId);
+      if (panel) {
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) {
+          if (type === 'p1') renderP1SubjectMultiSelect();
+          else renderHnSubjectMultiSelect();
+        }
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      const p1Cont = document.getElementById('p1-subject-multiselect-container');
+      if (p1Cont && !p1Cont.contains(e.target)) {
+        const panel = document.getElementById('p1-subject-dropdown-panel');
+        if (panel) panel.classList.add('hidden');
+      }
+      const hnCont = document.getElementById('hn-subject-multiselect-container');
+      if (hnCont && !hnCont.contains(e.target)) {
+        const panel = document.getElementById('hn-subject-dropdown-panel');
+        if (panel) panel.classList.add('hidden');
+      }
+    });
+
+    function renderP1SubjectMultiSelect() {
+      const panel = document.getElementById('p1-subject-dropdown-panel');
+      const textEl = document.getElementById('p1-selected-subjects-text');
+      if (!panel) return;
+
+      const currentSubjects = parseTeacherSubjects(currentUser.subject || (dataStore ? dataStore.subject : "Toán"));
+      if (textEl) {
+        textEl.textContent = currentSubjects.join(", ") || "Toán";
+        textEl.title = currentSubjects.join(", ");
+      }
+
+      let html = `<div class="space-y-1">`;
+      AVAILABLE_SUBJECTS.forEach(sub => {
+        const isChecked = currentSubjects.includes(sub) ? "checked" : "";
+        html += `
+          <label class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-emerald-50 cursor-pointer transition select-none text-xs font-semibold text-slate-800">
+            <input type="checkbox" value="${escapeHtml(sub)}" ${isChecked}
+              onchange="handleP1SubjectToggle('${escapeHtml(sub)}', this.checked)"
+              class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+            <span>${escapeHtml(sub)}</span>
+          </label>
+        `;
+      });
+      html += `</div>`;
+      panel.innerHTML = html;
+    }
+
+    function handleP1SubjectToggle(subName, checked) {
       if (isSemesterLocked(activeSemesterId)) return;
-      currentUser.subject = newSubject;
-      dataStore.subject = newSubject;
-      document.getElementById('badge-current-subject').textContent = newSubject;
-      showToast(`Đã chọn môn giảng dạy: ${newSubject}`, "info");
+      let list = parseTeacherSubjects(currentUser.subject || (dataStore ? dataStore.subject : "Toán"));
+      if (checked) {
+        if (!list.includes(subName)) list.push(subName);
+      } else {
+        list = list.filter(s => s !== subName);
+        if (list.length === 0) list = [subName];
+      }
+      const subStr = list.join(", ");
+      currentUser.subject = subStr;
+      if (dataStore) dataStore.subject = subStr;
+      const badgeCurrentSubject = document.getElementById('badge-current-subject');
+      if (badgeCurrentSubject) badgeCurrentSubject.textContent = subStr;
+      renderP1SubjectMultiSelect();
+      showToast(`Đã chọn môn giảng dạy: ${subStr}`, "info");
       triggerAutoSave();
+    }
+
+    function handleSubjectChange(newSubject) {
+      handleP1SubjectToggle(newSubject, true);
     }
 
     function handleQuotaChange(val) {
@@ -13417,10 +13645,9 @@ function initialSetup() {
         quotaInput.disabled = isLocked;
       }
 
-      const subjectDropdown = document.getElementById('subject-dropdown');
-      if (subjectDropdown) {
-        subjectDropdown.disabled = isLocked;
-      }
+      renderP1SubjectMultiSelect();
+      const btnP1Subject = document.getElementById('btn-p1-subject-dropdown');
+      if (btnP1Subject) btnP1Subject.disabled = isLocked;
 
       const quickFillHeaderInput = document.getElementById('quick-fill-header-input');
       if (quickFillHeaderInput && document.activeElement !== quickFillHeaderInput) {
@@ -14724,6 +14951,344 @@ function initialSetup() {
     }
 
     // Tải dữ liệu hòa nhập của giáo viên đang đăng nhập
+    let hoaNhapActiveSubject = 'all';
+
+    function getHoaNhapTeacherSubjects() {
+      if (hoaNhapDataStore && Array.isArray(hoaNhapDataStore.subjects) && hoaNhapDataStore.subjects.length > 0) {
+        return hoaNhapDataStore.subjects;
+      }
+      const localCached = localStorage.getItem(`hoanhap_subjects_${currentUser.taiKhoan}`);
+      if (localCached) {
+        try {
+          const p = JSON.parse(localCached);
+          if (Array.isArray(p) && p.length > 0) {
+            if (!hoaNhapDataStore) hoaNhapDataStore = { hk1: [], hk2: [] };
+            hoaNhapDataStore.subjects = p;
+            return p;
+          }
+        } catch (e) { }
+      }
+      const found = new Set();
+      (hoaNhapDataStore && hoaNhapDataStore.hk1 ? hoaNhapDataStore.hk1 : []).forEach(r => {
+        if (r.monDay) found.add(r.monDay.trim());
+      });
+      (hoaNhapDataStore && hoaNhapDataStore.hk2 ? hoaNhapDataStore.hk2 : []).forEach(r => {
+        if (r.monDay) found.add(r.monDay.trim());
+      });
+      if (found.size > 0) {
+        const arr = Array.from(found);
+        if (!hoaNhapDataStore) hoaNhapDataStore = { hk1: [], hk2: [] };
+        hoaNhapDataStore.subjects = arr;
+        return arr;
+      }
+      const fallback = currentUser.monGv || currentUser.subject || "Tin học";
+      const def = parseTeacherSubjects(fallback);
+      const res = def.length > 0 ? def : ["Tin học"];
+      if (!hoaNhapDataStore) hoaNhapDataStore = { hk1: [], hk2: [] };
+      hoaNhapDataStore.subjects = res;
+      return res;
+    }
+
+    function renderHnSubjectMultiSelect() {
+      const panel = document.getElementById('hn-subject-dropdown-panel');
+      const textEl = document.getElementById('hn-selected-subjects-text');
+      if (!panel) return;
+
+      const currentSubjects = getHoaNhapTeacherSubjects();
+      if (textEl) {
+        textEl.textContent = `Môn: ${currentSubjects.join(", ") || "Chưa chọn môn"}`;
+        textEl.title = currentSubjects.join(", ");
+      }
+
+      let html = `<div class="space-y-1">`;
+      AVAILABLE_SUBJECTS.forEach(sub => {
+        const isChecked = currentSubjects.includes(sub) ? "checked" : "";
+        html += `
+          <label class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-indigo-50 cursor-pointer transition select-none text-xs font-semibold text-slate-800">
+            <input type="checkbox" value="${escapeHtml(sub)}" ${isChecked}
+              onchange="handleHnSubjectToggle('${escapeHtml(sub)}', this.checked)"
+              class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+            <span>${escapeHtml(sub)}</span>
+          </label>
+        `;
+      });
+      html += `</div>`;
+      panel.innerHTML = html;
+    }
+
+    function handleHnSubjectToggle(subName, checked) {
+      let list = [...getHoaNhapTeacherSubjects()];
+      if (checked) {
+        if (!list.includes(subName)) list.push(subName);
+        if (!hoaNhapDataStore.classesBySubject) hoaNhapDataStore.classesBySubject = {};
+        if (!hoaNhapDataStore.classesBySubject[subName]) {
+          hoaNhapDataStore.classesBySubject[subName] = [...getHoaNhapTeacherClasses()];
+        }
+      } else {
+        list = list.filter(s => s !== subName);
+        if (list.length === 0) list = [subName];
+      }
+      hoaNhapDataStore.subjects = list;
+      if (!list.includes(hoaNhapActiveSubject) && hoaNhapActiveSubject !== 'all') {
+        hoaNhapActiveSubject = list[0];
+      }
+      if (currentUser && currentUser.taiKhoan) {
+        localStorage.setItem(`hoanhap_subjects_${currentUser.taiKhoan}`, JSON.stringify(list));
+        localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
+      }
+      renderHnSubjectMultiSelect();
+      renderHoaNhapSubjectTabs();
+      syncTeacherHoaNhapRowsWithClasses('hk1');
+      syncTeacherHoaNhapRowsWithClasses('hk2');
+      renderHoaNhapSelectedClassesChips();
+      renderHoaNhapTeacherTable();
+      showToast(`Đã cập nhật môn hòa nhập: ${list.join(", ")}`, "info");
+    }
+
+    function renderHoaNhapSubjectTabs() {
+      const container = document.getElementById('hn-subject-tabs-container');
+      const tabsWrapper = document.getElementById('hn-subject-tabs');
+      if (!container || !tabsWrapper) return;
+
+      const subjects = getHoaNhapTeacherSubjects();
+      if (subjects.length <= 1) {
+        container.classList.add('hidden');
+        hoaNhapActiveSubject = subjects[0] || 'all';
+        return;
+      }
+
+      container.classList.remove('hidden');
+
+      if (!subjects.includes(hoaNhapActiveSubject) && hoaNhapActiveSubject !== 'all') {
+        hoaNhapActiveSubject = subjects[0];
+      }
+
+      let html = "";
+      subjects.forEach(sub => {
+        const isActive = hoaNhapActiveSubject === sub;
+        const countCls = getHoaNhapTeacherClasses(sub).length;
+        html += `
+          <button type="button" onclick="switchHoaNhapActiveSubject('${escapeHtml(sub)}')"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 ${isActive ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-600 ring-offset-1' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
+            <i class="fa-solid fa-book"></i>
+            <span>Môn ${escapeHtml(sub)}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'} font-black">${countCls} lớp</span>
+          </button>
+        `;
+      });
+
+      const isAll = hoaNhapActiveSubject === 'all';
+      html += `
+        <button type="button" onclick="switchHoaNhapActiveSubject('all')"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 ${isAll ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600 ring-offset-1' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Tất cả các môn</span>
+        </button>
+      `;
+
+      tabsWrapper.innerHTML = html;
+    }
+
+    function switchHoaNhapActiveSubject(sub) {
+      hoaNhapActiveSubject = sub;
+      renderHoaNhapSubjectTabs();
+      renderHoaNhapSelectedClassesChips();
+      renderHoaNhapTeacherTable();
+    }
+
+    function getHoaNhapTeacherClasses(sub) {
+      if (sub && sub !== 'all' && hoaNhapDataStore && hoaNhapDataStore.classesBySubject && Array.isArray(hoaNhapDataStore.classesBySubject[sub])) {
+        return hoaNhapDataStore.classesBySubject[sub];
+      }
+      if (hoaNhapDataStore && Array.isArray(hoaNhapDataStore.classes) && hoaNhapDataStore.classes.length > 0) {
+        return hoaNhapDataStore.classes;
+      }
+      const localCached = localStorage.getItem(`hoanhap_classes_${currentUser.taiKhoan}`);
+      if (localCached) {
+        try {
+          const p = JSON.parse(localCached);
+          if (Array.isArray(p) && p.length > 0) {
+            if (!hoaNhapDataStore) hoaNhapDataStore = { hk1: [], hk2: [] };
+            hoaNhapDataStore.classes = p;
+            return p;
+          }
+        } catch (e) { }
+      }
+      const existingClasses = new Set();
+      (hoaNhapDataStore && hoaNhapDataStore.hk1 ? hoaNhapDataStore.hk1 : []).forEach(r => {
+        if (r.lop) existingClasses.add(r.lop);
+      });
+      (hoaNhapDataStore && hoaNhapDataStore.hk2 ? hoaNhapDataStore.hk2 : []).forEach(r => {
+        if (r.lop) existingClasses.add(r.lop);
+      });
+      if (existingClasses.size > 0) {
+        const arr = Array.from(existingClasses);
+        if (!hoaNhapDataStore) hoaNhapDataStore = { hk1: [], hk2: [] };
+        hoaNhapDataStore.classes = arr;
+        return arr;
+      }
+      return [];
+    }
+
+    function setHoaNhapTeacherClasses(sub, newClasses) {
+      if (!hoaNhapDataStore) hoaNhapDataStore = { hk1: [], hk2: [] };
+      if (sub && sub !== 'all') {
+        if (!hoaNhapDataStore.classesBySubject) hoaNhapDataStore.classesBySubject = {};
+        hoaNhapDataStore.classesBySubject[sub] = newClasses;
+      }
+      const allHnClasses = new Set(newClasses);
+      if (hoaNhapDataStore.classesBySubject) {
+        Object.values(hoaNhapDataStore.classesBySubject).forEach(arr => {
+          if (Array.isArray(arr)) arr.forEach(c => allHnClasses.add(c));
+        });
+      }
+      hoaNhapDataStore.classes = Array.from(allHnClasses);
+      if (currentUser && currentUser.taiKhoan) {
+        localStorage.setItem(`hoanhap_classes_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore.classes));
+        localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
+      }
+    }
+
+    let currentHoaNhapModalGrade = '6';
+
+    function openSelectHoaNhapGradeClassesModal(grade) {
+      currentHoaNhapModalGrade = String(grade);
+      const modal = document.getElementById('modal-select-hn-grade-classes');
+      const title = document.getElementById('select-hn-grade-modal-title');
+      const container = document.getElementById('hn-grade-classes-checklist-container');
+      if (!modal || !container) return;
+
+      const subjects = getHoaNhapTeacherSubjects();
+      const activeSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (subjects[0] || 'Toán');
+      if (title) title.textContent = `Chọn Lớp Dạy Hòa Nhập - Khối ${grade} ${subjects.length > 1 ? `(Môn ${activeSub})` : ''}`;
+
+      const availableClasses = getSchoolGradeClasses(grade);
+      const currentClasses = getHoaNhapTeacherClasses(activeSub);
+
+      let html = "";
+      availableClasses.forEach(cls => {
+        const isChecked = currentClasses.includes(cls) ? "checked" : "";
+        html += `
+          <label class="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 cursor-pointer transition select-none">
+            <input type="checkbox" name="hn-grade-class-item" value="${escapeHtml(cls)}" ${isChecked}
+              class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+            <span class="text-xs font-bold text-slate-800">${escapeHtml(cls)}</span>
+          </label>
+        `;
+      });
+
+      container.innerHTML = html || '<p class="text-xs text-slate-400 col-span-3 text-center py-4">Chưa có lớp nào được khai báo cho khối này.</p>';
+      modal.classList.remove('hidden');
+    }
+
+    function closeSelectHoaNhapGradeClassesModal() {
+      const modal = document.getElementById('modal-select-hn-grade-classes');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function toggleSelectAllHoaNhapGradeClasses(select) {
+      const checkboxes = document.querySelectorAll('#hn-grade-classes-checklist-container input[type="checkbox"]');
+      checkboxes.forEach(cb => { cb.checked = !!select; });
+    }
+
+    function confirmHoaNhapGradeClassesSelection() {
+      const checkboxes = document.querySelectorAll('#hn-grade-classes-checklist-container input[type="checkbox"]');
+      const chosenInThisGrade = [];
+      checkboxes.forEach(cb => {
+        if (cb.checked) chosenInThisGrade.push(cb.value.trim());
+      });
+
+      const subjects = getHoaNhapTeacherSubjects();
+      const activeSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (subjects[0] || 'Toán');
+      let currentClasses = getHoaNhapTeacherClasses(activeSub);
+      const otherGradeClasses = currentClasses.filter(c => !c.startsWith(currentHoaNhapModalGrade));
+      const newClasses = [...otherGradeClasses, ...chosenInThisGrade];
+
+      setHoaNhapTeacherClasses(activeSub, newClasses);
+
+      closeSelectHoaNhapGradeClassesModal();
+      syncTeacherHoaNhapRowsWithClasses('hk1');
+      syncTeacherHoaNhapRowsWithClasses('hk2');
+      renderHoaNhapSubjectTabs();
+      renderHoaNhapSelectedClassesChips();
+      renderHoaNhapTeacherTable();
+      showToast(`Đã chọn ${chosenInThisGrade.length} lớp cho Khối ${currentHoaNhapModalGrade} ${subjects.length > 1 ? `(Môn ${activeSub})` : ''}! Nhớ nhấn "Lưu Lên Google Sheet" để lưu lại.`, "success");
+    }
+
+    function removeHoaNhapTeacherClass(cls) {
+      const subjects = getHoaNhapTeacherSubjects();
+      const activeSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (subjects[0] || 'Toán');
+      let currentClasses = getHoaNhapTeacherClasses(activeSub);
+      currentClasses = currentClasses.filter(c => c !== cls);
+      setHoaNhapTeacherClasses(activeSub, currentClasses);
+      syncTeacherHoaNhapRowsWithClasses('hk1');
+      syncTeacherHoaNhapRowsWithClasses('hk2');
+      renderHoaNhapSubjectTabs();
+      renderHoaNhapSelectedClassesChips();
+      renderHoaNhapTeacherTable();
+    }
+
+    function renderHoaNhapSelectedClassesChips() {
+      const container = document.getElementById('hn-selected-classes-chips');
+      const hintEl = document.getElementById('hn-matched-classes-hint');
+      if (!container) return;
+
+      const subjects = getHoaNhapTeacherSubjects();
+      const activeSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (subjects[0] || 'Toán');
+      const currentClasses = getHoaNhapTeacherClasses(activeSub);
+
+      ['6', '7', '8', '9'].forEach(g => {
+        const badge = document.getElementById(`hn-badge-count-k${g}`);
+        if (badge) {
+          const count = currentClasses.filter(c => c.startsWith(g)).length;
+          badge.textContent = count;
+          if (count > 0) {
+            badge.className = "px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-600 text-white font-black";
+          } else {
+            badge.className = "px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold";
+          }
+        }
+      });
+
+      if (!currentClasses || currentClasses.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400 italic">Chưa chọn lớp nào ${subjects.length > 1 ? `cho môn ${activeSub}` : ''}</span>`;
+        if (hintEl) hintEl.textContent = "Chưa chọn lớp dạy hòa nhập";
+      } else {
+        const sorted = [...currentClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        const fullClassText = sorted.join(", ");
+        const compactClassText = formatTeacherClassesSummary(currentClasses);
+        container.innerHTML = `
+          <div class="flex items-center gap-1.5 flex-wrap py-0.5 text-xs">
+            <span class="text-slate-500 font-semibold">Đã chọn (${sorted.length} lớp${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? ` môn ${activeSub}` : ''}):</span>
+            <span class="font-bold text-indigo-950 bg-indigo-50/90 px-2.5 py-0.5 rounded-md border border-indigo-200" title="${escapeHtml(fullClassText)}">
+              ${escapeHtml(compactClassText)}
+            </span>
+          </div>
+        `;
+
+        if (hintEl) {
+          const normClassMap = {};
+          currentClasses.forEach(c => { normClassMap[normalizeClassName(c)] = c; });
+          const matchedMap = {};
+          (hoaNhapStudentsList || []).forEach(s => {
+            const sNormLop = normalizeClassName(s.lop);
+            if (normClassMap[sNormLop]) {
+              const orig = normClassMap[sNormLop];
+              if (!matchedMap[orig]) matchedMap[orig] = 0;
+              matchedMap[orig]++;
+            }
+          });
+          const matchedKeys = Object.keys(matchedMap);
+          if (matchedKeys.length > 0) {
+            const detailHints = matchedKeys.map(c => `${c} (${matchedMap[c]} HS)`).join(", ");
+            hintEl.innerHTML = `<span class="text-indigo-700 font-extrabold">Có HS hòa nhập:</span> ${escapeHtml(detailHints)}`;
+          } else {
+            hintEl.textContent = "Không có lớp nào có HS hòa nhập trong danh sách đã chọn";
+          }
+        }
+      }
+    }
+
     async function loadTeacherHoaNhapData() {
       // 0. Luôn cập nhật danh sách học sinh hòa nhập mới nhất từ Sheet HOA NHAP
       if (GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE")) {
@@ -14745,15 +15310,14 @@ function initialSetup() {
           const parsed = typeof cached === 'string' ? JSON.parse(cached) : cached;
           if (parsed) hoaNhapDataStore = parsed;
         } catch (e) {
-          hoaNhapDataStore = { hk1: [], hk2: [], monGv: currentUser.monGv || currentUser.subject || "Tin học" };
+          hoaNhapDataStore = { hk1: [], hk2: [] };
         }
       } else {
-        hoaNhapDataStore = { hk1: [], hk2: [], monGv: currentUser.monGv || currentUser.subject || "Tin học" };
+        hoaNhapDataStore = { hk1: [], hk2: [] };
       }
 
       if (!hoaNhapDataStore.hk1) hoaNhapDataStore.hk1 = [];
       if (!hoaNhapDataStore.hk2) hoaNhapDataStore.hk2 = [];
-      if (!hoaNhapDataStore.monGv) hoaNhapDataStore.monGv = currentUser.monGv || currentUser.subject || "Tin học";
 
       // Cập nhật thông tin trên thẻ
       document.getElementById('hn-teacher-name').textContent = currentUser.tenGv || "Giáo viên";
@@ -14761,25 +15325,11 @@ function initialSetup() {
       if (dobEl) {
         dobEl.textContent = currentUser.ngaySinh ? `(NS: ${currentUser.ngaySinh})` : "";
       }
-      const subjEl = document.getElementById('hn-teacher-subject');
-      if (subjEl) subjEl.textContent = `Môn: ${hoaNhapDataStore.monGv || "Tin học"}`;
 
-      // Hiển thị lớp dạy của GV
-      let teacherClasses = [];
-      if (Array.isArray(currentTeacherSelectedClasses) && currentTeacherSelectedClasses.length > 0) {
-        teacherClasses = currentTeacherSelectedClasses;
-      } else if (currentUser && currentUser.lopDay) {
-        teacherClasses = parseTeacherLopDay(currentUser.lopDay);
-      } else {
-        const cachedCls = localStorage.getItem(`teacher_classes_${currentUser.taiKhoan}`);
-        if (cachedCls) teacherClasses = parseTeacherLopDay(cachedCls);
-      }
-      const displayClasses = formatTeacherClassesSummary(teacherClasses) || teacherClasses.join(", ") || "Chưa cập nhật";
-      const classesStrEl = document.getElementById('hn-teacher-classes-str');
-      if (classesStrEl) {
-        classesStrEl.textContent = displayClasses;
-        classesStrEl.title = teacherClasses.join(", ");
-      }
+      // Render Multi-Select môn hòa nhập & Tabs & Chips lớp độc lập của Phân hệ 2
+      renderHnSubjectMultiSelect();
+      renderHoaNhapSubjectTabs();
+      renderHoaNhapSelectedClassesChips();
 
       // 2. Dò tìm và tự động gộp các học sinh hòa nhập theo lớp của GV
       syncTeacherHoaNhapRowsWithClasses('hk1');
@@ -14791,9 +15341,6 @@ function initialSetup() {
       // 4. Đồng bộ từ Cloud nếu có
       syncTeacherHoaNhapDataFromCloud();
     }
-
-    // ⭐️ CƠ CHẾ THÔNG MINH NHẬN DIỆN LỚP DẠY & GỘP HỌC SINH HÒA NHẬP THEO LỚP ⭐️
-    // "CHÚ Ý LỚP NÀO CÓ TỪ 2,3 HS HÒA NHẬP THÌ GHI CHUNG 1 DÒNG ĐỂ CHỖ NHẬP TIẾT TUẦN CHỈ CÓ 1 DÒNG ĐỂ NHẬP , K TÍNH THÀNH 2, 3 DÒNG"
 
     // Helper trích xuất thông tin học sinh trong dòng (hỗ trợ xuống dòng cho lớp có 2-3 HS)
     function getRowStudentDetails(r) {
@@ -14811,36 +15358,34 @@ function initialSetup() {
         if (!field) return ['--'];
         const str = String(field).trim();
         if (str.includes('\n')) {
-          return str.split('\n').map(s => s.trim()).filter(Boolean);
+          return str.split('\n').map(x => x.trim()).filter(Boolean);
         }
-        if (primaryDelim && str.includes(primaryDelim)) {
-          return str.split(primaryDelim).map(s => s.trim()).filter(Boolean);
+        if (str.includes(';')) {
+          return str.split(';').map(x => x.trim()).filter(Boolean);
         }
-        if (secondaryDelim && str.includes(secondaryDelim)) {
-          return str.split(secondaryDelim).map(s => s.trim()).filter(Boolean);
+        if (str.includes(',')) {
+          return str.split(',').map(x => x.trim()).filter(Boolean);
         }
         return [str];
       };
 
-      const names = splitField(r.tenHs, ',');
-      const births = splitField(r.namSinh, ',');
-      const disabilities = splitField(r.dangKhuyetTat, ';', ',');
-      const levels = splitField(r.mucDo, ',', ';');
-      const times = splitField(r.thoiGian || '', ',', ';');
+      const names = splitField(r.tenHs);
+      const births = splitField(r.namSinh);
+      const disabilities = splitField(r.dangKhuyetTat);
+      const levels = splitField(r.mucDo);
+      const times = splitField(r.thoiGian || '');
 
-      const maxLen = Math.max(names.length, births.length, disabilities.length, levels.length, 1);
-      while (names.length < maxLen) names.push(names[names.length - 1] || '--');
-      while (births.length < maxLen) births.push(births[births.length - 1] || '--');
-      while (disabilities.length < maxLen) disabilities.push(disabilities[disabilities.length - 1] || '--');
-      while (levels.length < maxLen) levels.push(levels[levels.length - 1] || 'Nhẹ');
-      while (times.length < maxLen) times.push(times[times.length - 1] || '');
+      const maxLen = Math.max(names.length, births.length, disabilities.length, levels.length, times.length, 1);
+      while (names.length < maxLen) names.push(names[0] || '--');
+      while (births.length < maxLen) births.push(births[0] || '--');
+      while (disabilities.length < maxLen) disabilities.push(disabilities[0] || '--');
+      while (levels.length < maxLen) levels.push(levels[0] || 'Nhẹ');
+      while (times.length < maxLen) times.push(times[0] || '');
 
       return { names, births, disabilities, levels, times };
     }
-    // 2. Nếu ghi tuần (ví dụ: "Tuần 8" hoặc "8"): bắt đầu tính từ tuần đó đến hết HK
-    //    Ở HK1 (18 tuần thực học): 18 - 8 + 1 = 11 tuần
-    //    Ở HK2 (17 tuần thực học): nếu học sinh đã được công nhận từ HK1 thì sang HK2 được tính đủ 17 tuần;
-    //                             nếu ghi tuần ở HK2 (ví dụ "HK2 tuần 5" hoặc tuần 23) thì tính từ tuần đó đến hết HK2.
+
+    // Tính số tuần thực dạy dựa vào cột THỜI GIAN của Sheet HOA NHAP
     function calculateHoaNhapStudentWeeks(thoiGianRaw, sem = 'hk1') {
       const maxWeeks = sem === 'hk2' ? 17 : 18;
       const tgStr = String(thoiGianRaw || '').trim();
@@ -14860,7 +15405,6 @@ function initialSetup() {
 
       if (sem === 'hk1') {
         if (isHk2Explicit || num > 18) {
-          // Học sinh chỉ được công nhận ở HK2 -> HK1 chưa có học sinh này
           return { startWeek: 0, weeks: 0, text: tgStr, notInSem: true };
         }
         const startWeek = Math.max(1, Math.min(18, num));
@@ -14868,7 +15412,6 @@ function initialSetup() {
         return { startWeek: startWeek, weeks: weeks, text: `Tuần ${startWeek}` };
       } else if (sem === 'hk2') {
         if (num > 18) {
-          // Tuần dạng số cả năm (19..35)
           const startInHk2 = Math.max(1, Math.min(17, num - 18));
           const weeks = 17 - startInHk2 + 1;
           return { startWeek: startInHk2, weeks: weeks, text: `Tuần ${startInHk2}` };
@@ -14877,7 +15420,6 @@ function initialSetup() {
           const weeks = 17 - startWeek + 1;
           return { startWeek: startWeek, weeks: weeks, text: `Tuần ${startWeek}` };
         } else {
-          // Đã công nhận từ HK1 (ví dụ tuần 8 HK1) -> sang HK2 học sinh đã có từ đầu kỳ -> đủ 17 tuần
           return { startWeek: 1, weeks: 17, text: 'Đầu kỳ' };
         }
       }
@@ -14889,136 +15431,109 @@ function initialSetup() {
       if (!sem) sem = hoaNhapActiveSem === 'all' ? 'hk1' : hoaNhapActiveSem;
       if (!hoaNhapDataStore[sem]) hoaNhapDataStore[sem] = [];
 
-      let teacherClasses = [];
-      if (Array.isArray(currentTeacherSelectedClasses) && currentTeacherSelectedClasses.length > 0) {
-        teacherClasses = currentTeacherSelectedClasses;
-      } else if (currentUser && currentUser.lopDay) {
-        teacherClasses = parseTeacherLopDay(currentUser.lopDay);
-      } else {
-        const cachedCls = localStorage.getItem(`teacher_classes_${currentUser.taiKhoan}`);
-        if (cachedCls) teacherClasses = parseTeacherLopDay(cachedCls);
-      }
-
-      const cleanTeacherClasses = (teacherClasses || []).map(c => String(c).trim()).filter(Boolean);
-      if (cleanTeacherClasses.length === 0 || !Array.isArray(hoaNhapStudentsList) || hoaNhapStudentsList.length === 0) {
-        return;
-      }
-
-      const normClassMap = {};
-      cleanTeacherClasses.forEach(c => {
-        normClassMap[normalizeClassName(c)] = c;
-      });
-
-      // Lọc học sinh hòa nhập thuộc các lớp của GV
-      const matchedStudents = hoaNhapStudentsList.filter(s => {
-        const sNormLop = normalizeClassName(s.lop);
-        return !!normClassMap[sNormLop];
-      });
-
-      // Nhóm theo lớp
-      const classGroups = {};
-      matchedStudents.forEach(s => {
-        const sNormLop = normalizeClassName(s.lop);
-        const originalClassName = normClassMap[sNormLop] || s.lop;
-        if (!classGroups[originalClassName]) classGroups[originalClassName] = [];
-        classGroups[originalClassName].push(s);
-      });
-
-      // Cập nhật gợi ý lớp có HS hòa nhập ở thanh thông tin
-      const hintEl = document.getElementById('hn-matched-classes-hint');
-      const matchedClassNames = Object.keys(classGroups);
-      if (hintEl) {
-        if (matchedClassNames.length > 0) {
-          const detailHints = matchedClassNames.map(c => `${c} (${classGroups[c].length} HS)`).join(", ");
-          hintEl.innerHTML = `<span class="text-indigo-700 font-extrabold">Có HS hòa nhập:</span> ${escapeHtml(detailHints)}`;
-        } else {
-          hintEl.textContent = "Không có lớp nào có HS hòa nhập";
-        }
-      }
+      const subjects = getHoaNhapTeacherSubjects();
+      if (!subjects || subjects.length === 0) return;
 
       const defaultWeeks = sem === 'hk2' ? 17 : 18;
-      const defaultSubject = hoaNhapDataStore.monGv || currentUser.monGv || currentUser.subject || "Tin học";
 
-      // Duyệt từng lớp có HS hòa nhập:
-      // Tự động kiểm tra cột thời gian để cập nhật đúng số học sinh và số tuần thực dạy
-      matchedClassNames.forEach(lop => {
-        const studentsInClass = classGroups[lop];
-
-        // Lọc học sinh được tính trong học kỳ này
-        const activeStudents = studentsInClass.filter(s => {
-          const wInfo = calculateHoaNhapStudentWeeks(s.thoiGian, sem);
-          return wInfo.weeks > 0;
-        });
-
-        // Nếu trong học kỳ này chưa có học sinh nào được công nhận hòa nhập
-        if (activeStudents.length === 0 && studentsInClass.length > 0) {
+      subjects.forEach(sub => {
+        const teacherClasses = getHoaNhapTeacherClasses(sub);
+        const cleanTeacherClasses = (teacherClasses || []).map(c => String(c).trim()).filter(Boolean);
+        if (cleanTeacherClasses.length === 0 || !Array.isArray(hoaNhapStudentsList) || hoaNhapStudentsList.length === 0) {
           return;
         }
 
-        const effectiveStudents = activeStudents.length > 0 ? activeStudents : studentsInClass;
-
-        // Tính số tuần thực dạy của lớp:
-        // Lấy số tuần lớn nhất từ các học sinh trong lớp
-        const studentWeeksList = effectiveStudents.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
-        const calculatedClassWeeks = Math.max(...studentWeeksList);
-
-        // Chuẩn bị thông tin chi tiết từng học sinh (xuống dòng nếu có 2-3 HS)
-        const tenHsText = effectiveStudents.map(s => s.tenHs).join("\n");
-        const namSinhText = effectiveStudents.map(s => s.namSinh || s.ngaySinh).join("\n");
-        const dangKhuyetTatText = effectiveStudents.map(s => s.dangKhuyetTat || s.loaiHoaNhap).join("\n");
-        const mucDoText = effectiveStudents.map(s => s.mucDo || "Nhẹ").join("\n");
-
-        const studentsArray = effectiveStudents.map(s => {
-          const wInfo = calculateHoaNhapStudentWeeks(s.thoiGian, sem);
-          return {
-            tenHs: s.tenHs || "",
-            namSinh: s.namSinh || s.ngaySinh || "",
-            dangKhuyetTat: s.dangKhuyetTat || s.loaiHoaNhap || "",
-            mucDo: s.mucDo || "Nhẹ",
-            thoiGian: s.thoiGian || "",
-            soTuan: wInfo.weeks,
-            startWeek: wInfo.startWeek
-          };
+        const normClassMap = {};
+        cleanTeacherClasses.forEach(c => {
+          normClassMap[normalizeClassName(c)] = c;
         });
 
-        let existingRow = hoaNhapDataStore[sem].find(r => normalizeClassName(r.lop) === normalizeClassName(lop));
+        const matchedStudents = hoaNhapStudentsList.filter(s => {
+          const sNormLop = normalizeClassName(s.lop);
+          return !!normClassMap[sNormLop];
+        });
 
-        if (existingRow) {
-          existingRow.tenHs = tenHsText;
-          existingRow.namSinh = namSinhText;
-          existingRow.dangKhuyetTat = dangKhuyetTatText;
-          existingRow.mucDo = mucDoText;
-          existingRow.students = studentsArray;
-          if (!existingRow.monDay) existingRow.monDay = defaultSubject;
-          // Tự động cập nhật số tuần chuẩn xác theo đúng thời gian công nhận
-          existingRow.soTuan = calculatedClassWeeks;
-          if (existingRow.tietTuan === undefined || existingRow.tietTuan === null) existingRow.tietTuan = 0;
-          existingRow.tongTiet = (parseFloat(existingRow.tietTuan) || 0) * (parseFloat(existingRow.soTuan) || 0);
-          existingRow.studentsCount = effectiveStudents.length;
-        } else {
-          hoaNhapDataStore[sem].push({
-            id: 'hn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-            lop: lop,
-            tenHs: tenHsText,
-            namSinh: namSinhText,
-            dangKhuyetTat: dangKhuyetTatText,
-            mucDo: mucDoText,
-            students: studentsArray,
-            monDay: defaultSubject,
-            tietTuan: 0,
-            soTuan: calculatedClassWeeks,
-            tongTiet: 0,
-            studentsCount: effectiveStudents.length
+        const classGroups = {};
+        matchedStudents.forEach(s => {
+          const sNormLop = normalizeClassName(s.lop);
+          const originalClassName = normClassMap[sNormLop] || s.lop;
+          if (!classGroups[originalClassName]) classGroups[originalClassName] = [];
+          classGroups[originalClassName].push(s);
+        });
+
+        Object.keys(classGroups).forEach(lop => {
+          const studentsInClass = classGroups[lop];
+
+          const activeStudents = studentsInClass.filter(s => {
+            const wInfo = calculateHoaNhapStudentWeeks(s.thoiGian, sem);
+            return wInfo.weeks > 0;
           });
-        }
+
+          if (activeStudents.length === 0 && studentsInClass.length > 0) {
+            return;
+          }
+
+          const effectiveStudents = activeStudents.length > 0 ? activeStudents : studentsInClass;
+
+          const studentWeeksList = effectiveStudents.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
+          const calculatedClassWeeks = studentWeeksList.length > 0 ? Math.max(...studentWeeksList) : defaultWeeks;
+
+          const tenHsText = effectiveStudents.map(s => s.tenHs).join("\n");
+          const namSinhText = effectiveStudents.map(s => s.namSinh || s.ngaySinh).join("\n");
+          const dangKhuyetTatText = effectiveStudents.map(s => s.dangKhuyetTat || s.loaiHoaNhap).join("\n");
+          const mucDoText = effectiveStudents.map(s => s.mucDo || "Nhẹ").join("\n");
+
+          const studentsArray = effectiveStudents.map(s => {
+            const wInfo = calculateHoaNhapStudentWeeks(s.thoiGian, sem);
+            return {
+              tenHs: s.tenHs || "",
+              namSinh: s.namSinh || s.ngaySinh || "",
+              dangKhuyetTat: s.dangKhuyetTat || s.loaiHoaNhap || "",
+              mucDo: s.mucDo || "Nhẹ",
+              thoiGian: s.thoiGian || "",
+              soTuan: wInfo.weeks,
+              startWeek: wInfo.startWeek
+            };
+          });
+
+          let existingRow = hoaNhapDataStore[sem].find(r => normalizeClassName(r.lop) === normalizeClassName(lop) && (r.monDay || '').trim() === sub.trim());
+
+          if (existingRow) {
+            existingRow.tenHs = tenHsText;
+            existingRow.namSinh = namSinhText;
+            existingRow.dangKhuyetTat = dangKhuyetTatText;
+            existingRow.mucDo = mucDoText;
+            existingRow.students = studentsArray;
+            existingRow.monDay = sub;
+            existingRow.soTuan = calculatedClassWeeks;
+            if (existingRow.tietTuan === undefined || existingRow.tietTuan === null) existingRow.tietTuan = 0;
+            existingRow.tongTiet = (parseFloat(existingRow.tietTuan) || 0) * (parseFloat(existingRow.soTuan) || 0);
+            existingRow.studentsCount = effectiveStudents.length;
+          } else {
+            hoaNhapDataStore[sem].push({
+              id: 'hn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+              lop: lop,
+              monDay: sub,
+              tenHs: tenHsText,
+              namSinh: namSinhText,
+              dangKhuyetTat: dangKhuyetTatText,
+              mucDo: mucDoText,
+              students: studentsArray,
+              tietTuan: 0,
+              soTuan: calculatedClassWeeks,
+              tongTiet: 0,
+              studentsCount: effectiveStudents.length
+            });
+          }
+        });
       });
 
-      // Sắp xếp các lớp theo thứ tự tự nhiên (6A1, 6A2...)
-      hoaNhapDataStore[sem].sort((a, b) => (a.lop || '').localeCompare(b.lop || '', undefined, { numeric: true }));
-
-      if (currentUser && currentUser.taiKhoan) {
-        localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
-      }
+      hoaNhapDataStore[sem].sort((a, b) => {
+        if ((a.monDay || '') !== (b.monDay || '')) {
+          return (a.monDay || '').localeCompare(b.monDay || '');
+        }
+        return (a.lop || '').localeCompare(b.lop || '', undefined, { numeric: true });
+      });
     }
 
     // Render bảng kê khai dạy hòa nhập của Giáo viên
@@ -15031,10 +15546,9 @@ function initialSetup() {
 
       let rows = [];
       if (hoaNhapActiveSem === 'all') {
-        // Tổng hợp cả năm: Gộp các lớp từ cả HK1 và HK2
         const classMap = {};
         (hoaNhapDataStore.hk1 || []).forEach(r => {
-          const key = r.lop;
+          const key = (r.lop || '') + '__' + (r.monDay || '');
           if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk1Tiet = r.tongTiet || 0;
           classMap[key].hk1TietTuan = r.tietTuan || 0;
@@ -15042,7 +15556,7 @@ function initialSetup() {
           if (r.students && !classMap[key].students) classMap[key].students = r.students;
         });
         (hoaNhapDataStore.hk2 || []).forEach(r => {
-          const key = r.lop;
+          const key = (r.lop || '') + '__' + (r.monDay || '');
           if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk2Tiet = r.tongTiet || 0;
           classMap[key].hk2TietTuan = r.tietTuan || 0;
@@ -15054,17 +15568,34 @@ function initialSetup() {
         rows = hoaNhapDataStore[hoaNhapActiveSem] || [];
       }
 
+      const subjects = getHoaNhapTeacherSubjects();
+      let displayedRows = rows;
+      if (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') {
+        displayedRows = rows.filter(r => (r.monDay || '').trim() === hoaNhapActiveSubject.trim());
+      }
+
+      // Cập nhật Tiêu đề bảng
+      const titleEl = document.getElementById('hn-table-title');
+      const semLabel = hoaNhapActiveSem === 'hk1' ? 'Học Kỳ 1 (18 tuần thực học)' : (hoaNhapActiveSem === 'hk2' ? 'Học Kỳ 2 (17 tuần thực học)' : 'Cả Năm (Tổng hợp)');
+      if (titleEl) {
+        if (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') {
+          titleEl.innerHTML = `<i class="fa-solid fa-table-list text-indigo-600"></i><span>Bảng Kê Khai Số Tiết Dạy Học Sinh Hòa Nhập - Môn ${escapeHtml(hoaNhapActiveSubject)} - ${semLabel}</span>`;
+        } else {
+          titleEl.innerHTML = `<i class="fa-solid fa-table-list text-indigo-600"></i><span>Bảng Kê Khai Số Tiết Dạy Học Sinh Hòa Nhập - ${semLabel}</span>`;
+        }
+      }
+
       let totalPeriodsPerWeek = 0;
       let totalPeriodsSum = 0;
       const distinctClasses = new Set();
 
-      if (rows.length === 0) {
+      if (displayedRows.length === 0) {
         if (emptyNotice) emptyNotice.classList.remove('hidden');
       } else {
         if (emptyNotice) emptyNotice.classList.add('hidden');
       }
 
-      rows.forEach((r, idx) => {
+      displayedRows.forEach((r, idx) => {
         distinctClasses.add(r.lop);
         const details = getRowStudentDetails(r);
         const tr = document.createElement('tr');
@@ -15121,7 +15652,11 @@ function initialSetup() {
                 `).join('')}
               </div>
             </td>
-            <td class="py-2.5 px-3 text-center font-semibold text-slate-800 border-r border-slate-200 align-middle">${escapeHtml(r.monDay || 'Tin học')}</td>
+            <td class="py-2.5 px-3 text-center font-semibold text-slate-800 border-r border-slate-200 align-middle">
+              <span class="inline-block px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold">
+                ${escapeHtml(r.monDay || 'Tin học')}
+              </span>
+            </td>
             <td class="py-2.5 px-3 text-center font-bold text-indigo-900 border-r border-slate-200 bg-indigo-50/30 align-middle">
               HK1: ${formatNumber(r.hk1Tiet)}t | HK2: ${formatNumber(r.hk2Tiet)}t
             </td>
@@ -15188,10 +15723,10 @@ function initialSetup() {
                 `).join('')}
               </div>
             </td>
-            <td class="py-2 px-2 text-center border-r border-slate-200 align-middle">
-              <input type="text" value="${escapeHtml(r.monDay || 'Tin học')}"
-                onchange="handleHoaNhapRowChange('${hoaNhapActiveSem}', '${r.id}', 'monDay', this.value)"
-                class="w-full text-center px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:bg-white focus:ring-1 focus:ring-indigo-500">
+            <td class="py-2.5 px-3 text-center border-r border-slate-200 align-middle">
+              <span class="inline-block px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-bold">
+                ${escapeHtml(r.monDay || 'Tin học')}
+              </span>
             </td>
             <td class="py-2 px-2 text-center border-r border-slate-200 bg-indigo-50/20 align-middle">
               <input type="number" step="0.5" min="0" value="${tietTuanVal || ''}" placeholder="0"
@@ -15231,7 +15766,7 @@ function initialSetup() {
         teacherTfoot.innerHTML = `
           <tr class="text-center">
             <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
-              TỔNG CỘNG
+              TỔNG CỘNG ${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? `MÔN ${hoaNhapActiveSubject.toUpperCase()}` : ''}
             </td>
             <td id="hn-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
               ${formatNumber(totalPeriodsPerWeek)}
@@ -15251,9 +15786,8 @@ function initialSetup() {
       const statClasses = document.getElementById('hn-stat-classes-count');
       if (statClasses) statClasses.textContent = `${distinctClasses.size} lớp`;
 
-      // Đếm tổng số học sinh hòa nhập mà GV dạy
       let hsCount = 0;
-      rows.forEach(r => {
+      displayedRows.forEach(r => {
         if (r.students && Array.isArray(r.students)) {
           hsCount += r.students.length;
         } else if (r.tenHs) {
@@ -15264,8 +15798,17 @@ function initialSetup() {
       const statStudents = document.getElementById('hn-stat-students-count');
       if (statStudents) statStudents.textContent = `${hsCount} HS`;
 
+      // Tổng số tiết trên thẻ tính trên toàn bộ các môn của giáo viên
+      let totalAllSubjectsSum = 0;
+      rows.forEach(r => {
+        if (hoaNhapActiveSem === 'all') {
+          totalAllSubjectsSum += ((r.hk1Tiet || 0) + (r.hk2Tiet || 0));
+        } else {
+          totalAllSubjectsSum += (parseFloat(r.tongTiet) || 0);
+        }
+      });
       const statTotalPeriods = document.getElementById('hn-stat-total-periods');
-      if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
+      if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalAllSubjectsSum)} tiết`;
     }
 
     function handleHoaNhapRowChange(sem, rowId, field, val) {
@@ -15283,53 +15826,66 @@ function initialSetup() {
 
       row.tongTiet = (parseFloat(row.tietTuan) || 0) * (parseFloat(row.soTuan) || 0);
 
-      const cellTotal = document.getElementById(`hn-cell-total-${rowId}`);
-      if (cellTotal) {
-        cellTotal.textContent = `${formatNumber(row.tongTiet)} tiết`;
+      const cell = document.getElementById(`hn-cell-total-${rowId}`);
+      if (cell) cell.textContent = `${formatNumber(row.tongTiet)} tiết`;
+
+      // Cập nhật tổng cộng footer
+      const subjects = getHoaNhapTeacherSubjects();
+      let displayedRows = hoaNhapDataStore[sem] || [];
+      if (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') {
+        displayedRows = displayedRows.filter(r => (r.monDay || '').trim() === hoaNhapActiveSubject.trim());
       }
 
-      // Tính lại tổng footer
-      let totalPeriodsPerWeek = 0;
-      let totalPeriodsSum = 0;
-      hoaNhapDataStore[sem].forEach(r => {
-        totalPeriodsPerWeek += (parseFloat(r.tietTuan) || 0);
-        totalPeriodsSum += (parseFloat(r.tongTiet) || 0);
+      let sumTietTuan = 0;
+      let sumTotal = 0;
+      displayedRows.forEach(r => {
+        sumTietTuan += parseFloat(r.tietTuan) || 0;
+        sumTotal += parseFloat(r.tongTiet) || 0;
       });
 
       const footTietTuan = document.getElementById('hn-foot-periods-per-week');
-      if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
+      if (footTietTuan) footTietTuan.textContent = formatNumber(sumTietTuan);
 
       const footTongTiet = document.getElementById('hn-foot-total-periods');
-      if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
+      if (footTongTiet) footTongTiet.textContent = `${formatNumber(sumTotal)} tiết`;
 
+      let totalAllSubjectsSum = 0;
+      (hoaNhapDataStore[sem] || []).forEach(r => {
+        totalAllSubjectsSum += parseFloat(r.tongTiet) || 0;
+      });
       const statTotalPeriods = document.getElementById('hn-stat-total-periods');
-      if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
+      if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalAllSubjectsSum)} tiết`;
 
-      // Tự động lưu vào localStorage
       if (currentUser && currentUser.taiKhoan) {
         localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
       }
     }
 
-    // Xóa dòng
     function removeHoaNhapRow(sem, rowId) {
+      if (!confirm("Bạn có chắc chắn muốn xóa dòng này khỏi bảng kê khai hòa nhập?")) return;
       if (!hoaNhapDataStore[sem]) return;
       hoaNhapDataStore[sem] = hoaNhapDataStore[sem].filter(r => r.id !== rowId);
+
       if (currentUser && currentUser.taiKhoan) {
         localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
       }
+
       renderHoaNhapTeacherTable();
-      showToast("Đã xóa dòng khỏi danh sách kê khai!", "info");
+      showToast("Đã xóa dòng kê khai!", "info");
     }
 
-    // Điền nhanh số tiết thực dạy/tuần cho tất cả các lớp trong học kỳ
     function quickFillHoaNhapPeriods(val) {
       if (hoaNhapActiveSem === 'all') {
         showToast("Vui lòng chọn Học Kỳ 1 hoặc Học Kỳ 2 để điền nhanh số tiết!", "warning");
         return;
       }
-      const rows = hoaNhapDataStore[hoaNhapActiveSem] || [];
-      if (rows.length === 0) {
+      const allRows = hoaNhapDataStore[hoaNhapActiveSem] || [];
+      const subjects = getHoaNhapTeacherSubjects();
+      const targetRows = (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all')
+        ? allRows.filter(r => (r.monDay || '').trim() === hoaNhapActiveSubject.trim())
+        : allRows;
+
+      if (targetRows.length === 0) {
         showToast("Chưa có lớp nào trong danh sách để điền số tiết!", "warning");
         return;
       }
@@ -15340,7 +15896,7 @@ function initialSetup() {
         if (headerInput && headerInput.value && !isNaN(parseFloat(headerInput.value))) {
           num = parseFloat(headerInput.value);
         } else {
-          const userPrompt = prompt("Nhập số tiết thực dạy/tuần để điền nhanh cho tất cả các lớp:", "1");
+          const userPrompt = prompt(`Nhập số tiết thực dạy/tuần để điền nhanh ${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? `cho môn ${hoaNhapActiveSubject}` : 'cho tất cả các lớp'}:`, "1");
           if (userPrompt === null) return;
           num = parseFloat(userPrompt);
           if (isNaN(num) || num < 0) {
@@ -15354,7 +15910,7 @@ function initialSetup() {
       if (headerInput) headerInput.value = num;
 
       const defaultWeeks = hoaNhapActiveSem === 'hk2' ? 17 : 18;
-      rows.forEach(r => {
+      targetRows.forEach(r => {
         r.tietTuan = num;
         const normLop = normalizeClassName(r.lop);
         const matched = (hoaNhapStudentsList || []).filter(s => normalizeClassName(s.lop) === normLop);
@@ -15375,7 +15931,7 @@ function initialSetup() {
       }
 
       renderHoaNhapTeacherTable();
-      showToast(`Đã điền nhanh ${num} tiết thực dạy/tuần cho tất cả ${rows.length} lớp! Nhấn "Lưu Lên Google Sheet" để lưu lại.`, "success");
+      showToast(`Đã điền nhanh ${num} tiết/tuần cho ${targetRows.length} lớp ${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? `môn ${hoaNhapActiveSubject}` : ''}! Nhớ nhấn "Lưu Lên Google Sheet".`, "success");
     }
 
     function quickFillHoaNhapPeriodsPrompt() {
@@ -15384,7 +15940,8 @@ function initialSetup() {
       if (headerInput && headerInput.value && !isNaN(parseFloat(headerInput.value))) {
         defaultVal = headerInput.value;
       }
-      const userPrompt = prompt("Nhập số tiết thực dạy/tuần để điền nhanh cho tất cả các lớp:", defaultVal);
+      const subjects = getHoaNhapTeacherSubjects();
+      const userPrompt = prompt(`Nhập số tiết thực dạy/tuần để điền nhanh ${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? `cho môn ${hoaNhapActiveSubject}` : 'cho tất cả các lớp'}:`, defaultVal);
       if (userPrompt === null) return;
       const num = parseFloat(userPrompt);
       if (isNaN(num) || num < 0) {
@@ -15394,23 +15951,26 @@ function initialSetup() {
       quickFillHoaNhapPeriods(num);
     }
 
-    // Điền nhanh số tuần (tự động tính đúng 12 tuần cho tuần 7, 9 tuần cho tuần 10...)
     function quickFillHoaNhapWeeks() {
       if (hoaNhapActiveSem === 'all') {
         showToast("Vui lòng chọn Học Kỳ 1 hoặc Học Kỳ 2 để điền nhanh số tuần!", "warning");
         return;
       }
       const defaultWeeks = hoaNhapActiveSem === 'hk2' ? 17 : 18;
-
-      // Đồng bộ lại dữ liệu lớp với hoaNhapStudentsList mới nhất
       syncTeacherHoaNhapRowsWithClasses(hoaNhapActiveSem);
 
-      const rows = hoaNhapDataStore[hoaNhapActiveSem] || [];
-      if (rows.length === 0) {
+      const allRows = hoaNhapDataStore[hoaNhapActiveSem] || [];
+      const subjects = getHoaNhapTeacherSubjects();
+      const targetRows = (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all')
+        ? allRows.filter(r => (r.monDay || '').trim() === hoaNhapActiveSubject.trim())
+        : allRows;
+
+      if (targetRows.length === 0) {
         showToast("Chưa có dòng nào để điền!", "warning");
         return;
       }
-      rows.forEach(r => {
+
+      targetRows.forEach(r => {
         let classWeeks = defaultWeeks;
         const normLop = normalizeClassName(r.lop);
         const matched = (hoaNhapStudentsList || []).filter(s => normalizeClassName(s.lop) === normLop);
@@ -15423,6 +15983,7 @@ function initialSetup() {
         r.soTuan = classWeeks;
         r.tongTiet = (parseFloat(r.tietTuan) || 0) * classWeeks;
       });
+
       if (currentUser && currentUser.taiKhoan) {
         localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
       }
@@ -15435,7 +15996,8 @@ function initialSetup() {
       const modal = document.getElementById('modal-add-hoanhap-row');
       if (!modal) return;
       const monInput = document.getElementById('add-hn-mon');
-      if (monInput) monInput.value = hoaNhapDataStore.monGv || currentUser.monGv || currentUser.subject || "Tin học";
+      const activeOrFirstSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (getHoaNhapTeacherSubjects()[0] || hoaNhapDataStore.monGv || "Toán");
+      if (monInput) monInput.value = activeOrFirstSub;
       const soTuanInput = document.getElementById('add-hn-so-tuan');
       if (soTuanInput) soTuanInput.value = hoaNhapActiveSem === 'hk2' ? 17 : 18;
       modal.classList.remove('hidden');
@@ -15593,14 +16155,14 @@ function initialSetup() {
       if (sem === 'all') {
         const classMap = {};
         (store.hk1 || []).forEach(r => {
-          const key = r.lop;
+          const key = (r.lop || '') + '__' + (r.monDay || '');
           if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk1Tiet = r.tongTiet || 0;
           classMap[key].hk1TietTuan = r.tietTuan || 0;
           classMap[key].hk1Tuan = r.soTuan || 0;
         });
         (store.hk2 || []).forEach(r => {
-          const key = r.lop;
+          const key = (r.lop || '') + '__' + (r.monDay || '');
           if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk2Tiet = r.tongTiet || 0;
           classMap[key].hk2TietTuan = r.tietTuan || 0;
@@ -15658,7 +16220,9 @@ function initialSetup() {
       const todayMonth = String(printDate.getMonth() + 1).padStart(2, '0');
       const todayYear = printDate.getFullYear();
 
-      const teacherClasses = parseTeacherLopDay(teacher.lopDay || '');
+      const teacherClasses = (store && Array.isArray(store.classes) && store.classes.length > 0)
+        ? store.classes
+        : parseTeacherLopDay(teacher.lopDay || '');
       const displayClasses = formatTeacherClassesSummary(teacherClasses) || teacherClasses.join(", ") || "Chưa cập nhật";
 
       paper.innerHTML = `
@@ -15982,7 +16546,19 @@ function initialSetup() {
         }
       }
 
-      const tClasses = parseTeacherLopDay(t.lopDay || '');
+      let tClasses = [];
+      if (store && Array.isArray(store.classes) && store.classes.length > 0) {
+        tClasses = store.classes;
+      } else {
+        const rowClasses = new Set();
+        (store.hk1 || []).forEach(r => { if (r.lop) rowClasses.add(r.lop); });
+        (store.hk2 || []).forEach(r => { if (r.lop) rowClasses.add(r.lop); });
+        if (rowClasses.size > 0) {
+          tClasses = Array.from(rowClasses);
+        } else {
+          tClasses = parseTeacherLopDay(t.lopDay || '');
+        }
+      }
       const matchedClassesSet = new Set();
 
       (hoaNhapStudentsList || []).forEach(s => {
@@ -16350,8 +16926,13 @@ function initialSetup() {
               });
             });
           } else {
-            // Kiểm tra xem giáo viên có dạy lớp này theo phân công lopDay không
-            const tClasses = parseTeacherLopDay(t.lopDay || '');
+            // Kiểm tra xem giáo viên có dạy lớp này theo phân công (ưu tiên Phân hệ 2)
+            let tClasses = [];
+            if (store && Array.isArray(store.classes) && store.classes.length > 0) {
+              tClasses = store.classes;
+            } else {
+              tClasses = parseTeacherLopDay(t.lopDay || '');
+            }
             const teachesThisClass = tClasses.some(c => {
               if (isSameClass(c, clsItem.rawClass)) return true;
               const m = String(c).trim().match(/^(?:khối|k)\s*([6-9])/i);
@@ -16648,11 +17229,7 @@ function initialSetup() {
       const dobEl = document.getElementById('modal-hn-admin-teacher-dob');
       if (dobEl) dobEl.textContent = t.ngaySinh ? `(NS: ${t.ngaySinh})` : "";
 
-      const tClasses = parseTeacherLopDay(t.lopDay || '');
-      const displayClasses = formatTeacherClassesSummary(tClasses) || tClasses.join(", ") || "--";
-      document.getElementById('modal-hn-admin-teacher-classes').textContent = displayClasses;
-
-      // Đọc Store hòa nhập của giáo viên này
+      // Đọc Store hòa nhập của giáo viên này trước
       let store = {};
       if (t._hnStore) store = t._hnStore;
       else if (t.dataHoaNhapJson) {
@@ -16661,6 +17238,12 @@ function initialSetup() {
         } catch (e) { store = { hk1: [], hk2: [] }; }
       }
       t._hnStore = store;
+
+      const tClasses = (store && Array.isArray(store.classes) && store.classes.length > 0)
+        ? store.classes
+        : parseTeacherLopDay(t.lopDay || '');
+      const displayClasses = formatTeacherClassesSummary(tClasses) || tClasses.join(", ") || "--";
+      document.getElementById('modal-hn-admin-teacher-classes').textContent = displayClasses;
       document.getElementById('modal-hn-admin-teacher-subject').textContent = store.monGv || t.monGv || t.subject || "Tin học";
 
       renderAdminModalHoaNhapTable();
@@ -16692,7 +17275,7 @@ function initialSetup() {
       if (adminModalViewingHoaNhapSem === 'all') {
         const classMap = {};
         (store.hk1 || []).forEach(r => {
-          const key = r.lop;
+          const key = (r.lop || '') + '__' + (r.monDay || '');
           if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk1Tiet = r.tongTiet || 0;
           classMap[key].hk1TietTuan = r.tietTuan || 0;
@@ -16700,7 +17283,7 @@ function initialSetup() {
           if (r.students && !classMap[key].students) classMap[key].students = r.students;
         });
         (store.hk2 || []).forEach(r => {
-          const key = r.lop;
+          const key = (r.lop || '') + '__' + (r.monDay || '');
           if (!classMap[key]) classMap[key] = { lop: r.lop, tenHs: r.tenHs, namSinh: r.namSinh, dangKhuyetTat: r.dangKhuyetTat, mucDo: r.mucDo, students: r.students, monDay: r.monDay, hk1Tiet: 0, hk2Tiet: 0, hk1TietTuan: 0, hk2TietTuan: 0, hk1Tuan: 0, hk2Tuan: 0 };
           classMap[key].hk2Tiet = r.tongTiet || 0;
           classMap[key].hk2TietTuan = r.tietTuan || 0;
