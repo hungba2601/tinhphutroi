@@ -1011,7 +1011,7 @@
               <tbody id="hn-admin-summary-tbody" class="divide-y divide-slate-100">
                 <!-- Render từ JS -->
               </tbody>
-              <tfoot class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
+              <tfoot id="hn-admin-summary-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
                 <tr class="text-center">
                   <td colspan="7"
                     class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
@@ -16408,8 +16408,6 @@ function initialSetup() {
 
       let totalTeachers = list.length;
       let hnTeachersCount = 0;
-      let totalPeriodsAllSchool = 0;
-      let totalPeriodsPerWeekSchool = 0;
 
       list.forEach(t => {
         const stats = getTeacherHoaNhapStats(t);
@@ -16421,14 +16419,17 @@ function initialSetup() {
         if (stats.hasHnClasses || semRows.length > 0) {
           hnTeachersCount++;
         }
+      });
 
-        semRows.forEach(r => {
-          const tietTuan = parseFloat(r.tietTuan) || 0;
-          const soTuan = parseFloat(r.soTuan) || (hoaNhapAdminActiveSem === 'hk2' ? 17 : 18);
-          const tongTiet = (parseFloat(r.tongTiet) || (tietTuan * soTuan));
-          totalPeriodsPerWeekSchool += tietTuan;
-          totalPeriodsAllSchool += tongTiet;
-        });
+      // Tạo các dòng tổng hợp theo lớp từ 6A1 -> 9A14 (hoặc theo GV)
+      const summaryRows = buildHoaNhapSummaryRows(hoaNhapAdminActiveSem, hoaNhapSummaryViewMode);
+
+      // Tính tổng số tiết thực dạy/tuần và tổng tiết toàn trường trực tiếp từ danh sách các dòng hiển thị
+      let totalPeriodsAllSchool = 0;
+      let totalPeriodsPerWeekSchool = 0;
+      summaryRows.forEach(r => {
+        totalPeriodsPerWeekSchool += (parseFloat(r.tietTuan) || 0);
+        totalPeriodsAllSchool += (parseFloat(r.tongTiet) || 0);
       });
 
       // Cập nhật 4 thẻ chỉ số
@@ -16446,9 +16447,6 @@ function initialSetup() {
 
       const badgeSummaryPeriods = document.getElementById('hn-badge-admin-total-periods');
       if (badgeSummaryPeriods) badgeSummaryPeriods.textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
-
-      // Tạo các dòng tổng hợp theo lớp từ 6A1 -> 9A14 (hoặc theo GV)
-      const summaryRows = buildHoaNhapSummaryRows(hoaNhapAdminActiveSem, hoaNhapSummaryViewMode);
 
       if (summaryRows.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" class="py-8 text-center text-slate-400 italic">Chưa có dữ liệu tiết dạy hòa nhập trong kỳ này</td></tr>`;
@@ -16539,6 +16537,13 @@ function initialSetup() {
         `;
         tbody.appendChild(tr);
       });
+
+      // Cập nhật trực tiếp vào các ô footer của bảng
+      const footPeriodsPerWeek = document.getElementById('hn-admin-foot-periods-per-week');
+      if (footPeriodsPerWeek) footPeriodsPerWeek.textContent = formatNumber(totalPeriodsPerWeekSchool);
+
+      const footTotalPeriods = document.getElementById('hn-admin-foot-total-periods');
+      if (footTotalPeriods) footTotalPeriods.textContent = `${formatNumber(totalPeriodsAllSchool)} tiết`;
 
       if (tfoot) {
         tfoot.innerHTML = `
