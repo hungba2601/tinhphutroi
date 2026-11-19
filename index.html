@@ -606,7 +606,7 @@
                     <i class="fa-solid fa-chevron-down"></i>
                   </span>
                 </button>
-                <div id="hn-subject-dropdown-panel" class="hidden absolute left-0 right-0 z-40 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 max-h-64 overflow-y-auto custom-scrollbar animate-fade-in">
+                <div id="hn-subject-dropdown-panel" onclick="event.stopPropagation()" class="hidden absolute left-0 right-0 z-40 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 max-h-64 overflow-y-auto custom-scrollbar animate-fade-in">
                   <!-- Render từ JS -->
                 </div>
               </div>
@@ -1295,7 +1295,7 @@
                     <i class="fa-solid fa-chevron-down"></i>
                   </span>
                 </button>
-                <div id="p1-subject-dropdown-panel" class="hidden absolute left-0 right-0 z-40 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 max-h-64 overflow-y-auto custom-scrollbar animate-fade-in">
+                <div id="p1-subject-dropdown-panel" onclick="event.stopPropagation()" class="hidden absolute left-0 right-0 z-40 mt-1 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 max-h-64 overflow-y-auto custom-scrollbar animate-fade-in">
                   <!-- Render từ JS -->
                 </div>
               </div>
@@ -13520,8 +13520,29 @@ function initialSetup() {
 
     function parseTeacherSubjects(subStr) {
       if (!subStr) return [];
-      if (Array.isArray(subStr)) return subStr.map(s => String(s).trim()).filter(Boolean);
-      return String(subStr).split(/[,;+]+/).map(s => s.trim()).filter(Boolean);
+      if (Array.isArray(subStr)) return Array.from(new Set(subStr.map(s => String(s).trim()).filter(Boolean)));
+
+      const str = String(subStr).trim();
+      if (!str) return [];
+
+      // Sắp xếp danh sách môn chuẩn từ dài đến ngắn để tránh bị cắt xén những môn có dấu phẩy như "Hoạt động TN, HN"
+      const sortedKnown = [...AVAILABLE_SUBJECTS].sort((a, b) => b.length - a.length);
+      const found = [];
+      let remaining = str;
+
+      sortedKnown.forEach(sub => {
+        if (remaining.includes(sub)) {
+          found.push(sub);
+          remaining = remaining.split(sub).join('');
+        }
+      });
+
+      if (found.length > 0) {
+        found.sort((a, b) => str.indexOf(a) - str.indexOf(b));
+        return Array.from(new Set(found));
+      }
+
+      return Array.from(new Set(str.split(/[,;+]+/).map(s => s.trim()).filter(Boolean)));
     }
 
     function toggleSubjectDropdown(type, e) {
@@ -13581,6 +13602,21 @@ function initialSetup() {
       panel.innerHTML = html;
     }
 
+    function updateP1SubjectCheckboxes(list) {
+      const panel = document.getElementById('p1-subject-dropdown-panel');
+      const textEl = document.getElementById('p1-selected-subjects-text');
+      if (textEl) {
+        textEl.textContent = list.join(", ") || "Toán";
+        textEl.title = list.join(", ");
+      }
+      if (panel) {
+        const checkboxes = panel.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+          cb.checked = list.includes(cb.value);
+        });
+      }
+    }
+
     function handleP1SubjectToggle(subName, checked) {
       if (isSemesterLocked(activeSemesterId)) return;
       let list = parseTeacherSubjects(currentUser.subject || (dataStore ? dataStore.subject : "Toán"));
@@ -13595,7 +13631,7 @@ function initialSetup() {
       if (dataStore) dataStore.subject = subStr;
       const badgeCurrentSubject = document.getElementById('badge-current-subject');
       if (badgeCurrentSubject) badgeCurrentSubject.textContent = subStr;
-      renderP1SubjectMultiSelect();
+      updateP1SubjectCheckboxes(list);
       showToast(`Đã chọn môn giảng dạy: ${subStr}`, "info");
       triggerAutoSave();
     }
@@ -15030,6 +15066,21 @@ function initialSetup() {
       panel.innerHTML = html;
     }
 
+    function updateHnSubjectCheckboxes(list) {
+      const panel = document.getElementById('hn-subject-dropdown-panel');
+      const textEl = document.getElementById('hn-selected-subjects-text');
+      if (textEl) {
+        textEl.textContent = `Môn: ${list.join(", ") || "Chưa chọn môn"}`;
+        textEl.title = list.join(", ");
+      }
+      if (panel) {
+        const checkboxes = panel.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+          cb.checked = list.includes(cb.value);
+        });
+      }
+    }
+
     function handleHnSubjectToggle(subName, checked) {
       let list = [...getHoaNhapTeacherSubjects()];
       if (!hoaNhapDataStore) hoaNhapDataStore = { hk1: [], hk2: [] };
@@ -15072,7 +15123,7 @@ function initialSetup() {
         localStorage.setItem(`hoanhap_classes_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore.classes));
         localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
       }
-      renderHnSubjectMultiSelect();
+      updateHnSubjectCheckboxes(list);
       renderHoaNhapSubjectTabs();
       syncTeacherHoaNhapRowsWithClasses('hk1');
       syncTeacherHoaNhapRowsWithClasses('hk2');
