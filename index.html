@@ -16273,17 +16273,17 @@ function initialSetup() {
     // Thuật toán chia trang thông minh cho Báo cáo Tổng hợp Tiết dạy Hòa nhập Toàn trường
     function paginateHoaNhapSummaryPdf(totalRows) {
       const pages = [];
-      const P1_MAX_WITH_SIG = 20; // Tối đa có thể chứa trên Trang 1 cùng chữ ký
-      const P1_MAX_NO_SIG = 25;   // Tối đa Trang 1 khi chạy hết trang (không có chữ ký)
-      const P_OTHER_MAX = 27;     // Tối đa trang giữa (chạy hết trang)
-      const P_LAST_MAX = 23;      // Tối đa trang cuối có chữ ký
+      const P1_MAX_WITH_SIG = 30; // Trang 1 chứa được đến 30 dòng cùng với khối Chữ ký & Tổng cộng
+      const P1_MAX_NO_SIG = 36;   // Trang 1 khi chạy đầy trang (không có chữ ký)
+      const P_OTHER_MAX = 38;     // Trang giữa khi chạy đầy trang
+      const P_LAST_MAX = 32;      // Trang cuối chứa dòng + Chữ ký & Tổng cộng
 
-      // 1. Nếu toàn bộ dữ liệu vừa vặn trên đúng 1 trang cùng khối chữ ký
+      // 1. Nếu toàn bộ dữ liệu vừa vặn trên đúng 1 trang cùng khối chữ ký (tối đa 30 dòng)
       if (totalRows <= P1_MAX_WITH_SIG) {
         return [{ pageNum: 1, start: 0, end: totalRows, isFirst: true, isLast: true }];
       }
 
-      // 2. Khi vượt quá 1 trang: Cho chạy hết đầy trang 1 (tối đa 25 dòng), chừa lại ít nhất 1 dòng cho trang sau cùng chữ ký
+      // 2. Khi vượt quá 30 dòng: Cho chạy hết đầy trang 1 (tối đa 36 dòng), chừa lại ít nhất 1 dòng cho trang sau cùng chữ ký
       let p1Take = Math.min(totalRows - 1, P1_MAX_NO_SIG);
       pages.push({ pageNum: 1, start: 0, end: p1Take, isFirst: true, isLast: false });
 
@@ -16292,12 +16292,12 @@ function initialSetup() {
 
       while (cur < totalRows) {
         const rem = totalRows - cur;
-        // Nếu phần còn lại vừa vặn trang cuối (có chữ ký: tối đa 23 dòng)
+        // Nếu phần còn lại vừa vặn trang cuối (có chữ ký)
         if (rem <= P_LAST_MAX) {
           pages.push({ pageNum: p++, start: cur, end: totalRows, isFirst: false, isLast: true });
           cur = totalRows;
         } else {
-          // Trang giữa: tiếp tục chạy hết trang (tối đa 27 dòng)
+          // Trang giữa: tiếp tục chạy hết trang
           let take = Math.min(rem - 1, P_OTHER_MAX);
           pages.push({ pageNum: p++, start: cur, end: cur + take, isFirst: false, isLast: false });
           cur += take;
@@ -16381,7 +16381,7 @@ function initialSetup() {
             <div>
               <p class="italic text-[11px] text-slate-600">Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}</p>
               <p class="font-bold uppercase text-slate-800 mt-1">Người lập biểu</p>
-              <p class="italic text-[11px] text-slate-500 mb-12">(Ký và ghi rõ họ tên)</p>
+              <p class="italic text-[10.5px] text-slate-500 mb-8">(Ký và ghi rõ họ tên)</p>
               <p class="font-bold text-slate-900">${escapeHtml(currentUser.tenGv || '')}</p>
             </div>
           </div>
@@ -16416,16 +16416,16 @@ function initialSetup() {
 
           rowsHtml += `
             <tr class="${isNewClassBorder}border-b border-slate-300 text-center text-[9px] leading-tight" style="page-break-inside: avoid;">
-              <td class="py-1 px-0.5 border border-slate-300 font-bold align-middle">${globalIdx}</td>
-              <td class="py-1 px-1 border border-slate-300 text-left font-bold text-slate-800 align-middle truncate">${escapeHtml(r.teacherName || '--')}</td>
-              <td class="py-1 px-0.5 border border-slate-300 align-middle truncate">${escapeHtml(r.monGv || '--')}</td>
-              <td class="py-1 px-0.5 border border-slate-300 font-black text-indigo-950 align-middle bg-slate-50">${escapeHtml(r.lop || '--')}</td>
-              <td class="py-1 px-1 border border-slate-300 text-left leading-tight align-middle">${hsNames}</td>
-              <td class="py-1 px-1 border border-slate-300 text-left text-[8.5px] leading-tight align-middle">${hsKts}</td>
-              <td class="py-1 px-0.5 border border-slate-300 align-middle leading-tight">${hsLevels}</td>
-              <td class="py-1 px-0.5 border border-slate-300 font-bold align-middle">${formatNumber(r.tietTuan)}</td>
-              <td class="py-1 px-0.5 border border-slate-300 align-middle">${formatNumber(r.soTuan)}</td>
-              <td class="py-1 px-0.5 border border-slate-300 font-black bg-slate-50 align-middle">${formatNumber(r.tongTiet)}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 font-bold align-middle">${globalIdx}</td>
+              <td class="py-0.5 px-1 border border-slate-300 text-left font-bold text-slate-800 align-middle truncate">${escapeHtml(r.teacherName || '--')}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 align-middle truncate">${escapeHtml(r.monGv || '--')}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 font-black text-indigo-950 align-middle bg-slate-50">${escapeHtml(r.lop || '--')}</td>
+              <td class="py-0.5 px-1 border border-slate-300 text-left leading-tight align-middle">${hsNames}</td>
+              <td class="py-0.5 px-1 border border-slate-300 text-left text-[8.5px] leading-tight align-middle">${hsKts}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 align-middle leading-tight">${hsLevels}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 font-bold align-middle">${formatNumber(r.tietTuan)}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 align-middle">${formatNumber(r.soTuan)}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 font-black bg-slate-50 align-middle">${formatNumber(r.tongTiet)}</td>
             </tr>
           `;
         });
