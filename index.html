@@ -15740,7 +15740,7 @@ function initialSetup() {
       }
 
       const opt = {
-        margin: [6, 6, 6, 6],
+        margin: [4, 5, 4, 5],
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
@@ -16720,34 +16720,34 @@ function initialSetup() {
         if (!summaryRows || !summaryRows[idx]) return 1;
         const r = summaryRows[idx];
         if (Array.isArray(r.students) && r.students.length > 1) {
-          return 1 + (r.students.length - 1) * 0.7; // Dòng có 2-3 HS chiếm thêm ~70% chiều cao
+          return 1 + (r.students.length - 1) * 0.55; // Dòng có 2-3 HS chiếm thêm ~55% chiều cao
         }
         if (r.tenHs && r.tenHs.includes('\n')) {
           const lines = r.tenHs.split('\n').filter(Boolean).length;
-          if (lines > 1) return 1 + (lines - 1) * 0.7;
+          if (lines > 1) return 1 + (lines - 1) * 0.55;
         }
         return 1;
       };
 
-      // Giới hạn dung lượng theo dòng:
-      // P1_MAX_WITH_SIG: 35 dòng vừa vặn trên 1 trang duy nhất cùng chữ ký
-      // P1_MAX_NO_SIG: 45 dòng khi chạy nhiều trang (nhồi đầy trang 1 gần như toàn bộ)
-      // P_OTHER_MAX: 48 dòng cho các trang giữa
-      // P_LAST_MAX: 40 dòng cho trang cuối cùng chữ ký
-      const P1_MAX_WITH_SIG = 35;
-      const P1_MAX_NO_SIG = 45;
-      const P_OTHER_MAX = 48;
-      const P_LAST_MAX = 40;
+      // Giới hạn dung lượng theo dòng (đã tính toán chính xác theo chiều cao A4 printable 289mm):
+      // P1_MAX_WITH_SIG: 51 dòng trọng số (vừa vặn trên đúng 1 trang duy nhất cùng bảng và khối chữ ký)
+      // P1_MAX_NO_SIG: 53 dòng trọng số khi chạy nhiều trang (nhồi đầy trang 1 sát mép dưới trước khi sang trang mới)
+      // P_OTHER_MAX: 55 dòng cho các trang giữa
+      // P_LAST_MAX: 45 dòng cho trang cuối cùng chữ ký
+      const P1_MAX_WITH_SIG = 51;
+      const P1_MAX_NO_SIG = 53;
+      const P_OTHER_MAX = 55;
+      const P_LAST_MAX = 45;
 
       let totalWeight = 0;
       for (let i = 0; i < totalRows; i++) totalWeight += getWeight(i);
 
-      // 1. Nếu toàn bộ dữ liệu vừa vặn trên đúng 1 trang cùng khối chữ ký (tối đa ~35 dòng)
+      // 1. Nếu toàn bộ dữ liệu vừa vặn trên đúng 1 trang cùng khối chữ ký (tối đa ~51 dòng)
       if (totalWeight <= P1_MAX_WITH_SIG) {
         return [{ pageNum: 1, start: 0, end: totalRows, isFirst: true, isLast: true }];
       }
 
-      // 2. Chạy hết đầy trang 1 tối đa (P1_MAX_NO_SIG = 45), chừa lại ít nhất 1 dòng cho trang sau cùng chữ ký
+      // 2. Chạy hết đầy trang 1 tối đa (P1_MAX_NO_SIG = 53), chừa lại ít nhất 1 dòng cho trang sau cùng chữ ký
       const pages = [];
       let cur = 0;
 
@@ -16824,50 +16824,50 @@ function initialSetup() {
       const pages = paginateHoaNhapSummaryPdf(summaryRows);
       const totalPages = pages.length;
 
-      // Tiêu đề bảng cố định 10 cột chuẩn khổ dọc A4
+      // Tiêu đề bảng cố định 10 cột chuẩn khổ dọc A4 (tối ưu đệm gọn)
       const tableTheadHtml = `
         <thead>
           <tr class="bg-slate-100 font-bold text-slate-800 border-b border-slate-300">
-            <th style="width: 4.5%;" class="py-1 px-0.5 border border-slate-300 text-center">STT</th>
-            <th style="width: 17%;" class="py-1 px-1 border border-slate-300 text-left">Tên Giáo Viên</th>
-            <th style="width: 9%;" class="py-1 px-0.5 border border-slate-300 text-center">Môn Dạy</th>
-            <th style="width: 7%;" class="py-1 px-0.5 border border-slate-300 font-black text-center">Lớp Dạy</th>
-            <th style="width: 23%;" class="py-1 px-1 border border-slate-300 text-left">Danh Sách Học Sinh Hòa Nhập</th>
-            <th style="width: 17.5%;" class="py-1 px-1 border border-slate-300 text-left">Dạng Khuyết Tật</th>
-            <th style="width: 6%;" class="py-1 px-0.5 border border-slate-300 text-center">Mức Độ</th>
-            <th style="width: 5%;" class="py-1 px-0.5 border border-slate-300 text-center">Tiết/tuần</th>
-            <th style="width: 5%;" class="py-1 px-0.5 border border-slate-300 text-center">Số tuần</th>
-            <th style="width: 6%;" class="py-1 px-0.5 border border-slate-300 bg-slate-200/60 font-black text-center">Tổng tiết</th>
+            <th style="width: 4.5%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">STT</th>
+            <th style="width: 17%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Tên Giáo Viên</th>
+            <th style="width: 9%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Môn Dạy</th>
+            <th style="width: 7%;" class="py-0.5 px-0.5 border border-slate-300 font-black text-center text-[8.5px]">Lớp Dạy</th>
+            <th style="width: 23%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Danh Sách Học Sinh Hòa Nhập</th>
+            <th style="width: 17.5%;" class="py-0.5 px-0.5 border border-slate-300 text-left text-[8.5px]">Dạng Khuyết Tật</th>
+            <th style="width: 6%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Mức Độ</th>
+            <th style="width: 5%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Tiết/tuần</th>
+            <th style="width: 5%;" class="py-0.5 px-0.5 border border-slate-300 text-center text-[8.5px]">Số tuần</th>
+            <th style="width: 6%;" class="py-0.5 px-0.5 border border-slate-300 bg-slate-200/60 font-black text-center text-[8.5px]">Tổng tiết</th>
           </tr>
         </thead>
       `;
 
       const tableTfootHtml = `
         <tfoot>
-          <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400">
-            <td colspan="7" class="py-1.5 px-3 text-center uppercase tracking-wider text-[10px]">
+          <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-400 text-[9px]">
+            <td colspan="7" class="py-1 px-2 text-center uppercase tracking-wider">
               TỔNG CỘNG TOÀN TRƯỜNG
             </td>
-            <td class="py-1.5 px-0.5 border border-slate-300 font-black text-[10px] text-center">${formatNumber(totalPeriodsPerWeekSchool)}</td>
-            <td class="py-1.5 px-0.5 border border-slate-300 text-slate-400 font-normal italic text-center">--</td>
-            <td class="py-1.5 px-0.5 border border-slate-300 font-black text-[10px] bg-slate-200 text-center">${formatNumber(totalPeriodsAllSchool)}</td>
+            <td class="py-1 px-0.5 border border-slate-300 font-black text-center">${formatNumber(totalPeriodsPerWeekSchool)}</td>
+            <td class="py-1 px-0.5 border border-slate-300 text-slate-400 font-normal italic text-center">--</td>
+            <td class="py-1 px-0.5 border border-slate-300 font-black bg-slate-200 text-center">${formatNumber(totalPeriodsAllSchool)}</td>
           </tr>
         </tfoot>
       `;
 
       const signatureHtml = `
-        <div class="mt-4 pt-1" style="page-break-inside: avoid;">
-          <div class="grid grid-cols-2 gap-4 text-center mt-2 text-xs">
+        <div class="mt-2 pt-0.5" style="page-break-inside: avoid;">
+          <div class="grid grid-cols-2 gap-4 text-center text-xs">
             <div>
-              <p class="italic text-[11px] text-slate-600">Ngày ...... tháng ...... năm ${todayYear}</p>
-              <p class="font-bold uppercase text-slate-800 mt-1">Phó hiệu trưởng</p>
-              <p class="italic text-[11px] text-slate-500">Duyệt</p>
+              <p class="italic text-[10px] text-slate-600">Ngày ...... tháng ...... năm ${todayYear}</p>
+              <p class="font-bold uppercase text-slate-800 mt-0.5">Phó hiệu trưởng</p>
+              <p class="italic text-[10px] text-slate-500">Duyệt</p>
             </div>
             <div>
-              <p class="italic text-[11px] text-slate-600">Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}</p>
-              <p class="font-bold uppercase text-slate-800 mt-1">Người lập biểu</p>
-              <p class="italic text-[10.5px] text-slate-500 mb-8">(Ký và ghi rõ họ tên)</p>
-              <p class="font-bold text-slate-900">${escapeHtml(currentUser.tenGv || '')}</p>
+              <p class="italic text-[10px] text-slate-600">Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}</p>
+              <p class="font-bold uppercase text-slate-800 mt-0.5">Người lập biểu</p>
+              <p class="italic text-[9.5px] text-slate-500 mb-6">(Ký và ghi rõ họ tên)</p>
+              <p class="font-bold text-slate-900 text-[11px]">${escapeHtml(currentUser.tenGv || '')}</p>
             </div>
           </div>
         </div>
@@ -16908,13 +16908,13 @@ function initialSetup() {
           const isNewClassBorder = r.isClassFirstRow && localIdx > 0 ? "border-t-2 border-slate-500 " : "";
 
           rowsHtml += `
-            <tr class="${isNewClassBorder}border-b border-slate-300 text-center text-[9px] leading-tight" style="page-break-inside: avoid;">
+            <tr class="${isNewClassBorder}border-b border-slate-300 text-center text-[8.5px] leading-tight" style="page-break-inside: avoid;">
               <td class="py-0.5 px-0.5 border border-slate-300 font-bold align-middle">${globalIdx}</td>
-              <td class="py-0.5 px-1 border border-slate-300 text-left font-bold text-slate-800 align-middle truncate">${escapeHtml(r.teacherName || '--')}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 text-left font-bold text-slate-800 align-middle truncate">${escapeHtml(r.teacherName || '--')}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 align-middle truncate">${escapeHtml(r.monGv || '--')}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 font-black text-indigo-950 align-middle bg-slate-50">${escapeHtml(r.lop || '--')}</td>
-              <td class="py-0.5 px-1 border border-slate-300 text-left leading-tight align-middle">${hsNames}</td>
-              <td class="py-0.5 px-1 border border-slate-300 text-left text-[8.5px] leading-tight align-middle">${hsKts}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 text-left leading-tight align-middle">${hsNames}</td>
+              <td class="py-0.5 px-0.5 border border-slate-300 text-left text-[8px] leading-tight align-middle">${hsKts}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 align-middle leading-tight">${hsLevels}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 font-bold align-middle">${formatNumber(r.tietTuan)}</td>
               <td class="py-0.5 px-0.5 border border-slate-300 align-middle">${formatNumber(r.soTuan)}</td>
@@ -16928,34 +16928,34 @@ function initialSetup() {
         }
 
         const pageHeaderHtml = pageInfo.isFirst ? `
-          <div class="mb-2">
+          <div class="mb-1.5">
             <div class="text-left">
               <div class="inline-block text-center">
-                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
-                <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
+                <p class="font-bold text-[10.5px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
+                <p class="font-bold text-[10.5px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+                <div class="w-20 h-[1px] bg-slate-400 mx-auto my-0.5"></div>
               </div>
             </div>
 
-            <div class="text-center mt-1">
-              <h1 class="text-sm sm:text-base font-black uppercase text-slate-900 leading-tight">
+            <div class="text-center mt-0.5">
+              <h1 class="text-xs sm:text-sm font-black uppercase text-slate-900 leading-tight">
                 BẢNG TỔNG HỢP SỐ TIẾT DẠY HỌC SINH KHUYẾT TẬT HỌC HÒA NHẬP TOÀN TRƯỜNG
               </h1>
-              <p class="text-xs font-bold text-indigo-800 mt-0.5">${semLabel}</p>
+              <p class="text-[11px] font-bold text-indigo-800 mt-0.5">${semLabel}</p>
             </div>
           </div>
         ` : `
-          <div class="mb-2 flex items-center justify-between border-b border-slate-300 pb-1 text-[10px]">
+          <div class="mb-1.5 flex items-center justify-between border-b border-slate-300 pb-0.5 text-[9.5px]">
             <span class="font-bold uppercase text-slate-700">TRƯỜNG THCS AN NHƠN</span>
             <span class="font-black text-indigo-900 uppercase">BẢNG TỔNG HỢP SỐ TIẾT DẠY HÒA NHẬP TOÀN TRƯỜNG (${semLabel}) - Tiếp theo</span>
           </div>
         `;
 
         fullDocHtml += `
-          <div class="pdf-page-portrait ${pageInfo.isLast ? 'pdf-last-page' : ''}" style="background: #ffffff; padding: 4px 2px; margin-bottom: ${pageInfo.isLast ? '0' : '20px'}; box-sizing: border-box; page-break-inside: avoid; page-break-after: ${pageInfo.isLast ? 'avoid' : 'always'};">
+          <div class="pdf-page-portrait ${pageInfo.isLast ? 'pdf-last-page' : ''}" style="background: #ffffff; padding: 2px 2px; margin-bottom: ${pageInfo.isLast ? '0' : '20px'}; box-sizing: border-box; page-break-inside: avoid; page-break-after: ${pageInfo.isLast ? 'avoid' : 'always'};">
             ${pageHeaderHtml}
 
-            <table class="w-full border-collapse border border-slate-400 text-center text-[9.5px] mb-2" style="table-layout: fixed; width: 100%;">
+            <table class="w-full border-collapse border border-slate-400 text-center text-[9px] mb-1" style="table-layout: fixed; width: 100%;">
               ${tableTheadHtml}
               <tbody>
                 ${rowsHtml}
@@ -16965,7 +16965,7 @@ function initialSetup() {
 
             ${pageInfo.isLast ? signatureHtml : ''}
 
-            <div style="margin-top: 6px; text-align: right; font-size: 8.5px; color: #64748b; font-style: italic;">
+            <div style="margin-top: 4px; text-align: right; font-size: 8px; color: #64748b; font-style: italic;">
               Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
             </div>
           </div>
