@@ -14549,10 +14549,8 @@ function initialSetup() {
         }
       }
 
-      // 2. Tải danh sách HS hòa nhập từ cache hoặc cloud nếu chưa có
-      if (!hoaNhapStudentsList || hoaNhapStudentsList.length === 0) {
-        await loadHoaNhapStudentsFromCloud(true);
-      }
+      // 2. Luôn đồng bộ danh sách HS hòa nhập mới nhất từ Cloud (để cập nhật cột thời gian, tuần mới nhập trên Sheet)
+      await loadHoaNhapStudentsFromCloud(true);
 
       // Quyết định view:
       if (isRoleAdmin(currentUser.quyen)) {
@@ -14710,11 +14708,11 @@ function initialSetup() {
         const badgeHs = document.getElementById('hn-badge-admin-students-count');
         if (badgeHs) badgeHs.textContent = hoaNhapStudentsList.length;
 
+        syncTeacherHoaNhapRowsWithClasses('hk1');
+        syncTeacherHoaNhapRowsWithClasses('hk2');
         if (isHoaNhapAdminView) {
           renderHoaNhapAdminView();
         } else {
-          syncTeacherHoaNhapRowsWithClasses('hk1');
-          syncTeacherHoaNhapRowsWithClasses('hk2');
           renderHoaNhapTeacherTable();
         }
       } catch (err) {
@@ -14724,6 +14722,19 @@ function initialSetup() {
 
     // Tải dữ liệu hòa nhập của giáo viên đang đăng nhập
     async function loadTeacherHoaNhapData() {
+      // 0. Luôn cập nhật danh sách học sinh hòa nhập mới nhất từ Sheet HOA NHAP
+      if (GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE")) {
+        try {
+          const resHs = await callGasBackend({ action: "getHoaNhapStudents" });
+          if (resHs && resHs.success && Array.isArray(resHs.list)) {
+            hoaNhapStudentsList = resHs.list;
+            localStorage.setItem('school_hoanhap_students_cache', JSON.stringify(hoaNhapStudentsList));
+          }
+        } catch (e) {
+          console.warn("Lỗi cập nhật HS hòa nhập:", e);
+        }
+      }
+
       // 1. Khôi phục từ localStorage
       const cached = localStorage.getItem(`offline_hoanhap_data_${currentUser.taiKhoan}`);
       if (cached) {
@@ -15321,8 +15332,18 @@ function initialSetup() {
       const defaultWeeks = hoaNhapActiveSem === 'hk2' ? 17 : 18;
       rows.forEach(r => {
         r.tietTuan = num;
-        const soTuan = parseFloat(r.soTuan) || defaultWeeks;
-        r.tongTiet = num * soTuan;
+        const normLop = normalizeClassName(r.lop);
+        const matched = (hoaNhapStudentsList || []).filter(s => normalizeClassName(s.lop) === normLop);
+        const sourceStudents = (matched.length > 0) ? matched : (r.students || []);
+        let classWeeks = defaultWeeks;
+        if (sourceStudents.length > 0) {
+          const weeksList = sourceStudents.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, hoaNhapActiveSem).weeks);
+          classWeeks = Math.max(...weeksList);
+        } else if (r.soTuan) {
+          classWeeks = parseFloat(r.soTuan) || defaultWeeks;
+        }
+        r.soTuan = classWeeks;
+        r.tongTiet = num * classWeeks;
       });
 
       if (currentUser && currentUser.taiKhoan) {
@@ -15349,13 +15370,17 @@ function initialSetup() {
       quickFillHoaNhapPeriods(num);
     }
 
-    // Điền nhanh số tuần (18 cho HK1, 17 cho HK2)
+    // Điền nhanh số tuần (tự động tính đúng 12 tuần cho tuần 7, 9 tuần cho tuần 10...)
     function quickFillHoaNhapWeeks() {
       if (hoaNhapActiveSem === 'all') {
         showToast("Vui lòng chọn Học Kỳ 1 hoặc Học Kỳ 2 để điền nhanh số tuần!", "warning");
         return;
       }
       const defaultWeeks = hoaNhapActiveSem === 'hk2' ? 17 : 18;
+
+      // Đồng bộ lại dữ liệu lớp với hoaNhapStudentsList mới nhất
+      syncTeacherHoaNhapRowsWithClasses(hoaNhapActiveSem);
+
       const rows = hoaNhapDataStore[hoaNhapActiveSem] || [];
       if (rows.length === 0) {
         showToast("Chưa có dòng nào để điền!", "warning");
@@ -15363,8 +15388,12 @@ function initialSetup() {
       }
       rows.forEach(r => {
         let classWeeks = defaultWeeks;
-        if (r.students && Array.isArray(r.students) && r.students.length > 0) {
-          const weeksList = r.students.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, hoaNhapActiveSem).weeks);
+        const normLop = normalizeClassName(r.lop);
+        const matched = (hoaNhapStudentsList || []).filter(s => normalizeClassName(s.lop) === normLop);
+        const sourceStudents = (matched.length > 0) ? matched : (r.students || []);
+
+        if (sourceStudents.length > 0) {
+          const weeksList = sourceStudents.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, hoaNhapActiveSem).weeks);
           classWeeks = Math.max(...weeksList);
         }
         r.soTuan = classWeeks;
@@ -15374,7 +15403,7 @@ function initialSetup() {
         localStorage.setItem(`offline_hoanhap_data_${currentUser.taiKhoan}`, JSON.stringify(hoaNhapDataStore));
       }
       renderHoaNhapTeacherTable();
-      showToast(`Đã điền số tuần tự động theo thời gian công nhận của từng lớp!`, "success");
+      showToast(`Đã tự động tính toán & điền số tuần chuẩn xác theo thời gian công nhận của từng học sinh!`, "success");
     }
 
     // Modal thêm dòng lớp hòa nhập mới
@@ -15795,6 +15824,25 @@ function initialSetup() {
     // ========================================================
     // LOGIC DÀNH CHO ADMIN / BGH: PHÂN HỆ 2
     // ========================================================
+    // Chuyển đổi học kỳ trong Sổ Cá Nhân của Giáo Viên
+    function switchHoaNhapSemester(sem) {
+      hoaNhapActiveSem = sem;
+      ['hk1', 'hk2', 'all'].forEach(s => {
+        const btn = document.getElementById(`btn-hn-sem-${s}`);
+        if (!btn) return;
+        const icon = btn.querySelector('i');
+        if (s === sem) {
+          btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-indigo-900 shadow-xs';
+          if (icon) icon.className = (s === 'all') ? 'fa-solid fa-calendar-check text-indigo-600' : 'fa-solid fa-calendar-days text-indigo-600';
+        } else {
+          btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+          if (icon) icon.className = (s === 'all') ? 'fa-solid fa-calendar-check' : 'fa-solid fa-calendar-days';
+        }
+      });
+      syncTeacherHoaNhapRowsWithClasses(sem);
+      renderHoaNhapTeacherTable();
+    }
+
     function switchHoaNhapAdminTab(tab) {
       hoaNhapAdminActiveSubTab = tab;
 
@@ -16249,7 +16297,12 @@ function initialSetup() {
           if (matchingRows.length > 0) {
             matchingRows.forEach(r => {
               const tietTuan = parseFloat(r.tietTuan) || 0;
-              const soTuan = parseFloat(r.soTuan) || defaultSoTuan;
+              const classWeeksList = (clsItem.students || []).map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
+              const expectedClassWeeks = classWeeksList.length > 0 ? Math.max(...classWeeksList) : defaultSoTuan;
+              let soTuan = parseFloat(r.soTuan);
+              if (!soTuan || isNaN(soTuan) || (soTuan === defaultSoTuan && expectedClassWeeks !== defaultSoTuan)) {
+                soTuan = expectedClassWeeks;
+              }
               const tongTiet = parseFloat(r.tongTiet) || (tietTuan * soTuan);
 
               teacherRowsInClass.push({
@@ -16279,6 +16332,9 @@ function initialSetup() {
             });
 
             if (teachesThisClass) {
+              const classWeeksList = (clsItem.students || []).map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
+              const autoClassWeeks = classWeeksList.length > 0 ? Math.max(...classWeeksList) : defaultSoTuan;
+
               teacherRowsInClass.push({
                 teacherTk: t.taiKhoan,
                 teacherName: t.tenGv,
@@ -16286,7 +16342,7 @@ function initialSetup() {
                 lop: clsItem.rawClass,
                 students: clsItem.students,
                 tietTuan: 0,
-                soTuan: defaultSoTuan,
+                soTuan: autoClassWeeks,
                 tongTiet: 0,
                 isDeclared: false,
                 isClassFirstRow: false
