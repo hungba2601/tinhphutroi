@@ -712,7 +712,7 @@
             <tbody id="hn-teacher-table-tbody" class="divide-y divide-slate-100">
               <!-- Render từ JS -->
             </tbody>
-            <tfoot id="hn-admin-summary-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
+            <tfoot id="hn-teacher-table-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
               <tr class="text-center">
                 <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
                   TỔNG CỘNG
@@ -957,7 +957,7 @@
               <tbody id="hn-admin-summary-tbody" class="divide-y divide-slate-100">
                 <!-- Render từ JS -->
               </tbody>
-              <tfoot class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
+              <tfoot id="hn-admin-summary-tfoot" class="bg-indigo-50/80 border-t-2 border-indigo-200 font-black text-slate-900">
                 <tr class="text-center">
                   <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
                     TỔNG CỘNG TOÀN TRƯỜNG
@@ -14957,12 +14957,32 @@ function initialSetup() {
         tbody.appendChild(tr);
       });
 
-      // Cập nhật Footer tổng cộng
-      const footTietTuan = document.getElementById('hn-foot-periods-per-week');
-      if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
-
-      const footTongTiet = document.getElementById('hn-foot-total-periods');
-      if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
+      // Cập nhật Footer tổng cộng của Giáo Viên
+      const tfootTeacher = document.getElementById('hn-teacher-table-tfoot');
+      if (tfootTeacher) {
+        tfootTeacher.innerHTML = `
+          <tr class="text-center">
+            <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
+              TỔNG CỘNG
+            </td>
+            <td id="hn-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
+              ${formatNumber(totalPeriodsPerWeek)}
+            </td>
+            <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">
+              --
+            </td>
+            <td id="hn-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">
+              ${formatNumber(totalPeriodsSum)} tiết
+            </td>
+            <td class="py-3 px-2"></td>
+          </tr>
+        `;
+      } else {
+        const footTietTuan = document.getElementById('hn-foot-periods-per-week');
+        if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
+        const footTongTiet = document.getElementById('hn-foot-total-periods');
+        if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
+      }
 
       // Cập nhật các thẻ chỉ số
       const statClasses = document.getElementById('hn-stat-classes-count');
@@ -15013,11 +15033,31 @@ function initialSetup() {
         totalPeriodsSum += (parseFloat(r.tongTiet) || 0);
       });
 
-      const footTietTuan = document.getElementById('hn-foot-periods-per-week');
-      if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
-
-      const footTongTiet = document.getElementById('hn-foot-total-periods');
-      if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
+      const tfootTeacher = document.getElementById('hn-teacher-table-tfoot');
+      if (tfootTeacher) {
+        tfootTeacher.innerHTML = `
+          <tr class="text-center">
+            <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
+              TỔNG CỘNG
+            </td>
+            <td id="hn-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
+              ${formatNumber(totalPeriodsPerWeek)}
+            </td>
+            <td class="py-3 px-3 text-slate-400 font-normal text-xs italic text-center border-r border-slate-200">
+              --
+            </td>
+            <td id="hn-foot-total-periods" class="py-3 px-3 font-black text-purple-950 bg-purple-200/60 text-sm sm:text-base text-center border-r border-slate-200">
+              ${formatNumber(totalPeriodsSum)} tiết
+            </td>
+            <td class="py-3 px-2"></td>
+          </tr>
+        `;
+      } else {
+        const footTietTuan = document.getElementById('hn-foot-periods-per-week');
+        if (footTietTuan) footTietTuan.textContent = formatNumber(totalPeriodsPerWeek);
+        const footTongTiet = document.getElementById('hn-foot-total-periods');
+        if (footTongTiet) footTongTiet.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
+      }
 
       const statTotalPeriods = document.getElementById('hn-stat-total-periods');
       if (statTotalPeriods) statTotalPeriods.textContent = `${formatNumber(totalPeriodsSum)} tiết`;
