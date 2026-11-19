@@ -13619,20 +13619,19 @@ function initialSetup() {
 
     function handleP1SubjectToggle(subName, checked) {
       if (isSemesterLocked(activeSemesterId)) return;
-      let list = parseTeacherSubjects(currentUser.subject || (dataStore ? dataStore.subject : "Toán"));
+      let list = parseTeacherSubjects(currentUser.subject || (dataStore ? dataStore.subject : ""));
       if (checked) {
         if (!list.includes(subName)) list.push(subName);
       } else {
         list = list.filter(s => s !== subName);
-        if (list.length === 0) list = [subName];
       }
       const subStr = list.join(", ");
       currentUser.subject = subStr;
       if (dataStore) dataStore.subject = subStr;
       const badgeCurrentSubject = document.getElementById('badge-current-subject');
-      if (badgeCurrentSubject) badgeCurrentSubject.textContent = subStr;
+      if (badgeCurrentSubject) badgeCurrentSubject.textContent = subStr || "Chưa chọn môn";
       updateP1SubjectCheckboxes(list);
-      showToast(`Đã chọn môn giảng dạy: ${subStr}`, "info");
+      showToast(list.length > 0 ? `Đã chọn môn giảng dạy: ${subStr}` : "Đã bỏ chọn tất cả các môn", "info");
       triggerAutoSave();
     }
 
@@ -15004,7 +15003,7 @@ function initialSetup() {
     let hoaNhapActiveSubject = 'all';
 
     function getHoaNhapTeacherSubjects() {
-      if (hoaNhapDataStore && Array.isArray(hoaNhapDataStore.subjects) && hoaNhapDataStore.subjects.length > 0) {
+      if (hoaNhapDataStore && Array.isArray(hoaNhapDataStore.subjects)) {
         return hoaNhapDataStore.subjects;
       }
       const localCached = localStorage.getItem(`hoanhap_subjects_${currentUser.taiKhoan}`);
@@ -15095,7 +15094,6 @@ function initialSetup() {
         hoaNhapActiveSubject = subName;
       } else {
         list = list.filter(s => s !== subName);
-        if (list.length === 0) list = [subName];
         delete hoaNhapDataStore.classesBySubject[subName];
         // Xóa các dòng thuộc môn bị bỏ chọn
         ['hk1', 'hk2'].forEach(sem => {
@@ -15103,8 +15101,12 @@ function initialSetup() {
             hoaNhapDataStore[sem] = hoaNhapDataStore[sem].filter(r => (r.monDay || '').trim() !== subName.trim());
           }
         });
-        if (!list.includes(hoaNhapActiveSubject) && hoaNhapActiveSubject !== 'all') {
-          hoaNhapActiveSubject = list[0];
+        if (list.length > 0) {
+          if (!list.includes(hoaNhapActiveSubject) && hoaNhapActiveSubject !== 'all') {
+            hoaNhapActiveSubject = list[0];
+          }
+        } else {
+          hoaNhapActiveSubject = 'all';
         }
       }
 
@@ -15129,7 +15131,7 @@ function initialSetup() {
       syncTeacherHoaNhapRowsWithClasses('hk2');
       renderHoaNhapSelectedClassesChips();
       renderHoaNhapTeacherTable();
-      showToast(`Đã cập nhật môn hòa nhập: ${list.join(", ")}`, "info");
+      showToast(list.length > 0 ? `Đã cập nhật môn hòa nhập: ${list.join(", ")}` : "Đã bỏ chọn tất cả các môn hòa nhập", "info");
     }
 
     function renderHoaNhapSubjectTabs() {
@@ -15249,6 +15251,10 @@ function initialSetup() {
       if (!modal || !container) return;
 
       const subjects = getHoaNhapTeacherSubjects();
+      if (!subjects || subjects.length === 0) {
+        showToast("Vui lòng tích chọn ít nhất 1 môn giảng dạy trước khi chọn lớp!", "warning");
+        return;
+      }
       if (!targetSub) {
         if (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all' && subjects.includes(hoaNhapActiveSubject)) {
           currentHoaNhapModalSubject = hoaNhapActiveSubject;
@@ -15376,6 +15382,19 @@ function initialSetup() {
       if (!container) return;
 
       const subjects = getHoaNhapTeacherSubjects();
+      if (!subjects || subjects.length === 0) {
+        if (titleEl) titleEl.textContent = "Khối & Lớp Giảng Dạy:";
+        container.innerHTML = `<span class="text-xs text-slate-400 italic">Chưa chọn môn giảng dạy hòa nhập</span>`;
+        if (hintEl) hintEl.textContent = "Vui lòng chọn môn giảng dạy";
+        ['6', '7', '8', '9'].forEach(g => {
+          const badge = document.getElementById(`hn-badge-count-k${g}`);
+          if (badge) {
+            badge.textContent = 0;
+            badge.className = "px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-600 font-bold";
+          }
+        });
+        return;
+      }
       const isMulti = subjects.length > 1;
       const activeSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (isMulti ? 'all' : (subjects[0] || 'Toán'));
       const currentClasses = getHoaNhapTeacherClasses(activeSub);
