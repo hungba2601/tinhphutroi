@@ -15023,7 +15023,7 @@ function initialSetup() {
     }
 
     // Tải dữ liệu hòa nhập của giáo viên đang đăng nhập
-    let hoaNhapActiveSubject = 'all';
+    let hoaNhapActiveSubject = '';
 
     function getHoaNhapTeacherSubjects() {
       if (hoaNhapDataStore && Array.isArray(hoaNhapDataStore.subjects)) {
@@ -15129,11 +15129,11 @@ function initialSetup() {
           }
         });
         if (list.length > 0) {
-          if (!list.includes(hoaNhapActiveSubject) && hoaNhapActiveSubject !== 'all') {
+          if (!list.includes(hoaNhapActiveSubject)) {
             hoaNhapActiveSubject = list[0];
           }
         } else {
-          hoaNhapActiveSubject = 'all';
+          hoaNhapActiveSubject = '';
         }
       }
 
@@ -15169,13 +15169,13 @@ function initialSetup() {
       const subjects = getHoaNhapTeacherSubjects();
       if (subjects.length <= 1) {
         container.classList.add('hidden');
-        hoaNhapActiveSubject = subjects[0] || 'all';
+        hoaNhapActiveSubject = subjects[0] || '';
         return;
       }
 
       container.classList.remove('hidden');
 
-      if (!subjects.includes(hoaNhapActiveSubject) && hoaNhapActiveSubject !== 'all') {
+      if (!subjects.includes(hoaNhapActiveSubject)) {
         hoaNhapActiveSubject = subjects[0];
       }
 
@@ -15192,17 +15192,6 @@ function initialSetup() {
           </button>
         `;
       });
-
-      const isAll = hoaNhapActiveSubject === 'all';
-      const allCount = getHoaNhapTeacherClasses('all').length;
-      html += `
-        <button type="button" onclick="switchHoaNhapActiveSubject('all')"
-          class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 ${isAll ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 ring-2 ring-purple-600 ring-offset-1' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
-          <i class="fa-solid fa-layer-group"></i>
-          <span>Tất cả các môn</span>
-          <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isAll ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-800'} font-black">${allCount} lớp</span>
-        </button>
-      `;
 
       tabsWrapper.innerHTML = html;
     }
@@ -15435,17 +15424,15 @@ function initialSetup() {
         return;
       }
       const isMulti = subjects.length > 1;
-      const activeSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (isMulti ? 'all' : (subjects[0] || 'Toán'));
+      const activeSub = (hoaNhapActiveSubject && subjects.includes(hoaNhapActiveSubject)) ? hoaNhapActiveSubject : (subjects[0] || 'Toán');
       const currentClasses = getHoaNhapTeacherClasses(activeSub);
 
       // Cập nhật tiêu đề hàng Khối & Lớp
       if (titleEl) {
         if (!isMulti) {
           titleEl.textContent = "Khối & Lớp Giảng Dạy:";
-        } else if (hoaNhapActiveSubject === 'all') {
-          titleEl.innerHTML = `Khối & Lớp Giảng Dạy <span class="text-purple-700 font-extrabold">(Tất cả các môn)</span>:`;
         } else {
-          titleEl.innerHTML = `Khối & Lớp Giảng Dạy <span class="text-indigo-700 font-extrabold">(Môn ${escapeHtml(hoaNhapActiveSubject)})</span>:`;
+          titleEl.innerHTML = `Khối & Lớp Giảng Dạy <span class="text-indigo-700 font-extrabold">(Môn ${escapeHtml(activeSub)})</span>:`;
         }
       }
 
@@ -15463,7 +15450,7 @@ function initialSetup() {
       });
 
       if (!currentClasses || currentClasses.length === 0) {
-        container.innerHTML = `<span class="text-xs text-slate-400 italic">Chưa chọn lớp nào ${isMulti && hoaNhapActiveSubject !== 'all' ? `cho môn ${activeSub}` : ''}</span>`;
+        container.innerHTML = `<span class="text-xs text-slate-400 italic">Chưa chọn lớp nào ${isMulti ? `cho môn ${activeSub}` : ''}</span>`;
         if (hintEl) hintEl.textContent = "Chưa chọn lớp dạy hòa nhập";
       } else {
         const sorted = [...currentClasses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -15471,7 +15458,7 @@ function initialSetup() {
         const compactClassText = formatTeacherClassesSummary(currentClasses);
         container.innerHTML = `
           <div class="flex items-center gap-1.5 flex-wrap py-0.5 text-xs">
-            <span class="text-slate-500 font-semibold">Đã chọn (${sorted.length} lớp${isMulti && hoaNhapActiveSubject !== 'all' ? ` môn ${activeSub}` : ''}):</span>
+            <span class="text-slate-500 font-semibold">Đã chọn (${sorted.length} lớp${isMulti ? ` môn ${activeSub}` : ''}):</span>
             <span class="font-bold text-indigo-950 bg-indigo-50/90 px-2.5 py-0.5 rounded-md border border-indigo-200" title="${escapeHtml(fullClassText)}">
               ${escapeHtml(compactClassText)}
             </span>
@@ -15825,7 +15812,7 @@ function initialSetup() {
 
       const subjects = getHoaNhapTeacherSubjects();
       let displayedRows = rows;
-      if (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') {
+      if (subjects.length > 1 && hoaNhapActiveSubject) {
         displayedRows = rows.filter(r => (r.monDay || '').trim() === hoaNhapActiveSubject.trim());
       }
 
@@ -15920,7 +15907,7 @@ function initialSetup() {
       const semLabel = hoaNhapActiveSem === 'hk1' ? 'Học Kỳ 1 (18 tuần thực học)' : (hoaNhapActiveSem === 'hk2' ? 'Học Kỳ 2 (17 tuần thực học)' : 'Cả Năm (Tổng hợp)');
       const lockBadge = isHnLocked ? '<span class="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs"><i class="fa-solid fa-lock text-rose-600 text-[11px]"></i>Hệ thống đang khóa</span>' : '';
       if (titleEl) {
-        if (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') {
+        if (subjects.length > 1 && hoaNhapActiveSubject) {
           titleEl.innerHTML = `<i class="fa-solid fa-table-list text-indigo-600"></i><span>Bảng Kê Khai Số Tiết Dạy Học Sinh Hòa Nhập - Môn ${escapeHtml(hoaNhapActiveSubject)} - ${semLabel}</span>${lockBadge}`;
         } else {
           titleEl.innerHTML = `<i class="fa-solid fa-table-list text-indigo-600"></i><span>Bảng Kê Khai Số Tiết Dạy Học Sinh Hòa Nhập - ${semLabel}</span>${lockBadge}`;
@@ -16116,7 +16103,7 @@ function initialSetup() {
         teacherTfoot.innerHTML = `
           <tr class="text-center">
             <td colspan="7" class="py-3 px-4 text-center uppercase tracking-wider text-xs sm:text-sm text-indigo-950 font-black border-r border-slate-200">
-              TỔNG CỘNG ${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? `MÔN ${hoaNhapActiveSubject.toUpperCase()}` : ''}
+              TỔNG CỘNG ${subjects.length > 1 && hoaNhapActiveSubject ? `MÔN ${hoaNhapActiveSubject.toUpperCase()}` : ''}
             </td>
             <td id="hn-foot-periods-per-week" class="py-3 px-3 font-black text-indigo-950 bg-indigo-100/60 text-xs sm:text-sm text-center border-r border-slate-200">
               ${formatNumber(totalPeriodsPerWeek)}
@@ -16183,7 +16170,7 @@ function initialSetup() {
       // Cập nhật tổng cộng footer
       const subjects = getHoaNhapTeacherSubjects();
       let displayedRows = hoaNhapDataStore[sem] || [];
-      if (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') {
+      if (subjects.length > 1 && hoaNhapActiveSubject) {
         displayedRows = displayedRows.filter(r => (r.monDay || '').trim() === hoaNhapActiveSubject.trim());
       }
 
@@ -16240,7 +16227,7 @@ function initialSetup() {
       }
       const allRows = hoaNhapDataStore[hoaNhapActiveSem] || [];
       const subjects = getHoaNhapTeacherSubjects();
-      const targetRows = (subjects.length > 1 && hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all')
+      const targetRows = (subjects.length > 1 && hoaNhapActiveSubject)
         ? allRows.filter(r => (r.monDay || '').trim() === hoaNhapActiveSubject.trim())
         : allRows;
 
@@ -16255,7 +16242,7 @@ function initialSetup() {
         if (headerInput && headerInput.value && !isNaN(parseFloat(headerInput.value))) {
           num = parseFloat(headerInput.value);
         } else {
-          const userPrompt = prompt(`Nhập số tiết thực dạy/tuần để điền nhanh ${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? `cho môn ${hoaNhapActiveSubject}` : 'cho tất cả các lớp'}:`, "1");
+          const userPrompt = prompt(`Nhập số tiết thực dạy/tuần để điền nhanh ${subjects.length > 1 && hoaNhapActiveSubject ? `cho môn ${hoaNhapActiveSubject}` : 'cho tất cả các lớp'}:`, "1");
           if (userPrompt === null) return;
           num = parseFloat(userPrompt);
           if (isNaN(num) || num < 0) {
@@ -16290,7 +16277,7 @@ function initialSetup() {
       }
 
       renderHoaNhapTeacherTable();
-      showToast(`Đã điền nhanh ${num} tiết/tuần cho ${targetRows.length} lớp ${subjects.length > 1 && hoaNhapActiveSubject !== 'all' ? `môn ${hoaNhapActiveSubject}` : ''}! Nhớ nhấn "Lưu Lên Google Sheet".`, "success");
+      showToast(`Đã điền nhanh ${num} tiết/tuần cho ${targetRows.length} lớp ${subjects.length > 1 && hoaNhapActiveSubject ? `môn ${hoaNhapActiveSubject}` : ''}! Nhớ nhấn "Lưu Lên Google Sheet".`, "success");
     }
 
     function quickFillHoaNhapPeriodsPrompt() {
@@ -16363,7 +16350,7 @@ function initialSetup() {
       const modal = document.getElementById('modal-add-hoanhap-row');
       if (!modal) return;
       const monInput = document.getElementById('add-hn-mon');
-      const activeOrFirstSub = (hoaNhapActiveSubject && hoaNhapActiveSubject !== 'all') ? hoaNhapActiveSubject : (getHoaNhapTeacherSubjects()[0] || hoaNhapDataStore.monGv || "Toán");
+      const activeOrFirstSub = (hoaNhapActiveSubject && subjects.includes(hoaNhapActiveSubject)) ? hoaNhapActiveSubject : (getHoaNhapTeacherSubjects()[0] || hoaNhapDataStore.monGv || "Toán");
       if (monInput) monInput.value = activeOrFirstSub;
       const soTuanInput = document.getElementById('add-hn-so-tuan');
       if (soTuanInput) soTuanInput.value = hoaNhapActiveSem === 'hk2' ? 17 : 18;
