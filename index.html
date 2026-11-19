@@ -1175,7 +1175,7 @@
                   <th class="py-3 px-3 w-12 text-center">STT</th>
                   <th class="py-3 px-4 text-left min-w-[200px]">Họ và tên học sinh</th>
                   <th class="py-3 px-3 text-center w-24">Lớp</th>
-                  <th class="py-3 px-3 text-center w-36">Ngày tháng năm sinh</th>
+                  <th class="py-3 px-3 text-center w-32">Ngày sinh</th>
                   <th class="py-3 px-4 text-left min-w-[220px]">Dạng khuyết tật</th>
                   <th class="py-3 px-3 text-center w-28">Mức độ</th>
                   <th class="py-3 px-3 text-center w-36">Thời gian (Tuần)</th>
@@ -5325,7 +5325,7 @@ function initialSetup() {
           </div>
         </div>
 
-        <!-- Lớp & Ngày tháng năm sinh (2 cột) -->
+        <!-- Lớp & Ngày sinh (2 cột) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-class">
@@ -5341,7 +5341,7 @@ function initialSetup() {
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1" for="hn-stu-modal-dob">
-              Ngày tháng năm sinh
+              Ngày sinh
             </label>
             <div class="relative">
               <input type="text" id="hn-stu-modal-dob"
@@ -18110,7 +18110,7 @@ function initialSetup() {
 
         const safeTk = (r.teacherTk || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
-        // Xử lý danh sách học sinh: Tách làm 2 cột riêng biệt (Họ và tên học sinh & Ngày tháng năm sinh)
+        // Xử lý danh sách học sinh: Tách làm 2 cột riêng biệt (Họ và tên học sinh & Ngày sinh)
         let studentNamesHtml = "";
         let studentBirthsHtml = "";
         let disabilityHtml = "";
@@ -19345,7 +19345,7 @@ function initialSetup() {
 
       const excelTitle = `BÁO CÁO TỔNG HỢP SỐ TIẾT DẠY HÒA NHẬP TOÀN TRƯỜNG - ${semUpper}`;
       const excelHeaders = [
-        "STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Họ và tên học sinh", "Ngày tháng năm sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"
+        "STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Họ và tên học sinh", "Ngày sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"
       ];
 
       const aoa = [
@@ -19460,7 +19460,7 @@ function initialSetup() {
         { wch: 15 }, // Môn dạy
         { wch: 12 }, // Lớp dạy
         { wch: 26 }, // Họ và tên HS
-        { wch: 18 }, // Ngày tháng năm sinh
+        { wch: 14 }, // Ngày sinh
         { wch: 25 }, // Dạng khuyết tật
         { wch: 12 }, // Mức độ
         { wch: 16 }, // Tiết/tuần
