@@ -8171,21 +8171,34 @@ function handleGetAllGdtcData() {
       const resultParts = [];
 
       grades.forEach(g => {
+        const fullGradeAlias = [...cleanSet].find(c => {
+          const lower = c.toLowerCase().replace(/\s+/g, '');
+          return lower === `khối${g}` || lower === `khoi${g}`;
+        });
+
         const classesInGrade = [...cleanSet].filter(c => c.startsWith(g));
-        if (classesInGrade.length === 0) return;
+        if (!fullGradeAlias && classesInGrade.length === 0) return;
 
-        const schoolGradeClasses = getSchoolGradeClasses(g);
-        const isFullGrade = isFullGradeClasses(classesInGrade, schoolGradeClasses, g);
-
-        if (isFullGrade) {
+        if (fullGradeAlias) {
           resultParts.push(`Khối ${g}`);
         } else {
-          const sortedInGrade = [...classesInGrade].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-          resultParts.push(sortedInGrade.join(", "));
+          const schoolGradeClasses = getSchoolGradeClasses(g);
+          const isFullGrade = isFullGradeClasses(classesInGrade, schoolGradeClasses, g);
+
+          if (isFullGrade) {
+            resultParts.push(`Khối ${g}`);
+          } else {
+            const sortedInGrade = [...classesInGrade].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+            resultParts.push(sortedInGrade.join(", "));
+          }
         }
       });
 
-      const otherClasses = [...cleanSet].filter(c => !grades.some(g => c.startsWith(g)));
+      const otherClasses = [...cleanSet].filter(c => {
+        const lower = c.toLowerCase().replace(/\s+/g, '');
+        const isGradeAlias = grades.some(g => lower === `khối${g}` || lower === `khoi${g}`);
+        return !isGradeAlias && !grades.some(g => c.startsWith(g));
+      });
       if (otherClasses.length > 0) {
         otherClasses.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
         resultParts.push(otherClasses.join(", "));
@@ -21038,7 +21051,11 @@ function renderGdtcTeacherTable() {
 
   weeks.forEach((w, index) => {
     const tuanNum = w.tuan;
-    const lopDayText = w.lopDay || defaultClassesStr || "--";
+    const rawLopDay = w.lopDay || defaultClassesStr || "";
+    const fullLopDayText = rawLopDay || "--";
+    const displayLopDayText = (typeof formatTeacherClassesSummary === 'function')
+      ? (formatTeacherClassesSummary(rawLopDay) || fullLopDayText)
+      : fullLopDayText;
     const tietDay = parseFloat(w.soTietDay) || 0;
     const tietThucHanh = parseFloat(w.soTietThucHanh) || 0;
 
@@ -21055,8 +21072,8 @@ function renderGdtcTeacherTable() {
       </td>
       <td class="py-3 px-4 border-r border-slate-200 text-left">
         <div class="flex items-center justify-between gap-2">
-          <span class="font-semibold text-slate-700 break-words leading-relaxed">
-            ${lopDayText}
+          <span class="font-semibold text-slate-700 break-words leading-relaxed" title="${escapeHtml(fullLopDayText)}">
+            ${escapeHtml(displayLopDayText)}
           </span>
           <button type="button" onclick="openGdtcEditWeekClassesModal(${index})" title="Chỉnh sửa lớp dạy tuần ${tuanNum}"
             class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-500 hover:text-amber-800 flex items-center justify-center transition shrink-0">
@@ -21228,9 +21245,14 @@ function renderGdtcSelectedClassesChips() {
     return;
   }
 
+  const fullClassesText = classes.join(', ');
+  const displayClassesText = (typeof formatTeacherClassesSummary === 'function')
+    ? (formatTeacherClassesSummary(classes) || fullClassesText)
+    : fullClassesText;
+
   container.innerHTML = `
     <span class="font-semibold text-slate-700">Đã chọn ${classes.length} lớp:</span>
-    <span class="text-amber-700 font-bold ml-1">${classes.join(', ')}</span>
+    <span class="text-amber-700 font-bold ml-1" title="${escapeHtml(fullClassesText)}">${escapeHtml(displayClassesText)}</span>
   `;
 }
 
@@ -21247,15 +21269,17 @@ function openGdtcSelectClassesModal(grade) {
   const titleEl = document.getElementById('gdtc-modal-classes-title');
   if (titleEl) titleEl.textContent = `Chọn Lớp Giảng Dạy Thể Dục - Khối ${grade}`;
 
-  // Lấy danh sách lớp toàn trường của khối này
-  let gradeClasses = [];
-  if (typeof schoolGradesData === 'object' && Array.isArray(schoolGradesData[grade])) {
-    gradeClasses = [...schoolGradesData[grade]];
-  } else if (typeof schoolGradesData === 'object' && Array.isArray(schoolGradesData[String(grade)])) {
-    gradeClasses = [...schoolGradesData[String(grade)]];
-  } else {
-    // Dự phòng mặc định nếu trường chưa cấu hình
-    gradeClasses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => `${grade}A${i}`);
+  // Lấy danh sách lớp toàn trường của khối này (đồng bộ với Phân hệ 1)
+  let gradeClasses = (typeof getSchoolGradeClasses === 'function') ? getSchoolGradeClasses(grade) : [];
+  if (!gradeClasses || gradeClasses.length === 0) {
+    if (typeof schoolGradesData === 'object' && Array.isArray(schoolGradesData[grade])) {
+      gradeClasses = [...schoolGradesData[grade]];
+    } else if (typeof schoolGradesData === 'object' && Array.isArray(schoolGradesData[String(grade)])) {
+      gradeClasses = [...schoolGradesData[String(grade)]];
+    } else {
+      // Dự phòng mặc định nếu trường chưa cấu hình
+      gradeClasses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(i => `${grade}A${i}`);
+    }
   }
 
   const existingClasses = gdtcTeacherStore.classes || [];
@@ -21332,11 +21356,11 @@ function confirmGdtcClassesSelection() {
   renderGdtcTeacherGradeBadges();
   renderGdtcSelectedClassesChips();
 
-  // Tự động điền lớp vào các tuần nếu tuần đó chưa có lớp
+  // Tự động điền lớp vào các tuần nếu tuần đó chưa có lớp hoặc chưa chỉnh sửa riêng
   const defaultClassesStr = gdtcTeacherStore.classes.join(', ');
   ['hk1', 'hk2'].forEach(semKey => {
     (gdtcTeacherStore[semKey] || []).forEach(w => {
-      if (!w.lopDay) w.lopDay = defaultClassesStr;
+      if (!w.hasCustomClasses) w.lopDay = defaultClassesStr;
     });
   });
 
@@ -21674,7 +21698,11 @@ function renderGdtcAdminTeachersTable() {
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
 
-    const classesText = (store.classes && store.classes.length > 0) ? store.classes.join(', ') : (t.lopDay || '--');
+    const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
+    const fullClassesText = Array.isArray(rawClasses) ? rawClasses.join(', ') : (rawClasses || '--');
+    const displayClassesText = (typeof formatTeacherClassesSummary === 'function')
+      ? (formatTeacherClassesSummary(rawClasses) || fullClassesText)
+      : fullClassesText;
 
     const tr = document.createElement('tr');
     tr.className = "hover:bg-amber-50/20 transition text-xs sm:text-sm";
@@ -21686,7 +21714,7 @@ function renderGdtcAdminTeachersTable() {
         ${t.ngaySinh ? `<div class="text-[11px] text-slate-400">NS: ${t.ngaySinh}</div>` : ''}
       </td>
       <td class="py-3 px-4 text-slate-700 font-medium">
-        <span class="break-words inline-block leading-relaxed">${classesText}</span>
+        <span class="break-words inline-block leading-relaxed" title="${escapeHtml(fullClassesText)}">${escapeHtml(displayClassesText)}</span>
       </td>
       <td class="py-3 px-4 text-center">
         ${isDeclared
@@ -21810,9 +21838,16 @@ function openAdminViewTeacherGdtcModal(taiKhoan) {
   if (dobEl) dobEl.textContent = t.ngaySinh ? `(NS: ${t.ngaySinh})` : '';
 
   const store = getTeacherGdtcStore(t);
-  const classesText = (store.classes && store.classes.length > 0) ? store.classes.join(', ') : (t.lopDay || '--');
+  const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
+  const fullClassesText = Array.isArray(rawClasses) ? rawClasses.join(', ') : (rawClasses || '--');
+  const compactClassesText = (typeof formatTeacherClassesSummary === 'function')
+    ? (formatTeacherClassesSummary(rawClasses) || fullClassesText)
+    : fullClassesText;
   const classEl = document.getElementById('modal-gdtc-admin-teacher-classes');
-  if (classEl) classEl.textContent = classesText;
+  if (classEl) {
+    classEl.textContent = compactClassesText;
+    classEl.title = fullClassesText;
+  }
 
   switchAdminModalGdtcSem('hk1');
   modal.classList.remove('hidden');
@@ -21850,7 +21885,11 @@ function renderAdminModalGdtcTable() {
 
   weeks.forEach(w => {
     const tuanNum = w.tuan;
-    const lopDayText = w.lopDay || defaultClassesStr || "--";
+    const rawLop = w.lopDay || defaultClassesStr || "";
+    const fullLopText = rawLop || "--";
+    const displayLopText = (typeof formatTeacherClassesSummary === 'function')
+      ? (formatTeacherClassesSummary(rawLop) || fullLopText)
+      : fullLopText;
     const tietDay = parseFloat(w.soTietDay) || 0;
     const tietThucHanh = parseFloat(w.soTietThucHanh) || 0;
 
@@ -21861,7 +21900,7 @@ function renderAdminModalGdtcTable() {
     tr.className = "hover:bg-amber-50/20 text-center";
     tr.innerHTML = `
       <td class="py-2.5 px-3 border-r border-slate-200 font-bold text-slate-800">Tuần ${tuanNum}</td>
-      <td class="py-2.5 px-4 border-r border-slate-200 text-left font-medium text-slate-700">${lopDayText}</td>
+      <td class="py-2.5 px-4 border-r border-slate-200 text-left font-medium text-slate-700" title="${escapeHtml(fullLopText)}">${escapeHtml(displayLopText)}</td>
       <td class="py-2.5 px-4 border-r border-slate-200 font-bold text-slate-800">${tietDay}</td>
       <td class="py-2.5 px-4 font-black text-amber-900 bg-amber-50/40">${tietThucHanh}</td>
     `;
@@ -22365,7 +22404,10 @@ function exportGdtcTeachersStatusPdf() {
     const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
-    const classesText = (store.classes && store.classes.length > 0) ? store.classes.join(', ') : (t.lopDay || '--');
+    const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
+    const classesText = (typeof formatTeacherClassesSummary === 'function')
+      ? (formatTeacherClassesSummary(rawClasses) || (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses) || '--')
+      : ((Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses) || '--');
 
     return {
       stt: idx + 1,
@@ -22535,7 +22577,10 @@ function exportGdtcTeachersStatusExcel() {
     const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
-    const classesText = (store.classes && store.classes.length > 0) ? store.classes.join(', ') : (t.lopDay || '');
+    const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
+    const classesText = (typeof formatTeacherClassesSummary === 'function')
+      ? (formatTeacherClassesSummary(rawClasses) || (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses))
+      : (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses);
 
     aoa.push([
       idx + 1,
@@ -22583,10 +22628,14 @@ function previewGdtcPersonalPdf(targetTeacher, targetSem) {
     const th = parseFloat(w.soTietThucHanh) || 0;
     sumDay += d;
     sumThucHanh += th;
+    const rawLop = w.lopDay || defaultClassesStr || "";
+    const lopText = (typeof formatTeacherClassesSummary === 'function')
+      ? (formatTeacherClassesSummary(rawLop) || rawLop || '--')
+      : (rawLop || '--');
     return `
       <tr style="text-align: center;">
         <td style="border: 1px solid #000; padding: 2.5px 3px;">Tuần ${w.tuan}</td>
-        <td style="border: 1px solid #000; padding: 2.5px 6px; text-align: left;">${w.lopDay || defaultClassesStr || '--'}</td>
+        <td style="border: 1px solid #000; padding: 2.5px 6px; text-align: left;">${lopText}</td>
         <td style="border: 1px solid #000; padding: 2.5px 3px;">${d}</td>
         <td style="border: 1px solid #000; padding: 2.5px 3px; font-weight: bold;">${th}</td>
       </tr>
@@ -22595,6 +22644,11 @@ function previewGdtcPersonalPdf(targetTeacher, targetSem) {
 
   const now = new Date();
   const dateStr = `ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
+
+  const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (teacher.lopDay || '');
+  const compactClassesText = (typeof formatTeacherClassesSummary === 'function')
+    ? (formatTeacherClassesSummary(rawClasses) || (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses) || '--')
+    : ((Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses) || '--');
 
   const paperHtml = `
     <div class="pdf-page-portrait pdf-last-page" style="background: #ffffff; padding: 4px 6px; box-sizing: border-box; page-break-inside: avoid; page-break-after: avoid; font-family: 'Times New Roman', Times, serif; font-size: 9.5pt; line-height: 1.25; color: #000;">
@@ -22628,7 +22682,7 @@ function previewGdtcPersonalPdf(targetTeacher, targetSem) {
       <div style="margin-bottom: 10px; font-size: 9.5pt; line-height: 1.4;">
         <div><strong>Họ và tên giáo viên:</strong> ${teacher.tenGv || teacher.taiKhoan} ${teacher.ngaySinh ? `(Ngày sinh: ${teacher.ngaySinh})` : ''}</div>
         <div><strong>Môn giảng dạy:</strong> Thể Dục (Giáo dục thể chất)</div>
-        <div><strong>Lớp giảng dạy:</strong> ${(store.classes || []).join(', ') || teacher.lopDay || '--'}</div>
+        <div><strong>Lớp giảng dạy:</strong> ${compactClassesText}</div>
       </div>
 
       <!-- Bảng 18 tuần -->
