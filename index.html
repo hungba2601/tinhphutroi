@@ -2842,14 +2842,34 @@ function isRoleGv(teacherOrRole, username) {
   let ten = "";
   if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
     role = teacherOrRole.quyen || teacherOrRole.vaiTro || "";
-    tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || "";
-    ten = teacherOrRole.tenGv || "";
+    tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || teacherOrRole.teacherTk || "";
+    ten = teacherOrRole.tenGv || teacherOrRole.teacherName || "";
   } else {
     role = teacherOrRole || "";
     tk = username || "";
   }
   const cleanTk = String(tk || "").trim().toLowerCase().replace(/^'+/, "");
   if (cleanTk === "admin" || cleanTk === "blt" || cleanTk === "bgh" || cleanTk === "quantri") return false;
+
+  // Nếu có danh sách adminTeachersList, kiểm tra chính xác qua tài khoản hoặc họ tên
+  if (typeof adminTeachersList !== 'undefined' && Array.isArray(adminTeachersList) && adminTeachersList.length > 0) {
+    const found = adminTeachersList.find(t => t && (
+      (cleanTk && isUsernameMatch(t.taiKhoan, cleanTk)) ||
+      (role && String(t.tenGv || '').trim().toLowerCase() === String(role).trim().toLowerCase()) ||
+      (ten && String(t.tenGv || '').trim().toLowerCase() === String(ten).trim().toLowerCase())
+    ));
+    if (found) {
+      const fTk = String(found.taiKhoan || found.rawTaiKhoan || '').trim().toLowerCase().replace(/^'+/, '');
+      if (fTk === 'admin' || fTk === 'blt' || fTk === 'bgh' || fTk === 'quantri') return false;
+      const fRole = String(found.quyen || found.vaiTro || '').trim().toLowerCase();
+      if (isSuperAdmin(fRole) || isRoleBgh(fRole) || isRoleAdmin(fRole)) return false;
+      if (fRole.includes('admin') || fRole.includes('bgh') || fRole.includes('quản') || fRole.includes('giám hiệu') || fRole.includes('hiệu trưởng') || fRole.includes('cbql')) return false;
+      const fTen = String(found.tenGv || '').trim().toLowerCase();
+      if (fTen.includes('quản trị viên') || fTen.includes('ban giám hiệu') || fTen.includes('trụ sở chính') || fTen.includes('bình lợi trung')) return false;
+      if (fRole === 'gv' || fRole === 'giáo viên' || fRole === 'giaovien' || fRole === 'teacher' || !fRole) return true;
+      return false;
+    }
+  }
 
   const r = String(role || "").trim().toLowerCase();
   if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
@@ -7969,8 +7989,8 @@ function initialSetup() {
       let ten = '';
       if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
         role = teacherOrRole.quyen || teacherOrRole.vaiTro || '';
-        tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || '';
-        ten = teacherOrRole.tenGv || '';
+        tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || teacherOrRole.teacherTk || '';
+        ten = teacherOrRole.tenGv || teacherOrRole.teacherName || '';
       } else {
         role = teacherOrRole || '';
         tk = username || '';
@@ -7981,6 +8001,26 @@ function initialSetup() {
       // Loại bỏ tài khoản đang đăng nhập nếu là Quản trị hoặc Ban Giám Hiệu
       if (typeof currentUser !== 'undefined' && currentUser && (currentUser.isLoggedInAsAdmin || isRoleAdmin(currentUser.quyen))) {
         if (cleanTk && isUsernameMatch(cleanTk, currentUser.taiKhoan)) return false;
+      }
+
+      // Nếu có danh sách adminTeachersList, kiểm tra chính xác qua tài khoản hoặc họ tên
+      if (typeof adminTeachersList !== 'undefined' && Array.isArray(adminTeachersList) && adminTeachersList.length > 0) {
+        const found = adminTeachersList.find(t => t && (
+          (cleanTk && isUsernameMatch(t.taiKhoan, cleanTk)) ||
+          (role && String(t.tenGv || '').trim().toLowerCase() === String(role).trim().toLowerCase()) ||
+          (ten && String(t.tenGv || '').trim().toLowerCase() === String(ten).trim().toLowerCase())
+        ));
+        if (found) {
+          const fTk = String(found.taiKhoan || found.rawTaiKhoan || '').trim().toLowerCase().replace(/^'+/, '');
+          if (fTk === 'admin' || fTk === 'blt' || fTk === 'bgh' || fTk === 'quantri') return false;
+          const fRole = String(found.quyen || found.vaiTro || '').trim().toLowerCase();
+          if (isSuperAdmin(fRole) || isRoleBgh(fRole) || isRoleAdmin(fRole)) return false;
+          if (fRole.includes('admin') || fRole.includes('bgh') || fRole.includes('quản') || fRole.includes('giám hiệu') || fRole.includes('hiệu trưởng') || fRole.includes('cbql')) return false;
+          const fTen = String(found.tenGv || '').trim().toLowerCase();
+          if (fTen.includes('quản trị viên') || fTen.includes('ban giám hiệu') || fTen.includes('trụ sở chính') || fTen.includes('bình lợi trung')) return false;
+          if (fRole === 'gv' || fRole === 'giáo viên' || fRole === 'giaovien' || fRole === 'teacher' || !fRole) return true;
+          return false;
+        }
       }
 
       const r = String(role || '').trim().toLowerCase();
@@ -18970,10 +19010,17 @@ function initialSetup() {
 
       let summaryRows = getFilteredHoaNhapSummaryRows(sem, hoaNhapSummaryViewMode).filter(r => {
         if (!r) return false;
-        if (!r.teacherTk && !r.teacherName) return true; // Lớp chưa có GV
+        if (!r.teacherTk && (!r.teacherName || r.teacherName === 'Chưa có GV kê khai')) return true; // Lớp chưa có GV
         const cleanTk = String(r.teacherTk || '').trim().toLowerCase().replace(/^'+/, '');
         if (cleanTk === 'admin' || cleanTk === 'blt' || cleanTk === 'bgh' || cleanTk === 'quantri') return false;
-        return isRoleGv(r.teacherName, r.teacherTk);
+        const tObj = (adminTeachersList || []).find(t => t && (
+          isUsernameMatch(t.taiKhoan, r.teacherTk) ||
+          (r.teacherName && String(t.tenGv || '').trim().toLowerCase() === String(r.teacherName).trim().toLowerCase())
+        ));
+        if (tObj) return isRoleGv(tObj);
+        const tName = String(r.teacherName || '').toLowerCase();
+        if (tName.includes('admin') || tName.includes('bgh') || tName.includes('quản trị') || tName.includes('ban giám hiệu')) return false;
+        return isRoleGv(r);
       });
 
       let totalPeriodsPerWeekSchool = 0;
@@ -19526,10 +19573,17 @@ function initialSetup() {
       // Loại bỏ hoàn toàn tài khoản Admin và BGH, chỉ giữ lại GV
       summaryRows = summaryRows.filter(r => {
         if (!r) return false;
-        if (!r.teacherTk && !r.teacherName) return true; // Lớp chưa có GV
+        if (!r.teacherTk && (!r.teacherName || r.teacherName === 'Chưa có GV kê khai')) return true; // Lớp chưa có GV
         const cleanTk = String(r.teacherTk || '').trim().toLowerCase().replace(/^'+/, '');
         if (cleanTk === 'admin' || cleanTk === 'blt' || cleanTk === 'bgh' || cleanTk === 'quantri') return false;
-        return isRoleGv(r.teacherName, r.teacherTk);
+        const tObj = (adminTeachersList || []).find(t => t && (
+          isUsernameMatch(t.taiKhoan, r.teacherTk) ||
+          (r.teacherName && String(t.tenGv || '').trim().toLowerCase() === String(r.teacherName).trim().toLowerCase())
+        ));
+        if (tObj) return isRoleGv(tObj);
+        const tName = String(r.teacherName || '').toLowerCase();
+        if (tName.includes('admin') || tName.includes('bgh') || tName.includes('quản trị') || tName.includes('ban giám hiệu')) return false;
+        return isRoleGv(r);
       });
 
       if (summaryRows.length === 0) {

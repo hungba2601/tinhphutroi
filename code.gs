@@ -408,14 +408,34 @@ function isRoleGv(teacherOrRole, username) {
   let ten = "";
   if (typeof teacherOrRole === 'object' && teacherOrRole !== null) {
     role = teacherOrRole.quyen || teacherOrRole.vaiTro || "";
-    tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || "";
-    ten = teacherOrRole.tenGv || "";
+    tk = teacherOrRole.taiKhoan || teacherOrRole.rawTaiKhoan || teacherOrRole.teacherTk || "";
+    ten = teacherOrRole.tenGv || teacherOrRole.teacherName || "";
   } else {
     role = teacherOrRole || "";
     tk = username || "";
   }
   const cleanTk = String(tk || "").trim().toLowerCase().replace(/^'+/, "");
   if (cleanTk === "admin" || cleanTk === "blt" || cleanTk === "bgh" || cleanTk === "quantri") return false;
+
+  // Nếu có danh sách adminTeachersList, kiểm tra chính xác qua tài khoản hoặc họ tên
+  if (typeof adminTeachersList !== 'undefined' && Array.isArray(adminTeachersList) && adminTeachersList.length > 0) {
+    const found = adminTeachersList.find(t => t && (
+      (cleanTk && isUsernameMatch(t.taiKhoan, cleanTk)) ||
+      (role && String(t.tenGv || '').trim().toLowerCase() === String(role).trim().toLowerCase()) ||
+      (ten && String(t.tenGv || '').trim().toLowerCase() === String(ten).trim().toLowerCase())
+    ));
+    if (found) {
+      const fTk = String(found.taiKhoan || found.rawTaiKhoan || '').trim().toLowerCase().replace(/^'+/, '');
+      if (fTk === 'admin' || fTk === 'blt' || fTk === 'bgh' || fTk === 'quantri') return false;
+      const fRole = String(found.quyen || found.vaiTro || '').trim().toLowerCase();
+      if (isSuperAdmin(fRole) || isRoleBgh(fRole) || isRoleAdmin(fRole)) return false;
+      if (fRole.includes('admin') || fRole.includes('bgh') || fRole.includes('quản') || fRole.includes('giám hiệu') || fRole.includes('hiệu trưởng') || fRole.includes('cbql')) return false;
+      const fTen = String(found.tenGv || '').trim().toLowerCase();
+      if (fTen.includes('quản trị viên') || fTen.includes('ban giám hiệu') || fTen.includes('trụ sở chính') || fTen.includes('bình lợi trung')) return false;
+      if (fRole === 'gv' || fRole === 'giáo viên' || fRole === 'giaovien' || fRole === 'teacher' || !fRole) return true;
+      return false;
+    }
+  }
 
   const r = String(role || "").trim().toLowerCase();
   if (isSuperAdmin(r) || isRoleBgh(r) || isRoleAdmin(r)) return false;
