@@ -2450,7 +2450,7 @@ function syncDataGdtcWithData(forceRebuild) {
                       existingJsonMap[rawTk.toLowerCase()] ||
                       existingJsonMap[normTk.replace(/^0+/, "").toLowerCase()] || "";
 
-    const cellTk = /^d+$/.test(normTk) ? "'" + normTk : normTk;
+    const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
     // Cột A: TK | Cột B: TÊN GV | Cột C: KÊ KHAI (Dạng JSON)
     teacherRows.push([cellTk, tenGv, savedJson]);
   }
@@ -2546,7 +2546,7 @@ function handleSaveGdtcData(taiKhoan, dataJson, isAdmin) {
   }
 
   const normTk = normalizeUsername(taiKhoan);
-  const cellTk = /^d+$/.test(normTk) ? "'" + normTk : normTk;
+  const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
 
   if (matchingRows.length === 0) {
     let tenGv = "";

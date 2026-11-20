@@ -210,14 +210,17 @@
       #teachers-status-print-modal-content,
       #teachers-status-print-modal-content *,
       #hoanhap-pdf-paper,
-      #hoanhap-pdf-paper * {
+      #hoanhap-pdf-paper *,
+      #gdtc-pdf-paper,
+      #gdtc-pdf-paper * {
         visibility: visible;
       }
 
       #print-modal-content,
       #school-print-modal-content,
       #teachers-status-print-modal-content,
-      #hoanhap-pdf-paper {
+      #hoanhap-pdf-paper,
+      #gdtc-pdf-paper {
         position: absolute;
         left: 0;
         top: 0;
@@ -1421,11 +1424,13 @@
 
         <!-- Controls: User info, View switcher, Action buttons -->
         <div class="flex items-center flex-wrap gap-2">
-          <!-- Trường / Đơn vị -->
+          <!-- Trường / Đơn vị & Thông tin người dùng -->
           <div
             class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs font-semibold text-slate-300">
             <i class="fa-solid fa-school text-amber-400"></i>
             <span id="gdtc-header-school-name">THCS AN NHƠN</span>
+            <span class="text-slate-500">•</span>
+            <span id="gdtc-header-user-name" class="font-bold text-white"></span>
             <span id="gdtc-header-role-badge"
               class="ml-1 px-1.5 py-0.5 text-[10px] font-black rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">
               GV
@@ -5579,7 +5584,7 @@ function syncDataGdtcWithData(forceRebuild) {
                       existingJsonMap[rawTk.toLowerCase()] ||
                       existingJsonMap[normTk.replace(/^0+/, "").toLowerCase()] || "";
 
-    const cellTk = /^d+$/.test(normTk) ? "'" + normTk : normTk;
+    const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
     // Cột A: TK | Cột B: TÊN GV | Cột C: KÊ KHAI (Dạng JSON)
     teacherRows.push([cellTk, tenGv, savedJson]);
   }
@@ -5675,7 +5680,7 @@ function handleSaveGdtcData(taiKhoan, dataJson, isAdmin) {
   }
 
   const normTk = normalizeUsername(taiKhoan);
-  const cellTk = /^d+$/.test(normTk) ? "'" + normTk : normTk;
+  const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
 
   if (matchingRows.length === 0) {
     let tenGv = "";
@@ -7438,8 +7443,8 @@ function handleGetAllGdtcData() {
       </div>
 
       <!-- Khung hiển thị nội dung trang in (PDF Preview Paper) -->
-      <div class="overflow-y-auto flex-grow p-4 bg-slate-200/70 rounded-2xl my-3 custom-scrollbar flex justify-center">
-        <div id="gdtc-pdf-paper" class="bg-white shadow-xl p-8 max-w-[800px] w-full text-slate-900 text-xs sm:text-sm font-sans space-y-4">
+      <div class="overflow-y-auto flex-grow p-2 sm:p-4 bg-slate-200/70 rounded-2xl my-3 custom-scrollbar flex justify-center">
+        <div id="gdtc-pdf-paper" class="bg-white shadow-xl p-4 sm:p-6 max-w-[850px] w-full text-slate-900 text-xs font-sans">
           <!-- Render HTML trang in chuẩn Quốc hiệu tiêu ngữ và bảng theo mẫu Hình H5 -->
         </div>
       </div>
@@ -9640,10 +9645,14 @@ function handleGetAllGdtcData() {
 
         document.getElementById('login-password').value = "";
         sessionStorage.removeItem('active_module');
+        sessionStorage.removeItem('gdtc_view');
+        sessionStorage.removeItem('hoanhap_view');
         document.getElementById('main-app').classList.add('hidden');
         document.getElementById('admin-portal').classList.add('hidden');
         const hoanhapEl = document.getElementById('hoanhap-portal');
         if (hoanhapEl) hoanhapEl.classList.add('hidden');
+        const gdtcEl = document.getElementById('gdtc-portal');
+        if (gdtcEl) gdtcEl.classList.add('hidden');
         const moduleHub = document.getElementById('module-selection-portal');
         if (moduleHub) moduleHub.classList.add('hidden');
         document.getElementById('login-modal').classList.remove('hidden');
@@ -20837,6 +20846,16 @@ function ensureGdtcWeeksStructure() {
 }
 
 /**
+ * Hàm kiểm tra trạng thái khóa hệ thống toàn trường an toàn
+ */
+function checkSystemLocked() {
+  if (typeof isSystemLocked === 'function') {
+    try { return isSystemLocked(); } catch (e) { return false; }
+  }
+  return isSystemLocked === true;
+}
+
+/**
  * Khởi tạo Phân hệ 3
  */
 async function initGdtcModule() {
@@ -20848,11 +20867,18 @@ async function initGdtcModule() {
 
   // Cập nhật thông tin Header Phân hệ 3
   const schoolNameEl = document.getElementById('gdtc-header-school-name');
-  if (schoolNameEl) schoolNameEl.textContent = currentSchoolName || "THCS AN NHƠN";
+  if (schoolNameEl) {
+    schoolNameEl.textContent = (typeof getCurrentSchoolName === 'function' ? getCurrentSchoolName() : (currentSchoolName || "THCS AN NHƠN"));
+  }
+
+  const userNameEl = document.getElementById('gdtc-header-user-name');
+  if (userNameEl) {
+    userNameEl.textContent = currentUser.tenGv || currentUser.taiKhoan;
+  }
 
   const roleBadgeEl = document.getElementById('gdtc-header-role-badge');
   if (roleBadgeEl) {
-    if (isRoleAdmin(currentUser.quyen) || currentUser.isLoggedInAsAdmin) {
+    if (isSuperAdmin(currentUser.quyen)) {
       roleBadgeEl.textContent = "Admin";
       roleBadgeEl.className = "ml-1 px-1.5 py-0.5 text-[10px] font-black rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase";
     } else if (isRoleBgh(currentUser.quyen)) {
@@ -20865,27 +20891,47 @@ async function initGdtcModule() {
   }
 
   const toggleBtn = document.getElementById('btn-gdtc-toggle-role-view');
-  if (isRoleAdmin(currentUser.quyen) || isRoleBgh(currentUser.quyen) || currentUser.isLoggedInAsAdmin) {
+  const isAdminOrBgh = isRoleAdmin(currentUser.quyen) || isRoleBgh(currentUser.quyen) || currentUser.isLoggedInAsAdmin;
+
+  if (isAdminOrBgh) {
     if (toggleBtn) toggleBtn.classList.remove('hidden');
-    isGdtcAdminView = true;
-    showGdtcAdminView();
+
+    // 1. Tải danh sách giáo viên toàn trường nếu chưa có (để phục vụ Tab 1 Quản lý GV và Tab 2 Tổng hợp kết quả)
+    if (!adminTeachersList || adminTeachersList.length === 0) {
+      if (typeof loadAdminAllData === 'function') {
+        await loadAdminAllData(false);
+      }
+    }
+
+    // 2. Quyết định giao diện: Mặc định Cổng Quản Trị cho Admin / BGH, trừ khi đã chọn Sổ cá nhân
+    const savedView = sessionStorage.getItem('gdtc_view');
+    if (savedView === 'teacher') {
+      showGdtcTeacherView();
+    } else {
+      await showGdtcAdminView();
+    }
   } else {
     if (toggleBtn) toggleBtn.classList.add('hidden');
-    isGdtcAdminView = false;
     showGdtcTeacherView();
   }
 }
 
 /**
- * Chuyển sang Giao diện Giáo Viên
+ * Chuyển sang Giao diện Giáo Viên (Sổ Cá Nhân)
  */
 function showGdtcTeacherView() {
   isGdtcAdminView = false;
-  document.getElementById('gdtc-admin-view').classList.add('hidden');
-  document.getElementById('gdtc-teacher-view').classList.remove('hidden');
+  sessionStorage.setItem('gdtc_view', 'teacher');
+  const adminViewEl = document.getElementById('gdtc-admin-view');
+  const teacherViewEl = document.getElementById('gdtc-teacher-view');
+  if (adminViewEl) adminViewEl.classList.add('hidden');
+  if (teacherViewEl) teacherViewEl.classList.remove('hidden');
 
-  const toggleLabel = document.getElementById('gdtc-toggle-role-label');
-  if (toggleLabel) toggleLabel.textContent = "Trang Quản Trị";
+  const toggleBtn = document.getElementById('btn-gdtc-toggle-role-view');
+  if (toggleBtn) {
+    toggleBtn.innerHTML = `<i class="fa-solid fa-shield-halved"></i><span id="gdtc-toggle-role-label">Trang Quản Trị</span>`;
+    toggleBtn.title = "Chuyển sang Cổng Quản Trị & Tổng Hợp Kết Quả";
+  }
 
   // Phục hồi từ cache localStorage nếu có
   const cacheKey = 'gdtc_data_' + (currentUser ? currentUser.taiKhoan : '');
@@ -20908,29 +20954,45 @@ function showGdtcTeacherView() {
 /**
  * Chuyển sang Giao diện Quản Trị Admin / BGH
  */
-function showGdtcAdminView() {
+async function showGdtcAdminView() {
   isGdtcAdminView = true;
-  document.getElementById('gdtc-teacher-view').classList.add('hidden');
-  document.getElementById('gdtc-admin-view').classList.remove('hidden');
+  sessionStorage.setItem('gdtc_view', 'admin');
+  const teacherViewEl = document.getElementById('gdtc-teacher-view');
+  const adminViewEl = document.getElementById('gdtc-admin-view');
+  if (teacherViewEl) teacherViewEl.classList.add('hidden');
+  if (adminViewEl) adminViewEl.classList.remove('hidden');
 
-  const toggleLabel = document.getElementById('gdtc-toggle-role-label');
-  if (toggleLabel) toggleLabel.textContent = "Sổ Cá Nhân";
+  const toggleBtn = document.getElementById('btn-gdtc-toggle-role-view');
+  if (toggleBtn) {
+    toggleBtn.innerHTML = `<i class="fa-solid fa-chalkboard-user"></i><span id="gdtc-toggle-role-label">Sổ Cá Nhân</span>`;
+    toggleBtn.title = "Chuyển sang Sổ kê khai cá nhân của Thầy/Cô";
+  }
+
+  // Đảm bảo danh sách giáo viên toàn trường đã có sẵn
+  if (!adminTeachersList || adminTeachersList.length === 0) {
+    if (typeof loadAdminAllData === 'function') {
+      await loadAdminAllData(false);
+    }
+  }
 
   // Đồng bộ trạng thái khóa toàn trường
   updateGdtcAdminLockUI();
 
-  // Tải dữ liệu từ Cloud
-  syncAllTeachersGdtcFromCloud();
+  // Kích hoạt tab quản trị đang chọn (mặc định Tab 1: Quản Lý Giáo Viên)
+  switchGdtcAdminTab(gdtcAdminActiveTab || 'teachers');
+
+  // Tải dữ liệu từ Cloud và cập nhật bảng
+  await syncAllTeachersGdtcFromCloud();
 }
 
 /**
  * Nút chuyển đổi View dành cho Admin / BGH
  */
-function toggleGdtcRoleView() {
+async function toggleGdtcRoleView() {
   if (isGdtcAdminView) {
     showGdtcTeacherView();
   } else {
-    showGdtcAdminView();
+    await showGdtcAdminView();
   }
 }
 
@@ -21100,7 +21162,7 @@ function updateGdtcTeacherAlertBanner(sumDay, sumThucHanh) {
   if (!banner) return;
 
   const semName = gdtcActiveSemester === 'hk1' ? 'Học Kỳ 1 (18 tuần)' : 'Học Kỳ 2 (17 tuần)';
-  const isLocked = isSystemLocked();
+  const isLocked = checkSystemLocked();
 
   if (isLocked) {
     banner.className = "p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs sm:text-sm font-medium flex items-center gap-3";
@@ -21339,8 +21401,8 @@ async function saveGdtcDataToCloud() {
   ensureGdtcWeeksStructure();
 
   // Kiểm tra khóa
-  const isAdmin = isRoleAdmin(currentUser.quyen) || currentUser.isLoggedInAsAdmin;
-  if (isSystemLocked() && !isAdmin) {
+  const isAdmin = isRoleAdmin(currentUser.quyen) || isRoleBgh(currentUser.quyen) || currentUser.isLoggedInAsAdmin;
+  if (checkSystemLocked() && !isAdmin) {
     showToast("Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban Giám Hiệu nhà trường!", "error");
     return;
   }
@@ -21490,7 +21552,7 @@ function handleGdtcAdminStatusFilterChange() {
 }
 
 function updateGdtcAdminLockUI() {
-  const isLocked = isSystemLocked();
+  const isLocked = checkSystemLocked();
   const label = document.getElementById('gdtc-admin-lock-label');
   const btn = document.getElementById('btn-gdtc-admin-lock-toggle');
 
@@ -21824,6 +21886,44 @@ function printGdtcFromAdminModal() {
  */
 
 /**
+ * Thuật toán chia trang thông minh cho Báo Cáo GDTC (Phân hệ 3)
+ * Đảm bảo bảng không bao giờ bị cắt dòng giữa chừng, vừa vặn A4
+ */
+function paginateGdtcSummaryPdf(totalRows) {
+  const P1_MAX_WITH_SIG = 22; // Chứa tối đa 22 GV trên đúng 1 trang duy nhất kèm chữ ký
+  const P_PER_PAGE_NO_SIG = 28; // Trang giữa không chữ ký
+  const P_LAST_MAX_WITH_SIG = 20; // Trang cuối cùng có khối chữ ký
+
+  if (totalRows <= P1_MAX_WITH_SIG) {
+    return [{ pageNum: 1, start: 0, end: totalRows, isFirst: true, isLast: true }];
+  }
+
+  const pages = [];
+  let cur = 0;
+  let p = 1;
+
+  while (cur < totalRows) {
+    const remaining = totalRows - cur;
+    if (remaining <= P_LAST_MAX_WITH_SIG) {
+      pages.push({ pageNum: p++, start: cur, end: totalRows, isFirst: (cur === 0), isLast: true });
+      break;
+    }
+
+    let end = Math.min(cur + P_PER_PAGE_NO_SIG, totalRows);
+    const remAfter = totalRows - end;
+    if (remAfter > 0 && remAfter < 3) {
+      end = Math.max(cur + 1, end - 3);
+    }
+
+    pages.push({ pageNum: p++, start: cur, end: end, isFirst: (cur === 0), isLast: (end === totalRows) });
+    cur = end;
+  }
+
+  if (pages.length > 0) pages[pages.length - 1].isLast = true;
+  return pages;
+}
+
+/**
  * Xuất PDF Báo Cáo Tổng Hợp Kết Quả Toàn Trường (Mẫu chuẩn Hình H5)
  */
 function exportGdtcAdminPdf() {
@@ -21831,14 +21931,20 @@ function exportGdtcAdminPdf() {
   const semLabel = sem === 'hk1' ? 'HỌC KỲ 1 (18 TUẦN THỰC HỌC)' : (sem === 'hk2' ? 'HỌC KỲ 2 (17 TUẦN THỰC HỌC)' : 'CẢ NĂM HỌC');
   const allTeachers = getGdtcTeachersList();
 
+  if (allTeachers.length === 0) {
+    showToast("Không có dữ liệu giáo viên để xuất PDF!", "warning");
+    return;
+  }
+
   const now = new Date();
   const dateStr = `ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
+  const colPhucapHeader = sem === 'hk1' ? 'Số tiết được Phụ cấp HK1' : (sem === 'hk2' ? 'Số tiết được Phụ cấp HK2' : 'Số tiết được Phụ cấp Cả Năm');
 
   let sumDayTuan = 0;
   let sumThucHanhTuan = 0;
   let sumPhucap = 0;
 
-  const rowsHtml = allTeachers.map((t, idx) => {
+  const teacherDataList = allTeachers.map((t, idx) => {
     const store = getTeacherGdtcStore(t);
     let weeks = sem === 'hk1' ? (store.hk1 || []) : (sem === 'hk2' ? (store.hk2 || []) : [...(store.hk1 || []), ...(store.hk2 || [])]);
 
@@ -21865,93 +21971,135 @@ function exportGdtcAdminPdf() {
     sumThucHanhTuan += tietThucHanhTuan;
     sumPhucap += tietPhucap;
 
-    return `
-      <tr style="text-align: center;">
-        <td style="border: 1px solid #000; padding: 6px 4px;">${idx + 1}</td>
-        <td style="border: 1px solid #000; padding: 6px 8px; text-align: left; font-weight: bold;">${t.tenGv || t.taiKhoan}</td>
-        <td style="border: 1px solid #000; padding: 6px 4px;">${tietDayTuan}</td>
-        <td style="border: 1px solid #000; padding: 6px 4px;">${tietThucHanhTuan}</td>
-        <td style="border: 1px solid #000; padding: 6px 4px; font-weight: bold;">${tietPhucap}</td>
+    return {
+      stt: idx + 1,
+      name: t.tenGv || t.taiKhoan,
+      tietDayTuan,
+      tietThucHanhTuan,
+      tietPhucap
+    };
+  });
+
+  const pages = paginateGdtcSummaryPdf(teacherDataList.length);
+  const totalPages = pages.length;
+
+  const theadHtml = `
+    <thead>
+      <tr style="text-align: center; font-weight: bold; background-color: #f1f5f9;">
+        <th rowspan="2" style="border: 1px solid #000; padding: 4px 3px; width: 40px;">TT</th>
+        <th rowspan="2" style="border: 1px solid #000; padding: 4px 6px; text-align: left;">Họ và tên giáo viên</th>
+        <th colspan="3" style="border: 1px solid #000; padding: 4px 3px;">Số tiết dạy trong học kỳ</th>
       </tr>
-    `;
-  }).join('');
+      <tr style="text-align: center; font-weight: bold; background-color: #f1f5f9;">
+        <th style="border: 1px solid #000; padding: 4px 3px; width: 140px;">Số tiết trên lớp/tuần</th>
+        <th style="border: 1px solid #000; padding: 4px 3px; width: 140px;">Số tiết Thực hành/tuần</th>
+        <th style="border: 1px solid #000; padding: 4px 3px; width: 160px;">${colPhucapHeader}</th>
+      </tr>
+    </thead>
+  `;
 
-  const colPhucapHeader = sem === 'hk1' ? 'Số tiết được Phụ cấp HK1' : (sem === 'hk2' ? 'Số tiết được Phụ cấp HK2' : 'Số tiết được Phụ cấp Cả Năm');
+  const tfootHtml = `
+    <tfoot>
+      <tr style="text-align: center; font-weight: bold; background-color: #f8fafc;">
+        <td colspan="2" style="border: 1px solid #000; padding: 6px 8px; font-weight: bold; text-align: center; text-transform: uppercase;">Tổng cộng</td>
+        <td style="border: 1px solid #000; padding: 6px 4px;">${Math.round(sumDayTuan * 10) / 10}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px;">${Math.round(sumThucHanhTuan * 10) / 10}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; font-weight: bold;">${sumPhucap}</td>
+      </tr>
+    </tfoot>
+  `;
 
-  const paperHtml = `
-    <div style="font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.4; color: #000; padding: 20px;">
+  const signatureHtml = `
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <tr>
+        <td style="width: 50%; text-align: center; vertical-align: top;">
+          <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt;">PHÓ HIỆU TRƯỞNG</div>
+          <div style="font-style: italic; font-size: 9.5pt;">(Duyệt)</div>
+        </td>
+        <td style="width: 50%; text-align: center; vertical-align: top;">
+          <div style="font-style: italic; font-size: 9.5pt;">An Nhơn, ${dateStr}</div>
+          <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt; margin-top: 2px;">NGƯỜI LẬP BIỂU</div>
+          <div style="font-style: italic; font-size: 9.5pt;">(Ký và ghi rõ họ tên)</div>
+          <div style="margin-top: 55px; font-weight: bold; font-size: 10.5pt;">${currentUser ? (currentUser.tenGv || '') : ''}</div>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  let fullHtml = "";
+
+  pages.forEach(pageInfo => {
+    const pageRows = teacherDataList.slice(pageInfo.start, pageInfo.end);
+    const rowsHtml = pageRows.map(r => `
+      <tr style="text-align: center;">
+        <td style="border: 1px solid #000; padding: 3.5px 3px;">${r.stt}</td>
+        <td style="border: 1px solid #000; padding: 3.5px 6px; text-align: left; font-weight: bold;">${r.name}</td>
+        <td style="border: 1px solid #000; padding: 3.5px 3px;">${r.tietDayTuan}</td>
+        <td style="border: 1px solid #000; padding: 3.5px 3px;">${r.tietThucHanhTuan}</td>
+        <td style="border: 1px solid #000; padding: 3.5px 3px; font-weight: bold;">${r.tietPhucap}</td>
+      </tr>
+    `).join('');
+
+    const pageHeaderHtml = pageInfo.isFirst ? `
       <!-- Header Quốc hiệu tiêu ngữ -->
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top;">
-            <div style="font-size: 11pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
-            <div style="margin-top: 4px; border-bottom: 1px solid #000; width: 120px; margin-left: auto; margin-right: auto;"></div>
+            <div style="font-size: 10pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
+            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
+            <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 110px; margin-left: auto; margin-right: auto;"></div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top;">
-            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
-            <div style="margin-top: 4px; border-bottom: 1px solid #000; width: 160px; margin-left: auto; margin-right: auto;"></div>
+            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-size: 10pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
+            <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 140px; margin-left: auto; margin-right: auto;"></div>
           </td>
         </tr>
       </table>
 
       <!-- Tiêu đề Bảng theo Hình H4 & H5 -->
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase;">
+      <div style="text-align: center; margin-bottom: 14px;">
+        <div style="font-size: 12.5pt; font-weight: bold; text-transform: uppercase;">
           BẢNG TỔNG HỢP SỐ TIẾT DẠY THỰC HÀNH CỦA GIÁO VIÊN THỂ DỤC
         </div>
-        <div style="font-size: 12pt; font-style: italic; margin-top: 4px;">
+        <div style="font-size: 10.5pt; font-style: italic; margin-top: 2px;">
           ${semLabel} - NĂM HỌC 2024 - 2025
         </div>
       </div>
-
-      <!-- Bảng dữ liệu đúng theo Hình H4 & H5 -->
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12pt;">
-        <thead>
-          <tr style="text-align: center; font-weight: bold;">
-            <th rowspan="2" style="border: 1px solid #000; padding: 6px 4px; width: 45px;">TT</th>
-            <th rowspan="2" style="border: 1px solid #000; padding: 6px 8px; text-align: left;">Họ và tên giáo viên</th>
-            <th colspan="3" style="border: 1px solid #000; padding: 6px 4px;">Số tiết dạy trong học kỳ</th>
-          </tr>
-          <tr style="text-align: center; font-weight: bold;">
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 140px;">Số tiết trên lớp/tuần</th>
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 140px;">Số tiết Thực hành/tuần</th>
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 160px;">${colPhucapHeader}</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-        <tfoot>
-          <tr style="text-align: center; font-weight: bold;">
-            <td colspan="2" style="border: 1px solid #000; padding: 8px; font-weight: bold;">Tổng cộng</td>
-            <td style="border: 1px solid #000; padding: 8px;">${Math.round(sumDayTuan * 10) / 10}</td>
-            <td style="border: 1px solid #000; padding: 8px;">${Math.round(sumThucHanhTuan * 10) / 10}</td>
-            <td style="border: 1px solid #000; padding: 8px;">${sumPhucap}</td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <!-- Khối chữ ký cuối bảng -->
-      <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+    ` : `
+      <!-- Header trang phụ -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
         <tr>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-weight: bold; text-transform: uppercase;">PHÓ HIỆU TRƯỞNG</div>
-            <div style="font-style: italic; font-size: 11pt;">(Duyệt)</div>
-          </td>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-style: italic; font-size: 11pt;">An Nhơn, ${dateStr}</div>
-            <div style="font-weight: bold; text-transform: uppercase; margin-top: 4px;">NGƯỜI LẬP BIỂU</div>
-            <div style="font-style: italic; font-size: 11pt;">(Ký và ghi rõ họ tên)</div>
-            <div style="margin-top: 70px; font-weight: bold;">${currentUser ? (currentUser.tenGv || '') : ''}</div>
+          <td style="text-align: left; font-size: 9pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</td>
+          <td style="text-align: right; font-size: 9pt; font-weight: bold; text-transform: uppercase;">
+            BẢNG TỔNG HỢP TIẾT DẠY THỰC HÀNH THỂ DỤC (${semLabel}) - Tiếp theo
           </td>
         </tr>
       </table>
-    </div>
-  `;
+    `;
 
-  openGdtcPdfPreviewModal(paperHtml, `Báo Cáo Tổng Hợp Tiết Thực Hành Thể Dục - ${semLabel}`);
+    fullHtml += `
+      <div class="pdf-page-portrait ${pageInfo.isLast ? 'pdf-last-page' : ''}" style="background: #ffffff; padding: 4px 6px; margin-bottom: ${pageInfo.isLast ? '0' : '20px'}; box-sizing: border-box; page-break-inside: avoid; page-break-after: ${pageInfo.isLast ? 'avoid' : 'always'}; font-family: 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.25; color: #000;">
+        ${pageHeaderHtml}
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10pt;">
+          ${theadHtml}
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+          ${pageInfo.isLast ? tfootHtml : ''}
+        </table>
+
+        ${pageInfo.isLast ? signatureHtml : ''}
+
+        <div style="margin-top: 10px; text-align: right; font-size: 8.5pt; color: #64748b; font-style: italic;">
+          Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+        </div>
+      </div>
+    `;
+  });
+
+  openGdtcPdfPreviewModal(fullHtml, `Báo Cáo Tổng Hợp Tiết Thực Hành Thể Dục - ${semLabel}`);
 }
 
 /**
@@ -22204,94 +22352,143 @@ function exportGdtcAdminExcel() {
  */
 function exportGdtcTeachersStatusPdf() {
   const allTeachers = getGdtcTeachersList();
+  if (allTeachers.length === 0) {
+    showToast("Không có danh sách giáo viên để xuất PDF!", "warning");
+    return;
+  }
+
   const now = new Date();
   const dateStr = `ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
 
-  const rowsHtml = allTeachers.map((t, idx) => {
+  const teacherDataList = allTeachers.map((t, idx) => {
     const store = getTeacherGdtcStore(t);
     const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
     const classesText = (store.classes && store.classes.length > 0) ? store.classes.join(', ') : (t.lopDay || '--');
 
-    return `
-      <tr style="text-align: center;">
-        <td style="border: 1px solid #000; padding: 6px 4px;">${idx + 1}</td>
-        <td style="border: 1px solid #000; padding: 6px 4px; font-family: monospace;">${t.taiKhoan}</td>
-        <td style="border: 1px solid #000; padding: 6px 8px; text-align: left; font-weight: bold;">
-          ${t.tenGv || t.taiKhoan} ${t.ngaySinh ? `<span style="font-size: 10pt; font-weight: normal;">(NS: ${t.ngaySinh})</span>` : ''}
-        </td>
-        <td style="border: 1px solid #000; padding: 6px 6px; text-align: left;">${classesText}</td>
-        <td style="border: 1px solid #000; padding: 6px 4px; font-weight: bold; color: ${isDeclared ? '#047857' : '#b91c1c'};">
-          ${isDeclared ? 'Đã kê khai' : 'Chưa kê khai'}
-        </td>
-        <td style="border: 1px solid #000; padding: 6px 4px;">${sumHk1} tiết</td>
-        <td style="border: 1px solid #000; padding: 6px 4px;">${sumHk2} tiết</td>
-      </tr>
-    `;
-  }).join('');
+    return {
+      stt: idx + 1,
+      taiKhoan: t.taiKhoan,
+      tenGv: t.tenGv || t.taiKhoan,
+      ngaySinh: t.ngaySinh || '',
+      classesText,
+      isDeclared,
+      sumHk1,
+      sumHk2
+    };
+  });
 
-  const paperHtml = `
-    <div style="font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.4; color: #000; padding: 20px;">
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+  const pages = paginateGdtcSummaryPdf(teacherDataList.length);
+  const totalPages = pages.length;
+
+  const theadHtml = `
+    <thead>
+      <tr style="text-align: center; font-weight: bold; background-color: #f1f5f9;">
+        <th style="border: 1px solid #000; padding: 4px 2px; width: 35px;">STT</th>
+        <th style="border: 1px solid #000; padding: 4px; width: 85px;">Tài khoản</th>
+        <th style="border: 1px solid #000; padding: 4px 6px; text-align: left;">Họ và tên giáo viên</th>
+        <th style="border: 1px solid #000; padding: 4px 6px; text-align: left;">Lớp giảng dạy</th>
+        <th style="border: 1px solid #000; padding: 4px; width: 95px;">Trạng thái</th>
+        <th style="border: 1px solid #000; padding: 4px; width: 75px;">HK1 (tiết)</th>
+        <th style="border: 1px solid #000; padding: 4px; width: 75px;">HK2 (tiết)</th>
+      </tr>
+    </thead>
+  `;
+
+  const signatureHtml = `
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <tr>
+        <td style="width: 50%; text-align: center; vertical-align: top;">
+          <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt;">PHÓ HIỆU TRƯỞNG</div>
+          <div style="font-style: italic; font-size: 9.5pt;">(Duyệt)</div>
+        </td>
+        <td style="width: 50%; text-align: center; vertical-align: top;">
+          <div style="font-style: italic; font-size: 9.5pt;">An Nhơn, ${dateStr}</div>
+          <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt; margin-top: 2px;">NGƯỜI LẬP BIỂU</div>
+          <div style="font-style: italic; font-size: 9.5pt;">(Ký và ghi rõ họ tên)</div>
+          <div style="margin-top: 55px; font-weight: bold; font-size: 10.5pt;">${currentUser ? (currentUser.tenGv || '') : ''}</div>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  let fullHtml = "";
+
+  pages.forEach(pageInfo => {
+    const pageRows = teacherDataList.slice(pageInfo.start, pageInfo.end);
+    const rowsHtml = pageRows.map(r => `
+      <tr style="text-align: center;">
+        <td style="border: 1px solid #000; padding: 3.5px 2px;">${r.stt}</td>
+        <td style="border: 1px solid #000; padding: 3.5px; font-family: monospace;">${r.taiKhoan}</td>
+        <td style="border: 1px solid #000; padding: 3.5px 6px; text-align: left; font-weight: bold;">
+          ${r.tenGv} ${r.ngaySinh ? `<span style="font-size: 8.5pt; font-weight: normal;">(NS: ${r.ngaySinh})</span>` : ''}
+        </td>
+        <td style="border: 1px solid #000; padding: 3.5px 6px; text-align: left;">${r.classesText}</td>
+        <td style="border: 1px solid #000; padding: 3.5px; font-weight: bold; color: ${r.isDeclared ? '#047857' : '#b91c1c'};">
+          ${r.isDeclared ? 'Đã kê khai' : 'Chưa kê khai'}
+        </td>
+        <td style="border: 1px solid #000; padding: 3.5px;">${r.sumHk1}</td>
+        <td style="border: 1px solid #000; padding: 3.5px;">${r.sumHk2}</td>
+      </tr>
+    `).join('');
+
+    const pageHeaderHtml = pageInfo.isFirst ? `
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top;">
-            <div style="font-size: 11pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
-            <div style="margin-top: 4px; border-bottom: 1px solid #000; width: 120px; margin-left: auto; margin-right: auto;"></div>
+            <div style="font-size: 10pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
+            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
+            <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 110px; margin-left: auto; margin-right: auto;"></div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top;">
-            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
-            <div style="margin-top: 4px; border-bottom: 1px solid #000; width: 160px; margin-left: auto; margin-right: auto;"></div>
+            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-size: 10pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
+            <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 140px; margin-left: auto; margin-right: auto;"></div>
           </td>
         </tr>
       </table>
 
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase;">
+      <div style="text-align: center; margin-bottom: 14px;">
+        <div style="font-size: 12.5pt; font-weight: bold; text-transform: uppercase;">
           DANH SÁCH THỐNG KÊ KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC
         </div>
-        <div style="font-size: 12pt; font-style: italic; margin-top: 4px;">
+        <div style="font-size: 10.5pt; font-style: italic; margin-top: 2px;">
           NĂM HỌC 2024 - 2025
         </div>
       </div>
-
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12pt;">
-        <thead>
-          <tr style="text-align: center; font-weight: bold; background-color: #f1f5f9;">
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 40px;">STT</th>
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 100px;">Tài khoản</th>
-            <th style="border: 1px solid #000; padding: 6px 8px; text-align: left;">Họ và tên giáo viên</th>
-            <th style="border: 1px solid #000; padding: 6px 6px; text-align: left;">Lớp giảng dạy</th>
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 110px;">Trạng thái</th>
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 90px;">Thực hành HK1</th>
-            <th style="border: 1px solid #000; padding: 6px 4px; width: 90px;">Thực hành HK2</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-      </table>
-
-      <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+    ` : `
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
         <tr>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-weight: bold; text-transform: uppercase;">PHÓ HIỆU TRƯỞNG</div>
-            <div style="font-style: italic; font-size: 11pt;">(Duyệt)</div>
-          </td>
-          <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-style: italic; font-size: 11pt;">An Nhơn, ${dateStr}</div>
-            <div style="font-weight: bold; text-transform: uppercase; margin-top: 4px;">NGƯỜI LẬP BIỂU</div>
-            <div style="font-style: italic; font-size: 11pt;">(Ký và ghi rõ họ tên)</div>
-            <div style="margin-top: 70px; font-weight: bold;">${currentUser ? (currentUser.tenGv || '') : ''}</div>
+          <td style="text-align: left; font-size: 9pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</td>
+          <td style="text-align: right; font-size: 9pt; font-weight: bold; text-transform: uppercase;">
+            THỐNG KÊ KÊ KHAI THỰC HÀNH THỂ DỤC (Trang ${pageInfo.pageNum}/${totalPages}) - Tiếp theo
           </td>
         </tr>
       </table>
-    </div>
-  `;
+    `;
 
-  openGdtcPdfPreviewModal(paperHtml, "Danh Sách Thống Kê Kê Khai Tiết Dạy Thực Hành Thể Dục");
+    fullHtml += `
+      <div class="pdf-page-portrait ${pageInfo.isLast ? 'pdf-last-page' : ''}" style="background: #ffffff; padding: 4px 6px; margin-bottom: ${pageInfo.isLast ? '0' : '20px'}; box-sizing: border-box; page-break-inside: avoid; page-break-after: ${pageInfo.isLast ? 'avoid' : 'always'}; font-family: 'Times New Roman', Times, serif; font-size: 9.5pt; line-height: 1.25; color: #000;">
+        ${pageHeaderHtml}
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9.5pt;">
+          ${theadHtml}
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        ${pageInfo.isLast ? signatureHtml : ''}
+
+        <div style="margin-top: 10px; text-align: right; font-size: 8.5pt; color: #64748b; font-style: italic;">
+          Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+        </div>
+      </div>
+    `;
+  });
+
+  openGdtcPdfPreviewModal(fullHtml, "Danh Sách Thống Kê Kê Khai Tiết Dạy Thực Hành Thể Dục");
 }
 
 /**
@@ -22365,6 +22562,7 @@ function exportGdtcTeachersStatusExcel() {
 
 /**
  * Xem trước & Xuất Phiếu Kê Khai Cá Nhân (PDF)
+ * Đảm bảo gói gọn chính xác trên 1 trang A4 Portrait duy nhất, không bị nhảy trang
  */
 function previewGdtcPersonalPdf(targetTeacher, targetSem) {
   const teacher = targetTeacher || currentUser;
@@ -22387,10 +22585,10 @@ function previewGdtcPersonalPdf(targetTeacher, targetSem) {
     sumThucHanh += th;
     return `
       <tr style="text-align: center;">
-        <td style="border: 1px solid #000; padding: 5px;">Tuần ${w.tuan}</td>
-        <td style="border: 1px solid #000; padding: 5px 8px; text-align: left;">${w.lopDay || defaultClassesStr || '--'}</td>
-        <td style="border: 1px solid #000; padding: 5px;">${d}</td>
-        <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${th}</td>
+        <td style="border: 1px solid #000; padding: 2.5px 3px;">Tuần ${w.tuan}</td>
+        <td style="border: 1px solid #000; padding: 2.5px 6px; text-align: left;">${w.lopDay || defaultClassesStr || '--'}</td>
+        <td style="border: 1px solid #000; padding: 2.5px 3px;">${d}</td>
+        <td style="border: 1px solid #000; padding: 2.5px 3px; font-weight: bold;">${th}</td>
       </tr>
     `;
   }).join('');
@@ -22399,44 +22597,48 @@ function previewGdtcPersonalPdf(targetTeacher, targetSem) {
   const dateStr = `ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
 
   const paperHtml = `
-    <div style="font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.4; color: #000; padding: 20px;">
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <div class="pdf-page-portrait pdf-last-page" style="background: #ffffff; padding: 4px 6px; box-sizing: border-box; page-break-inside: avoid; page-break-after: avoid; font-family: 'Times New Roman', Times, serif; font-size: 9.5pt; line-height: 1.25; color: #000;">
+      <!-- Header Quốc hiệu tiêu ngữ -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top;">
-            <div style="font-size: 11pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
-            <div style="margin-top: 4px; border-bottom: 1px solid #000; width: 120px; margin-left: auto; margin-right: auto;"></div>
+            <div style="font-size: 9.5pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
+            <div style="font-size: 9.5pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
+            <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 105px; margin-left: auto; margin-right: auto;"></div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top;">
-            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-size: 11pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
-            <div style="margin-top: 4px; border-bottom: 1px solid #000; width: 160px; margin-left: auto; margin-right: auto;"></div>
+            <div style="font-size: 9.5pt; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div style="font-size: 9.5pt; font-weight: bold;">Độc lập - Tự do - Hạnh phúc</div>
+            <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 135px; margin-left: auto; margin-right: auto;"></div>
           </td>
         </tr>
       </table>
 
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase;">
+      <!-- Tiêu đề Phiếu -->
+      <div style="text-align: center; margin-bottom: 10px;">
+        <div style="font-size: 12pt; font-weight: bold; text-transform: uppercase;">
           BẢNG KÊ KHAI TIẾT DẠY THỰC HÀNH CỦA GIÁO VIÊN THỂ DỤC
         </div>
-        <div style="font-size: 12pt; font-style: italic; margin-top: 4px;">
+        <div style="font-size: 9.5pt; font-style: italic; margin-top: 2px;">
           ${semName} - NĂM HỌC 2024 - 2025
         </div>
       </div>
 
-      <div style="margin-bottom: 15px; font-size: 12pt;">
+      <!-- Thông tin Giáo viên -->
+      <div style="margin-bottom: 10px; font-size: 9.5pt; line-height: 1.4;">
         <div><strong>Họ và tên giáo viên:</strong> ${teacher.tenGv || teacher.taiKhoan} ${teacher.ngaySinh ? `(Ngày sinh: ${teacher.ngaySinh})` : ''}</div>
         <div><strong>Môn giảng dạy:</strong> Thể Dục (Giáo dục thể chất)</div>
         <div><strong>Lớp giảng dạy:</strong> ${(store.classes || []).join(', ') || teacher.lopDay || '--'}</div>
       </div>
 
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12pt;">
+      <!-- Bảng 18 tuần -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9.5pt;">
         <thead>
           <tr style="text-align: center; font-weight: bold; background-color: #f1f5f9;">
-            <th style="border: 1px solid #000; padding: 6px; width: 100px;">TUẦN HỌC</th>
-            <th style="border: 1px solid #000; padding: 6px 8px; text-align: left;">LỚP DẠY</th>
-            <th style="border: 1px solid #000; padding: 6px; width: 140px;">TỔNG SỐ TIẾT DẠY</th>
-            <th style="border: 1px solid #000; padding: 6px; width: 160px;">TỔNG SỐ TIẾT THỰC HÀNH</th>
+            <th style="border: 1px solid #000; padding: 4px; width: 85px;">TUẦN HỌC</th>
+            <th style="border: 1px solid #000; padding: 4px 6px; text-align: left;">LỚP DẠY</th>
+            <th style="border: 1px solid #000; padding: 4px; width: 130px;">TỔNG SỐ TIẾT DẠY</th>
+            <th style="border: 1px solid #000; padding: 4px; width: 150px;">TỔNG SỐ TIẾT THỰC HÀNH</th>
           </tr>
         </thead>
         <tbody>
@@ -22444,24 +22646,25 @@ function previewGdtcPersonalPdf(targetTeacher, targetSem) {
         </tbody>
         <tfoot>
           <tr style="text-align: center; font-weight: bold; background-color: #f8fafc;">
-            <td colspan="2" style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; text-transform: uppercase;">TỔNG CỘNG</td>
-            <td style="border: 1px solid #000; padding: 8px;">${sumDay}</td>
-            <td style="border: 1px solid #000; padding: 8px;">${sumThucHanh}</td>
+            <td colspan="2" style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold; text-transform: uppercase;">TỔNG CỘNG</td>
+            <td style="border: 1px solid #000; padding: 5px;">${sumDay}</td>
+            <td style="border: 1px solid #000; padding: 5px;">${sumThucHanh}</td>
           </tr>
         </tfoot>
       </table>
 
-      <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+      <!-- Khối chữ ký -->
+      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
         <tr>
           <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-weight: bold; text-transform: uppercase;">PHÓ HIỆU TRƯỞNG</div>
-            <div style="font-style: italic; font-size: 11pt;">(Ký và đóng dấu)</div>
+            <div style="font-weight: bold; text-transform: uppercase; font-size: 10pt;">PHÓ HIỆU TRƯỞNG</div>
+            <div style="font-style: italic; font-size: 9pt;">(Ký và đóng dấu)</div>
           </td>
           <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-style: italic; font-size: 11pt;">An Nhơn, ${dateStr}</div>
-            <div style="font-weight: bold; text-transform: uppercase; margin-top: 4px;">GIÁO VIÊN KÊ KHAI</div>
-            <div style="font-style: italic; font-size: 11pt;">(Ký và ghi rõ họ tên)</div>
-            <div style="margin-top: 70px; font-weight: bold;">${teacher.tenGv || teacher.taiKhoan}</div>
+            <div style="font-style: italic; font-size: 9pt;">An Nhơn, ${dateStr}</div>
+            <div style="font-weight: bold; text-transform: uppercase; font-size: 10pt; margin-top: 2px;">GIÁO VIÊN KÊ KHAI</div>
+            <div style="font-style: italic; font-size: 9pt;">(Ký và ghi rõ họ tên)</div>
+            <div style="margin-top: 45px; font-weight: bold; font-size: 10pt;">${teacher.tenGv || teacher.taiKhoan}</div>
           </td>
         </tr>
       </table>
@@ -22491,26 +22694,95 @@ function printGdtcPaperDirect() {
 }
 
 function downloadGdtcPdf() {
-  const element = document.getElementById('gdtc-pdf-paper');
-  if (!element || typeof html2pdf === 'undefined') {
+  const paper = document.getElementById('gdtc-pdf-paper');
+  if (!paper || typeof html2pdf === 'undefined') {
     showToast("Thư viện xuất PDF chưa sẵn sàng, đang chuyển sang in trực tiếp...", "info");
     window.print();
     return;
   }
 
-  showToast("Đang tạo và tải tệp PDF...", "info");
+  const btn = document.querySelector('[onclick="downloadGdtcPdf()"]');
+  const icon = btn ? btn.querySelector('i') : null;
+  const text = btn ? btn.querySelector('span') : null;
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('cursor-wait', 'opacity-85');
+  }
+  if (icon) icon.className = "fa-solid fa-spinner fa-spin";
+  if (text) text.textContent = "Đang tạo PDF...";
+
+  // Đưa thanh cuộn bên trong modal lên đỉnh để tránh lệch vị trí canvas
+  const scrollContainer = paper.parentElement;
+  const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+  if (scrollContainer) scrollContainer.scrollTop = 0;
+
+  // Xử lý tạm thời container và các trang để khi html2pdf ghép trang hoàn toàn liền mạch, không bị giật trang
+  const originalPadding = paper.style.padding;
+  const pages = paper.querySelectorAll('.pdf-page-portrait');
+  if (pages.length > 0) {
+    paper.style.padding = '0px';
+    pages.forEach(p => {
+      p.style.marginBottom = '0px';
+    });
+  }
+
+  const titleEl = document.getElementById('gdtc-pdf-preview-title');
+  const rawTitle = titleEl ? titleEl.textContent : '';
+  let filename = `Bao_Cao_GDTC_${Date.now()}.pdf`;
+  if (rawTitle.includes('Phiếu Kê Khai')) {
+    filename = `Phieu_Ke_Khai_GDTC_${(currentUser ? (currentUser.tenGv || 'GiaoVien') : 'GiaoVien').replace(/\s+/g, '_')}.pdf`;
+  } else if (rawTitle.includes('Tổng Hợp')) {
+    filename = `Bao_Cao_Tong_Hop_GDTC_${gdtcAdminActiveSem.toUpperCase()}_2024_2025.pdf`;
+  } else if (rawTitle.includes('Thống Kê')) {
+    filename = `Danh_Sach_Thong_Ke_GDTC_2024_2025.pdf`;
+  }
+
   const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `Phieu_Ke_Khai_GDTC_${Date.now()}.pdf`,
+    margin: [4, 5, 4, 5],
+    filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      letterRendering: true,
+      scrollY: 0,
+      scrollX: 0,
+      logging: false
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: 'css' }
   };
 
-  html2pdf().set(opt).from(element).save().then(() => {
+  html2pdf().set(opt).from(paper).save().then(() => {
+    if (pages.length > 0) {
+      paper.style.padding = originalPadding;
+      pages.forEach((p, idx) => {
+        if (idx < pages.length - 1) p.style.marginBottom = '20px';
+      });
+    }
+    if (scrollContainer) scrollContainer.scrollTop = prevScrollTop;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('cursor-wait', 'opacity-85');
+    }
+    if (icon) icon.className = "fa-solid fa-download";
+    if (text) text.textContent = "Tải Tệp PDF";
     showToast("Đã tải tệp PDF thành công!", "success");
   }).catch(err => {
     console.error("Lỗi html2pdf:", err);
+    if (pages.length > 0) {
+      paper.style.padding = originalPadding;
+      pages.forEach((p, idx) => {
+        if (idx < pages.length - 1) p.style.marginBottom = '20px';
+      });
+    }
+    if (scrollContainer) scrollContainer.scrollTop = prevScrollTop;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('cursor-wait', 'opacity-85');
+    }
+    if (icon) icon.className = "fa-solid fa-download";
+    if (text) text.textContent = "Tải Tệp PDF";
     window.print();
   });
 }
