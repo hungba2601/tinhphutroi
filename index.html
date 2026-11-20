@@ -15,7 +15,143 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">
+    // ⭐️ QUẢN LÝ PHIÊN BẢN BACKEND USER_CODE.GS (MẶC ĐỊNH 2.0)
+    const CURRENT_USER_CODE_VERSION = "2.0";
+    let activeDetectedBackendVersion = CURRENT_USER_CODE_VERSION;
+    let latestServerBackendVersion = CURRENT_USER_CODE_VERSION;
+
+    function isVersionOutdatedClient(currentVer, latestVer) {
+      if (!latestVer) return false;
+      if (!currentVer) return true;
+      const cleanC = String(currentVer).trim().replace(/^[vV]/, '');
+      const cleanL = String(latestVer).trim().replace(/^[vV]/, '');
+      if (cleanC === cleanL) return false;
+      const cParts = cleanC.split('.').map(n => parseInt(n, 10) || 0);
+      const lParts = cleanL.split('.').map(n => parseInt(n, 10) || 0);
+      const maxLen = Math.max(cParts.length, lParts.length);
+      for (let i = 0; i < maxLen; i++) {
+        const c = cParts[i] || 0;
+        const l = lParts[i] || 0;
+        if (c < l) return true;
+        if (c > l) return false;
+      }
+      return false;
+    }
+
+    // Hiển thị modal thông báo có bản cập nhật mới
+    function showBackendUpdateNoticeModal(currentVer, latestVer) {
+      const modal = document.getElementById('modal-backend-update-notice');
+      const latestEl = document.getElementById('backend-notice-latest-ver');
+      const currentEl = document.getElementById('backend-notice-current-ver');
+      const banner = document.getElementById('backend-version-update-banner');
+      const bannerLatest = document.getElementById('banner-latest-ver-tag');
+      const bannerCurrent = document.getElementById('banner-current-ver-tag');
+
+      if (latestEl) latestEl.textContent = `v${latestVer}`;
+      if (currentEl) currentEl.textContent = `v${currentVer}`;
+
+      if (banner) {
+        banner.classList.remove('hidden');
+        if (bannerLatest) bannerLatest.textContent = `v${latestVer}`;
+        if (bannerCurrent) bannerCurrent.textContent = `v${currentVer}`;
+      }
+
+      if (modal) modal.classList.remove('hidden');
+
+      // Tự động chuyển thẳng đến Tab Cấu Hình Backend theo yêu cầu
+      setTimeout(() => {
+        jumpToBackendConfigTab();
+      }, 400);
+    }
+
+    function closeBackendUpdateNoticeModal() {
+      const modal = document.getElementById('modal-backend-update-notice');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function confirmJumpToBackendConfigTab() {
+      closeBackendUpdateNoticeModal();
+      jumpToBackendConfigTab();
+    }
+
+    // Nhảy trực tiếp đến Tab 4: Cấu Hình Backend và cuộn tới nút Copy Code
+    function jumpToBackendConfigTab() {
+      // 1. Nếu đang ở màn hình chọn phân hệ hoặc phân hệ 2, chuyển về Cổng Quản Trị Phân Hệ 1
+      if (typeof selectModule === 'function') {
+        selectModule(1);
+      }
+      if (typeof showAdminPortal === 'function') {
+        showAdminPortal();
+      }
+
+      // 2. Chuyển sang Tab 4 (Cấu Hình Backend)
+      if (typeof switchAdminSubTab === 'function') {
+        switchAdminSubTab('backend');
+      }
+
+      // 3. Mở khung xem code nếu đang ẩn
+      const viewer = document.getElementById('backend-code-viewer-container');
+      if (viewer && viewer.classList.contains('hidden') && typeof toggleBackendCodeViewer === 'function') {
+        toggleBackendCodeViewer();
+      }
+
+      // 4. Cuộn mượt đến nút Copy và tạo hiệu ứng nhấp nháy nổi bật
+      setTimeout(() => {
+        const copyBtn = document.getElementById('btn-copy-backend-code');
+        if (copyBtn) {
+          copyBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          copyBtn.classList.add('ring-4', 'ring-amber-400', 'animate-pulse');
+          setTimeout(() => copyBtn.classList.remove('ring-4', 'ring-amber-400', 'animate-pulse'), 5000);
+        }
+      }, 500);
+
+      showToast("Đã chuyển đến Tab Cấu hình Backend. Vui lòng bấm 'Sao Chép Mã Nguồn user_code.gs'!", "warning");
+    }
+
+    // Kiểm tra phiên bản backend của trường với máy chủ trung tâm
+    async function checkAndHandleAdminBackendUpdate(username) {
+      if (!currentUser || (!isRoleAdmin(currentUser.quyen) && !currentUser.isLoggedInAsAdmin)) return;
+
+      const userTk = username || currentUser.taiKhoan;
+      const schoolBackendUrl = getActiveBackendUrl();
+
+      // 1. Lấy phiên bản backend thực tế của trường
+      let detectedSchoolVer = CURRENT_USER_CODE_VERSION;
+      try {
+        const pingRes = await callGasBackend({ action: "ping" }, schoolBackendUrl);
+        if (pingRes && pingRes.backendVersion) {
+          detectedSchoolVer = String(pingRes.backendVersion).trim();
+        } else if (schoolBackendUrl !== MASTER_GOOGLE_APPS_SCRIPT_URL) {
+          detectedSchoolVer = "1.0"; // Backend cũ chưa có thuộc tính version
+        }
+      } catch (pErr) {
+        console.warn("Không thể ping kiểm tra phiên bản trường:", pErr);
+      }
+      activeDetectedBackendVersion = detectedSchoolVer;
+
+      // 2. Gửi tài khoản Admin và phiên bản backend về Máy chủ Trung Tâm (Sheet DATA Cột G)
+      try {
+        const res = await callGasBackend({
+          action: "record_admin_backend_version",
+          taiKhoan: userTk,
+          backendVersion: detectedSchoolVer
+        }, MASTER_GOOGLE_APPS_SCRIPT_URL);
+
+        if (res && res.success) {
+          latestServerBackendVersion = res.latestBackendVersion || CURRENT_USER_CODE_VERSION;
+          const hasUpdate = res.hasBackendUpdate || isVersionOutdatedClient(detectedSchoolVer, latestServerBackendVersion);
+
+          if (hasUpdate) {
+            showBackendUpdateNoticeModal(detectedSchoolVer, latestServerBackendVersion);
+          }
+        }
+      } catch (cErr) {
+        console.warn("Lỗi kiểm tra phiên bản với máy chủ trung tâm:", cErr);
+      }
+    }
+
+</script>
   <!-- Google Font Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2386,6 +2522,28 @@
 
         <!-- Khung 2: MÃ NGUỒN APPS SCRIPT CHO CÁC TRƯỜNG (user_code.gs) & NÚT SAO CHÉP -->
         <div class="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-200">
+          <!-- Banner cảnh báo cập nhật phiên bản mới -->
+          <div id="backend-version-update-banner" class="hidden mb-5 p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg font-black shrink-0 animate-pulse">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div>
+                <p class="font-black text-sm text-amber-900 flex items-center gap-2">
+                  <span>Phát hiện bản cập nhật mã nguồn mới!</span>
+                  <span id="banner-latest-ver-tag" class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-black text-xs">v2.1</span>
+                </p>
+                <p class="text-xs text-amber-700 mt-0.5">
+                  Trường của bạn đang dùng: <strong id="banner-current-ver-tag">v2.0</strong>. Vui lòng bấm nút sao chép bên dưới và dán lại vào Apps Script của trường bạn.
+                </p>
+              </div>
+            </div>
+            <button type="button" onclick="copyBackendCodeToClipboard()"
+              class="px-4 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shrink-0 shadow-sm">
+              <i class="fa-solid fa-copy"></i>
+              <span>Sao Chép Code Mới Ngay</span>
+            </button>
+          </div>
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div class="flex items-center gap-3">
               <div
@@ -2393,8 +2551,11 @@
                 <i class="fa-solid fa-code"></i>
               </div>
               <div>
-                <h4 class="font-extrabold text-sm sm:text-base text-slate-800">
-                  Mã Nguồn Google Apps Script Cho Các Trường (user_code.gs)
+                <h4 class="font-extrabold text-sm sm:text-base text-slate-800 flex items-center gap-2 flex-wrap">
+                  <span>Mã Nguồn Google Apps Script Cho Các Trường (user_code.gs)</span>
+                  <span id="backend-current-version-badge" class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[11px] font-extrabold rounded-lg border border-emerald-300 flex items-center gap-1 shadow-sm">
+                    <i class="fa-solid fa-code-commit text-[10px]"></i> Phiên bản v2.0
+                  </span>
                 </h4>
                 <p class="text-xs text-slate-500">
                   Bấm nút bên cạnh để sao chép toàn bộ mã nguồn file user_code.gs và dán trực tiếp vào Apps Script của
@@ -2516,6 +2677,7 @@ const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | C
 const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
 const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP | Cột E: MỨC ĐỘ | Cột F: THỜI GIAN
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
+const BACKEND_VERSION = "2.0"; // PHIÊN BẢN HIỆN TẠI CỦA USER_CODE.GS
 
 /**
  * Xử lý yêu cầu HTTP GET
@@ -2643,9 +2805,17 @@ function doPost(e) {
           message: "Google Apps Script Backend đang kết nối và hoạt động tốt!",
           sheetName: sheetName,
           sheetsCount: sheetsCount,
+          backendVersion: BACKEND_VERSION,
           timestamp: new Date().toISOString()
         });
       }
+
+      case "get_backend_version":
+      case "getBackendVersion":
+        return jsonResponse({
+          success: true,
+          backendVersion: BACKEND_VERSION
+        });
 
       case "initialSetup": {
         const setupRes = initialSetup();
@@ -3752,7 +3922,8 @@ function handleLogin(taiKhoan, matKhau) {
     data: teacherDataJson,
     isSystemLocked: isSystemLocked(),
     columnConfig: getColumnConfig(),
-    matchedSchool: matchedSchool
+    matchedSchool: matchedSchool,
+    backendVersion: BACKEND_VERSION
   });
 }
 
@@ -7975,6 +8146,13 @@ function initialSetup() {
         showModuleSelectionScreen();
         showToast(`Xin chào ${currentUser.isLoggedInAsAdmin ? 'Quản trị viên' : 'Thầy/Cô'} ${currentUser.tenGv}! Vui lòng chọn phân hệ làm việc.`, "success");
 
+        // ⭐️ NẾU LÀ QUẢN TRỊ VIÊN: KIỂM TRA PHIÊN BẢN BACKEND VÀ GHI VÀO CỘT G SHEET DATA TRUNG TÂM
+        if (currentUser.isLoggedInAsAdmin || isRoleAdmin(currentUser.quyen)) {
+          setTimeout(() => {
+            checkAndHandleAdminBackendUpdate(currentUser.taiKhoan);
+          }, 800);
+        }
+
       } catch (err) {
         errorMsg.textContent = err.message || "Tài khoản hoặc mật khẩu không chính xác!";
         errorBox.classList.remove('hidden');
@@ -11234,7 +11412,50 @@ function initialSetup() {
               setTimeout(function() { window.close(); }, 500);
             };
           <\/script>
-        </body>
+        
+  <!-- MODAL THÔNG BÁO CẬP NHẬT CODE BACKEND -->
+  <div id="modal-backend-update-notice"
+    class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl border border-amber-200 max-w-lg w-full p-6 animate-scale-up">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shrink-0">
+          <i class="fa-solid fa-bell animate-bounce"></i>
+        </div>
+        <div>
+          <h3 class="font-black text-lg text-slate-800">Thông Báo Cập Nhật Mã Nguồn Backend</h3>
+          <p class="text-xs text-slate-500">Phát hiện phiên bản mã nguồn mới từ máy chủ trung tâm</p>
+        </div>
+      </div>
+
+      <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 mb-4 text-xs space-y-2 leading-relaxed">
+        <div class="flex items-center justify-between font-bold text-slate-700 pb-2 border-b border-amber-200/60">
+          <span>Phiên bản máy chủ phát hành (Ô H1):</span>
+          <span id="backend-notice-latest-ver" class="px-2.5 py-1 bg-amber-500 text-white rounded-lg font-black text-sm">v2.1</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-600">
+          <span>Phiên bản trường của bạn (Cột G):</span>
+          <span id="backend-notice-current-ver" class="font-bold text-slate-800">v2.0</span>
+        </div>
+        <p class="text-amber-800 font-medium pt-1">
+          Hệ thống máy chủ trung tâm đã phát hành mã nguồn mới. Vui lòng sao chép mã nguồn <code>user_code.gs</code> mới và cập nhật vào Google Apps Script của trường bạn để đảm bảo hệ thống hoạt động đầy đủ và chính xác nhất.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-3">
+        <button type="button" onclick="closeBackendUpdateNoticeModal()"
+          class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+          Bỏ Qua
+        </button>
+        <button type="button" onclick="confirmJumpToBackendConfigTab()"
+          class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold rounded-xl text-xs shadow-md shadow-amber-500/20 flex items-center gap-2 transition active:scale-95">
+          <i class="fa-solid fa-arrow-right"></i>
+          <span>Đến Cấu Hình Backend & Copy Code Ngay</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
         </html>
       `);
       printWindow.document.close();
@@ -19471,6 +19692,13 @@ function initialSetup() {
 
             // ⭐️ PHỤC HỒI NGAY LẬP TỨC DATA CỦA GIÁO VIÊN TỪ BỘ NHỚ MÁY (TRÁNH BỊ VỀ 0 HOẶC CHƯA KHAI)
             restoreTeacherDataFromLocalStorage(currentUser.taiKhoan);
+
+            // ⭐️ NẾU MỞ APP VỚI QUYỀN ADMIN: TỰ ĐỘNG KIỂM TRA BẢN CẬP NHẬT BACKEND
+            if (currentUser.isLoggedInAsAdmin || isRoleAdmin(currentUser.quyen)) {
+              setTimeout(() => {
+                checkAndHandleAdminBackendUpdate(currentUser.taiKhoan);
+              }, 1200);
+            }
 
             document.getElementById('login-modal').classList.add('hidden');
             const savedModule = sessionStorage.getItem('active_module');

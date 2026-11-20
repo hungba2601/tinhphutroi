@@ -82,6 +82,7 @@ const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | C
 const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
 const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP | Cột E: MỨC ĐỘ | Cột F: THỜI GIAN
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
+const BACKEND_VERSION = "2.0"; // PHIÊN BẢN HIỆN TẠI CỦA USER_CODE.GS
 
 /**
  * Xử lý yêu cầu HTTP GET
@@ -209,9 +210,17 @@ function doPost(e) {
           message: "Google Apps Script Backend đang kết nối và hoạt động tốt!",
           sheetName: sheetName,
           sheetsCount: sheetsCount,
+          backendVersion: BACKEND_VERSION,
           timestamp: new Date().toISOString()
         });
       }
+
+      case "get_backend_version":
+      case "getBackendVersion":
+        return jsonResponse({
+          success: true,
+          backendVersion: BACKEND_VERSION
+        });
 
       case "initialSetup": {
         const setupRes = initialSetup();
@@ -1318,7 +1327,8 @@ function handleLogin(taiKhoan, matKhau) {
     data: teacherDataJson,
     isSystemLocked: isSystemLocked(),
     columnConfig: getColumnConfig(),
-    matchedSchool: matchedSchool
+    matchedSchool: matchedSchool,
+    backendVersion: BACKEND_VERSION
   });
 }
 

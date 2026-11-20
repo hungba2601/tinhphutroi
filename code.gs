@@ -82,6 +82,86 @@ const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | C�
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
 const SHEET_HUB_SERVER = "HUB_SERVER"; // Cột A: TÊN TK | Cột B: TÊN TRƯỜNG | Cột C: KHỐI LỚP | Cột D: ĐỊA CHỈ URL | Cột E: NGÀY CẬP NHẬT
 
+const BACKEND_VERSION = "2.0";
+
+/**
+ * SO SÁNH HAI PHIÊN BẢN (Ví dụ "2.0" vs "2.1")
+ * Trả về true nếu phiên bản hiện tại nhỏ hơn phiên bản mới nhất
+ */
+function isVersionOutdated(currentVer, latestVer) {
+  if (!latestVer) return false;
+  if (!currentVer) return true;
+  const cleanC = String(currentVer).trim().replace(/^[vV]/, "");
+  const cleanL = String(latestVer).trim().replace(/^[vV]/, "");
+  if (cleanC === cleanL) return false;
+  const cParts = cleanC.split(".").map(n => parseInt(n, 10) || 0);
+  const lParts = cleanL.split(".").map(n => parseInt(n, 10) || 0);
+  const maxLen = Math.max(cParts.length, lParts.length);
+  for (let i = 0; i < maxLen; i++) {
+    const c = cParts[i] || 0;
+    const l = lParts[i] || 0;
+    if (c < l) return true;
+    if (c > l) return false;
+  }
+  return false;
+}
+
+/**
+ * ĐỌC PHIÊN BẢN MỚI NHẤT TỪ Ô H1 TRÊN SHEET DATA (MÁY CHỦ TRUNG TÂM)
+ */
+function getLatestBackendVersionFromSheet(sheetData) {
+  try {
+    const val = String(sheetData.getRange(1, 8).getDisplayValue() || sheetData.getRange("H1").getDisplayValue() || "").trim();
+    if (val) return val;
+  } catch (e) {}
+  return BACKEND_VERSION;
+}
+
+/**
+ * GHI NHẬN PHIÊN BẢN BACKEND CỦA TRƯỜNG VÀO CỘT G VÀ KIỂM TRA VỚI Ô H1
+ */
+function recordAndCheckAdminVersion(taiKhoan, schoolVersion) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetData = ss.getSheetByName(SHEET_DATA);
+  if (!sheetData) {
+    return { success: false, message: "Không tìm thấy Sheet DATA!" };
+  }
+  const cols = getSheetDataCols(sheetData);
+  const colVer = (cols.colVersion !== -1) ? cols.colVersion : 6;
+  const latestVersion = getLatestBackendVersionFromSheet(sheetData);
+
+  const versionToRecord = String(schoolVersion || BACKEND_VERSION).trim() || "2.0";
+  let recordedRow = -1;
+  const tkClean = String(taiKhoan || "").trim();
+
+  if (tkClean) {
+    const dataDisp = sheetData.getDataRange().getDisplayValues();
+    for (let i = 1; i < dataDisp.length; i++) {
+      const rowTk = String(dataDisp[i][cols.colTk] || "").trim();
+      if (isUsernameMatch(rowTk, tkClean)) {
+        recordedRow = i + 1; // 1-based row index
+        sheetData.getRange(recordedRow, colVer + 1).setValue(versionToRecord).setNumberFormat("@");
+        break;
+      }
+    }
+  }
+
+  const hasUpdate = isVersionOutdated(versionToRecord, latestVersion);
+
+  return {
+    success: true,
+    taiKhoan: tkClean,
+    recordedRow: recordedRow,
+    currentBackendVersion: versionToRecord,
+    latestBackendVersion: latestVersion,
+    hasBackendUpdate: hasUpdate,
+    message: hasUpdate 
+      ? "Đã có bản cập nhật code backend mới (" + latestVersion + ")!" 
+      : "Phiên bản backend đang là mới nhất (" + versionToRecord + ")."
+  };
+}
+
+
 /**
  * Xử lý yêu cầu HTTP GET
  */
@@ -208,8 +288,17 @@ function doPost(e) {
           message: "Google Apps Script Backend đang kết nối và hoạt động tốt!",
           sheetName: sheetName,
           sheetsCount: sheetsCount,
+          backendVersion: BACKEND_VERSION,
           timestamp: new Date().toISOString()
         });
+      }
+
+      case "record_admin_backend_version":
+      case "check_backend_version":
+      case "checkBackendVersion": {
+        const tk = payload.taiKhoan || payload.username || "";
+        const ver = payload.backendVersion || payload.version || "";
+        return jsonResponse(recordAndCheckAdminVersion(tk, ver));
       }
 
       case "initialSetup": {
@@ -473,6 +562,7 @@ function getSheetDataCols(sheetData) {
   let colMatKhau = 3;
   let colLopDay = -1;
 
+  let colVersion = -1;
   for (let c = 0; c < header.length; c++) {
     const h = String(header[c] || "").trim().toLowerCase();
     if (h.includes("tài khoản") || h === "tk") colTk = c;
@@ -481,6 +571,18 @@ function getSheetDataCols(sheetData) {
     else if (h.includes("quyền") || h.includes("quyen") || h.includes("role")) colQuyen = c;
     else if (h.includes("mật khẩu") || h.includes("matkhau") || h.includes("mk") || h.includes("pass")) colMatKhau = c;
     else if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") colLopDay = c;
+    else if (h.includes("version") || h.includes("verson") || h.includes("phiên bản") || h.includes("phien ban")) colVersion = c;
+  }
+  if (colVersion === -1) {
+    colVersion = 6; // Cột G (cột thứ 7, 0-based index 6)
+    try {
+      const g1Val = String(sheetData.getRange(1, 7).getValue() || "").trim();
+      if (!g1Val) {
+        sheetData.getRange(1, 7).setValue("VERSON").setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
+        sheetData.setColumnWidth(7, 120);
+        sheetData.getRange("G:G").setNumberFormat("@");
+      }
+    } catch (e) {}
   }
 
   // Nếu trong Sheet DATA chưa có cột Ngày sinh -> tự động chèn ngay sau cột Tên
@@ -509,7 +611,8 @@ function getSheetDataCols(sheetData) {
     colNgaySinh: colNgaySinh,
     colQuyen: colQuyen,
     colMatKhau: colMatKhau,
-    colLopDay: (typeof colLopDay === 'number' && !isNaN(colLopDay)) ? colLopDay : -1
+    colLopDay: (typeof colLopDay === 'number' && !isNaN(colLopDay)) ? colLopDay : -1,
+    colVersion: colVersion
   };
 }
 
@@ -1247,7 +1350,7 @@ function syncDuLieuWithData(forceRebuild) {
  * Hỗ trợ nhận diện số điện thoại cả khi có hoặc không có số 0 ở đầu.
  * Đồng thời lấy dữ liệu JSON đã lưu (nếu có) từ Sheet DULIEU.
  */
-function handleLogin(taiKhoan, matKhau) {
+function handleLogin(taiKhoan, matKhau, clientVersion) {
   if (!taiKhoan || !matKhau) {
     return jsonResponse({ success: false, message: "Vui lòng nhập đầy đủ tài khoản và mật khẩu!" });
   }
@@ -1308,9 +1411,16 @@ function handleLogin(taiKhoan, matKhau) {
     }
   }
 
-  // Nếu là tài khoản quản trị (Admin), tra cứu trong Sheet HUB_SERVER để biết URL và Tên trường của Admin này
+  // Nếu là tài khoản quản trị (Admin), ghi nhận phiên bản vào Cột G và tra cứu Sheet HUB_SERVER
   let matchedSchool = null;
+  let versionInfo = null;
   if (isSuperAdmin(foundUser.quyen)) {
+    try {
+      versionInfo = recordAndCheckAdminVersion(tkClean, clientVersion || BACKEND_VERSION);
+    } catch (vErr) {
+      Logger.log("Lỗi ghi nhận phiên bản admin: " + vErr);
+    }
+
     try {
       const sheetHub = ss.getSheetByName(SHEET_HUB_SERVER);
       if (sheetHub) {
@@ -1345,7 +1455,9 @@ function handleLogin(taiKhoan, matKhau) {
     data: teacherDataJson,
     isSystemLocked: isSystemLocked(),
     columnConfig: getColumnConfig(),
-    matchedSchool: matchedSchool
+    matchedSchool: matchedSchool,
+    backendVersion: BACKEND_VERSION,
+    versionInfo: versionInfo
   });
 }
 
