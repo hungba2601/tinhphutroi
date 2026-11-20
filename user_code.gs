@@ -82,6 +82,7 @@ const SHEET_DATA = "DATA";       // Cột A: Tài khoản | Cột B: Tên GV | C
 const SHEET_DULIEU = "DULIEU";   // Cột A: TK        | Cột B: TÊN GV | Cột C: DỮ LIỆU GV NHẬP DANG JSON | Cột D: LỚP DẠY
 const SHEET_HOA_NHAP = "HOA NHAP";             // Cột A: TÊN HỌC SINH | Cột B: NGÀY SINH | Cột C: LỚP | Cột D: LOẠI HÒA NHẬP | Cột E: MỨC ĐỘ | Cột F: THỜI GIAN
 const SHEET_DULIEU_HOA_NHAP = "dulieu_hoanhap"; // Cột A: TK GV | Cột B: TÊN GV | Cột C: DỮ LIỆU KHAI BÁO TIẾT HÒA NHẬP DẠNG JSON
+const SHEET_DATA_GDTC = "DATA GDTC"; // Cột A: TK | Cột B: TÊN GV | Cột C: KÊ KHAI (Dạng JSON)
 const BACKEND_VERSION = "2.0"; // PHIÊN BẢN HIỆN TẠI CỦA USER_CODE.GS
 
 /**
@@ -160,6 +161,14 @@ function doGet(e) {
 
     if (action === "getHoaNhapData") {
       return handleGetHoaNhapData(params.taiKhoan || params.tai_khoan);
+    }
+
+    if (action === "getGdtcData" || action === "get_gdtc_data") {
+      return handleGetGdtcData(params.taiKhoan || params.tai_khoan);
+    }
+
+    if (action === "getAllGdtcData" || action === "get_all_gdtc_data") {
+      return handleGetAllGdtcData();
     }
 
     return jsonResponse({ success: false, message: "Hành động không hợp lệ: " + action });
@@ -347,6 +356,22 @@ function doPost(e) {
 
       case "saveHoaNhapData":
         return handleSaveHoaNhapData(payload.taiKhoan || payload.tai_khoan, payload.dataJson || payload.data_json, payload.isAdmin);
+
+      case "getGdtcData":
+      case "get_gdtc_data":
+        return handleGetGdtcData(payload.taiKhoan || payload.tai_khoan);
+
+      case "saveGdtcData":
+      case "save_gdtc_data":
+        return handleSaveGdtcData(payload.taiKhoan || payload.tai_khoan, payload.dataJson || payload.data_json, payload.isAdmin);
+
+      case "getAllGdtcData":
+      case "get_all_gdtc_data":
+        return handleGetAllGdtcData();
+
+      case "syncDataGdtc":
+      case "syncGdtc":
+        return jsonResponse(syncDataGdtcWithData(true));
 
       default:
         return jsonResponse({ success: false, message: "Hành động không xác định: " + action });
@@ -2293,4 +2318,250 @@ function initialSetup() {
     success: true,
     message: "Khởi tạo thành công đầy đủ 4 Sheet: DATA, DULIEU, HOA NHAP, dulieu_hoanhap!"
   };
+}
+
+/**
+ * ========================================================
+ * PHÂN HỆ 3: BẢNG KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC (GDTC)
+ * SHEET "DATA GDTC": CỘT A: TK | CỘT B: TÊN GV | CỘT C: KÊ KHAI (DẠNG JSON)
+ * ========================================================
+ */
+function initDataGdtcSheet(ss) {
+  let sheet = ss.getSheetByName(SHEET_DATA_GDTC);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_DATA_GDTC);
+  }
+  capNhatCotSheetDataGdtc(sheet);
+  return sheet;
+}
+
+function capNhatCotSheetDataGdtc(sheet) {
+  if (!sheet) return;
+  const headers = ["TK", "TÊN GV", "KÊ KHAI"];
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+  } else {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+  const headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setFontWeight("bold").setBackground("#ea580c").setFontColor("#ffffff");
+  sheet.setColumnWidth(1, 160);
+  sheet.setColumnWidth(2, 240);
+  sheet.setColumnWidth(3, 400);
+  sheet.getRange("A:C").setNumberFormat("@");
+}
+
+function syncDataGdtcWithData(forceRebuild) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetData = ss.getSheetByName(SHEET_DATA);
+  if (!sheetData) {
+    return { success: false, message: "Không tìm thấy sheet DATA trong bảng tính!" };
+  }
+
+  let sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
+  if (!sheetGdtc) {
+    sheetGdtc = initDataGdtcSheet(ss);
+  } else {
+    capNhatCotSheetDataGdtc(sheetGdtc);
+  }
+
+  const cols = getSheetDataCols(sheetData);
+  const dataValuesRaw = sheetData.getDataRange().getValues();
+  const dataValuesDisplay = sheetData.getDataRange().getDisplayValues();
+
+  // Đọc dữ liệu JSON hiện có trong Sheet DATA GDTC (nếu có)
+  const existingJsonMap = {};
+  const gdtcLastRow = sheetGdtc.getLastRow();
+  const gdtcLastCol = Math.max(3, sheetGdtc.getLastColumn());
+  if (gdtcLastRow > 1) {
+    const gVals = sheetGdtc.getRange(1, 1, gdtcLastRow, gdtcLastCol).getValues();
+    const gDisp = sheetGdtc.getRange(1, 1, gdtcLastRow, gdtcLastCol).getDisplayValues();
+    for (let j = 1; j < gVals.length; j++) {
+      const rawTk = String(gVals[j][0] || "").trim();
+      const dispTk = String(gDisp[j][0] || "").trim();
+      const normTk = normalizeUsername(dispTk || rawTk);
+      const jsonContent = gdtcLastCol >= 3 ? (gVals[j][2] !== undefined && gVals[j][2] !== "" ? gVals[j][2] : gVals[j][1]) : gVals[j][1];
+      if (jsonContent) {
+        if (normTk) existingJsonMap[normTk.toLowerCase()] = jsonContent;
+        if (rawTk) existingJsonMap[rawTk.toLowerCase()] = jsonContent;
+        const stripped = normTk.replace(/^0+/, "").toLowerCase();
+        if (stripped) existingJsonMap[stripped] = jsonContent;
+      }
+    }
+  }
+
+  // Thu thập danh sách giáo viên từ Sheet DATA theo đúng thứ tự hàng cố định
+  const teacherRows = [];
+  for (let i = 1; i < dataValuesRaw.length; i++) {
+    const rowRaw = dataValuesRaw[i];
+    const rowDisp = dataValuesDisplay[i];
+    const rawTk = String(rowDisp[cols.colTk] || rowRaw[cols.colTk] || "").trim();
+    if (!rawTk) continue;
+    const normTk = normalizeUsername(rawTk);
+    const cleanTk = normTk.replace(/^'+/, "").toLowerCase();
+    const quyen = String(rowRaw[cols.colQuyen] || "").trim().toLowerCase();
+    if (cleanTk === "admin" || cleanTk === "blt" || !isRoleGv(quyen, cleanTk)) continue;
+    const tenGv = String(rowDisp[cols.colTenGv] || rowRaw[cols.colTenGv] || "").trim();
+
+    const savedJson = existingJsonMap[normTk.toLowerCase()] ||
+                      existingJsonMap[rawTk.toLowerCase()] ||
+                      existingJsonMap[normTk.replace(/^0+/, "").toLowerCase()] || "";
+
+    const cellTk = /^d+$/.test(normTk) ? "'" + normTk : normTk;
+    // Cột A: TK | Cột B: TÊN GV | Cột C: KÊ KHAI (Dạng JSON)
+    teacherRows.push([cellTk, tenGv, savedJson]);
+  }
+
+  if (teacherRows.length === 0) {
+    return { success: false, message: "Sheet DATA chưa có giáo viên nào!" };
+  }
+
+  if (!forceRebuild && gdtcLastRow === teacherRows.length + 1 && gdtcLastCol >= 3) {
+    let perfectlyMatched = true;
+    const currentGdtcDisplay = sheetGdtc.getRange(2, 1, teacherRows.length, 1).getDisplayValues();
+    for (let k = 0; k < teacherRows.length; k++) {
+      const curTk = String(currentGdtcDisplay[k][0] || "").trim();
+      const expectedTk = teacherRows[k][0].replace(/^'/, "");
+      if (!isUsernameMatch(curTk, expectedTk)) {
+        perfectlyMatched = false;
+        break;
+      }
+    }
+    if (perfectlyMatched) {
+      return { success: true, count: teacherRows.length, message: "Sheet DATA GDTC đã khớp hoàn toàn." };
+    }
+  }
+
+  sheetGdtc.clearContents();
+  sheetGdtc.appendRow(["TK", "TÊN GV", "KÊ KHAI"]);
+  capNhatCotSheetDataGdtc(sheetGdtc);
+
+  if (teacherRows.length > 0) {
+    const targetRange = sheetGdtc.getRange(2, 1, teacherRows.length, 3);
+    targetRange.setValues(teacherRows);
+    sheetGdtc.getRange(2, 1, teacherRows.length, 1).setNumberFormat("@");
+    sheetGdtc.getRange(2, 3, teacherRows.length, 1).setNumberFormat("@");
+  }
+
+  return { success: true, count: teacherRows.length, message: "Đã đồng bộ " + teacherRows.length + " giáo viên vào Sheet DATA GDTC!" };
+}
+
+function handleGetGdtcData(taiKhoan) {
+  if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
+  if (!sheetGdtc) return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
+  const lastRow = sheetGdtc.getLastRow();
+  if (lastRow <= 1) return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
+  const numCols = Math.max(3, sheetGdtc.getLastColumn());
+  const vals = sheetGdtc.getRange(2, 1, lastRow - 1, numCols).getValues();
+  const disp = sheetGdtc.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
+  for (let i = 0; i < vals.length; i++) {
+    const tk = String(disp[i][0] || vals[i][0] || "").trim();
+    if (isUsernameMatch(tk, taiKhoan)) {
+      const jsonVal = vals[i][2] || null;
+      return jsonResponse({ success: true, data: jsonVal, isSystemLocked: isSystemLocked() });
+    }
+  }
+  return jsonResponse({ success: true, data: null, isSystemLocked: isSystemLocked() });
+}
+
+function handleSaveGdtcData(taiKhoan, dataJson, isAdmin) {
+  if (!taiKhoan) return jsonResponse({ success: false, message: "Thiếu tài khoản!" });
+
+  const cleanTk = String(taiKhoan).trim().toLowerCase();
+  if (cleanTk === "admin" || cleanTk === "blt" || cleanTk === "bgh" || cleanTk === "quantri") {
+    return jsonResponse({ success: true, message: "Tài khoản Quản trị / BGH không tham gia kê khai tiết dạy." });
+  }
+
+  const isUserAdmin = isAdmin === true;
+  if (isSystemLocked() && !isUserAdmin) {
+    return jsonResponse({
+      success: false,
+      message: "Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban giám hiệu nhà trường. Quý thầy cô chỉ có thể xem số liệu, không thể lưu dữ liệu mới lúc này!"
+    });
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
+  if (!sheetGdtc) {
+    syncDataGdtcWithData(true);
+    sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
+  }
+
+  const lastRow = sheetGdtc.getLastRow();
+  const matchingRows = [];
+  if (lastRow > 1) {
+    const vals = sheetGdtc.getRange(2, 1, lastRow - 1, 1).getValues();
+    const disp = sheetGdtc.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
+    for (let i = 0; i < vals.length; i++) {
+      const tk = String(disp[i][0] || vals[i][0] || "").trim();
+      if (isUsernameMatch(tk, taiKhoan)) {
+        matchingRows.push(i + 2);
+      }
+    }
+  }
+
+  const normTk = normalizeUsername(taiKhoan);
+  const cellTk = /^d+$/.test(normTk) ? "'" + normTk : normTk;
+
+  if (matchingRows.length === 0) {
+    let tenGv = "";
+    const sheetData = ss.getSheetByName(SHEET_DATA);
+    if (sheetData) {
+      const dVals = sheetData.getDataRange().getValues();
+      const dDisp = sheetData.getDataRange().getDisplayValues();
+      const cols = getSheetDataCols(sheetData);
+      for (let r = 1; r < dVals.length; r++) {
+        const sTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
+        if (isUsernameMatch(sTk, taiKhoan)) {
+          tenGv = String(dDisp[r][cols.colTenGv] || dVals[r][cols.colTenGv] || "").trim();
+          break;
+        }
+      }
+    }
+    sheetGdtc.appendRow([cellTk, tenGv, dataJson]);
+    const newRow = sheetGdtc.getLastRow();
+    sheetGdtc.getRange(newRow, 1).setNumberFormat("@");
+    sheetGdtc.getRange(newRow, 3).setNumberFormat("@");
+  } else {
+    for (let m = 0; m < matchingRows.length; m++) {
+      const rowIndex = matchingRows[m];
+      sheetGdtc.getRange(rowIndex, 3).setValue(dataJson).setNumberFormat("@");
+    }
+  }
+
+  return jsonResponse({
+    success: true,
+    message: "Lưu kê khai tiết dạy thực hành Thể dục thành công!"
+  });
+}
+
+function handleGetAllGdtcData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const map = {};
+  try {
+    const sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
+    if (sheetGdtc && sheetGdtc.getLastRow() > 1) {
+      const numCols = Math.max(3, sheetGdtc.getLastColumn());
+      const gVals = sheetGdtc.getRange(2, 1, sheetGdtc.getLastRow() - 1, numCols).getValues();
+      const gDisp = sheetGdtc.getRange(2, 1, sheetGdtc.getLastRow() - 1, numCols).getDisplayValues();
+      for (let h = 0; h < gVals.length; h++) {
+        const hRawTk = String(gVals[h][0] || "").trim();
+        const hDispTk = String(gDisp[h][0] || "").trim();
+        const hNormTk = normalizeUsername(hDispTk || hRawTk);
+        const cleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
+        const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
+        if (cleanRaw === 'admin' || cleanNorm === 'admin' || cleanRaw === 'blt' || cleanNorm === 'blt' || cleanRaw === 'bgh' || cleanNorm === 'bgh') continue;
+        const hJsonStr = gVals[h][2] || "";
+        if (cleanRaw) map[cleanRaw] = hJsonStr;
+        if (cleanNorm) map[cleanNorm] = hJsonStr;
+        const stripped = cleanNorm.replace(/^0+/, "");
+        if (stripped) map[stripped] = hJsonStr;
+      }
+    }
+    return jsonResponse({ success: true, data: map, isSystemLocked: isSystemLocked() });
+  } catch (err) {
+    return jsonResponse({ success: false, message: "Lỗi đọc dữ liệu GDTC: " + err.message });
+  }
 }
