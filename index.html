@@ -5455,7 +5455,38 @@ function initialSetup() {
  * SHEET "DATA GDTC": CỘT A: TK | CỘT B: TÊN GV | CỘT C: KÊ KHAI (DẠNG JSON)
  * ========================================================
  */
+
+/**
+ * ⭐️ HÀM TẠO VÀ ĐỒNG BỘ SHEET "DATA GDTC" DÀNH CHO ADMIN CHẠY TRỰC TIẾP TRONG APPS SCRIPT:
+ * Chọn hàm 'taoSheetGDTC' (hoặc 'capNhatCotSheetDataGdtc') trong danh sách hàm và nhấn nút 'Chạy' (Run).
+ * Hệ thống sẽ tự động tạo Sheet "DATA GDTC" nếu chưa có và đồng bộ danh sách giáo viên sang.
+ */
+function taoSheetGDTC() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_DATA_GDTC);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_DATA_GDTC);
+  }
+  capNhatCotSheetDataGdtc(sheet);
+  const res = syncDataGdtcWithData(true);
+  Logger.log("✅ ĐÃ TẠO VÀ ĐỒNG BỘ THÀNH CÔNG SHEET 'DATA GDTC' VỚI 3 CỘT: TK, TÊN GV, KÊ KHAI!");
+  return res;
+}
+
+function taoSheetDataGdtc() {
+  return taoSheetGDTC();
+}
+
+function dongBoSheetGDTC() {
+  return taoSheetGDTC();
+}
+
+function dongBoSheetDataGdtc() {
+  return taoSheetGDTC();
+}
+
 function initDataGdtcSheet(ss) {
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_DATA_GDTC);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_DATA_GDTC);
@@ -5465,7 +5496,13 @@ function initDataGdtcSheet(ss) {
 }
 
 function capNhatCotSheetDataGdtc(sheet) {
-  if (!sheet) return;
+  if (!sheet) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    sheet = ss.getSheetByName(SHEET_DATA_GDTC);
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_DATA_GDTC);
+    }
+  }
   const headers = ["TK", "TÊN GV", "KÊ KHAI"];
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
@@ -5478,9 +5515,16 @@ function capNhatCotSheetDataGdtc(sheet) {
   sheet.setColumnWidth(2, 240);
   sheet.setColumnWidth(3, 400);
   sheet.getRange("A:C").setNumberFormat("@");
+
+  // Nếu sheet mới tạo chưa có giáo viên, tự động đồng bộ ngay
+  if (sheet.getLastRow() <= 1) {
+    syncDataGdtcWithData(true);
+  }
+  return sheet;
 }
 
 function syncDataGdtcWithData(forceRebuild) {
+  if (forceRebuild === undefined) forceRebuild = true;
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetData = ss.getSheetByName(SHEET_DATA);
   if (!sheetData) {
@@ -5489,10 +5533,9 @@ function syncDataGdtcWithData(forceRebuild) {
 
   let sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
   if (!sheetGdtc) {
-    sheetGdtc = initDataGdtcSheet(ss);
-  } else {
-    capNhatCotSheetDataGdtc(sheetGdtc);
+    sheetGdtc = ss.insertSheet(SHEET_DATA_GDTC);
   }
+  capNhatCotSheetDataGdtc(sheetGdtc);
 
   const cols = getSheetDataCols(sheetData);
   const dataValuesRaw = sheetData.getDataRange().getValues();
