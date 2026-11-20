@@ -22444,7 +22444,7 @@ function exportGdtcAdminExcel() {
   const r5 = new Array(numCols).fill("");
   r5[0] = `Thời gian xuất: ${dateStr} ${timeStr} | Người lập: ${currentUser ? (currentUser.tenGv || '') : ''}`;
 
-  // Tiêu đề bảng 2 hàng theo đúng Hình H4 & H5
+  // Tiêu đề bảng 2 hàng theo đúng quy chuẩn
   const headerRow1 = ["TT", "Họ và tên giáo viên", "Số tiết dạy trong học kỳ", "", ""];
   const headerRow2 = ["", "", "Số tiết trên lớp/tuần", "Số tiết Thực hành/tuần", colPhucapHeader];
 
@@ -22501,136 +22501,305 @@ function exportGdtcAdminExcel() {
   });
 
   // Hàng Tổng cộng
-  const sumRow = ["Tổng cộng", "", Math.round(sumDayTuan * 10) / 10, Math.round(sumThucHanhTuan * 10) / 10, sumPhucap];
+  const sumRow = ["TỔNG CỘNG", "", Math.round(sumDayTuan * 10) / 10, Math.round(sumThucHanhTuan * 10) / 10, sumPhucap];
   aoa.push(sumRow);
 
-  // Khối chữ ký cuối bảng
+  // 2 hàng trống ngăn cách
   aoa.push(new Array(numCols).fill(""));
   aoa.push(new Array(numCols).fill(""));
 
+  // Khối chữ ký cuối bảng (Chia đều 2 bên: A-B cho Phó Hiệu Trưởng, C-E cho Người Lập Biểu)
   const signDateRow = new Array(numCols).fill("");
-  signDateRow[3] = `Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+  signDateRow[0] = `Ngày ...... tháng ...... năm ${todayYear}`;
+  signDateRow[2] = `An Nhơn, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
   aoa.push(signDateRow);
 
   const signTitleRow = new Array(numCols).fill("");
   signTitleRow[0] = "PHÓ HIỆU TRƯỞNG";
-  signTitleRow[3] = "NGƯỜI LẬP BIỂU";
+  signTitleRow[2] = "NGƯỜI LẬP BIỂU";
   aoa.push(signTitleRow);
 
   const signSubRow = new Array(numCols).fill("");
-  signSubRow[0] = "(Duyệt)";
-  signSubRow[3] = "(Ký và ghi rõ họ tên)";
+  signSubRow[0] = "(Duyệt, ký và đóng dấu)";
+  signSubRow[2] = "(Ký và ghi rõ họ tên)";
   aoa.push(signSubRow);
 
   aoa.push(new Array(numCols).fill(""));
   aoa.push(new Array(numCols).fill(""));
 
   const signNameRow = new Array(numCols).fill("");
-  signNameRow[3] = currentUser ? (currentUser.tenGv || '') : '';
+  signNameRow[2] = currentUser ? (currentUser.tenGv || '') : '';
   aoa.push(signNameRow);
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-  // Merge các ô theo mẫu chuẩn
+  // Các chỉ số dòng
+  const sumRowIdx = 9 + declaredTeachers.length;
+  const rDate = sumRowIdx + 3;
+  const rTitle = sumRowIdx + 4;
+  const rSub = sumRowIdx + 5;
+  const rName = sumRowIdx + 8;
+
+  // Merge các ô theo mẫu chuẩn chỉnh chu nhất (Mercel đầy đủ)
   ws['!merges'] = [
+    // Header cơ quan & Quốc hiệu tiêu ngữ
     { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
     { s: { r: 0, c: 2 }, e: { r: 0, c: 4 } },
     { s: { r: 1, c: 2 }, e: { r: 1, c: 4 } },
+    // Tiêu đề bảng & phụ đề thông tin
     { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } },
     { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } },
     { s: { r: 5, c: 0 }, e: { r: 5, c: 4 } },
-    // Header 2 hàng (Hàng 7 & 8)
+    // Header bảng 2 hàng
     { s: { r: 7, c: 0 }, e: { r: 8, c: 0 } }, // TT
     { s: { r: 7, c: 1 }, e: { r: 8, c: 1 } }, // Họ và tên giáo viên
     { s: { r: 7, c: 2 }, e: { r: 7, c: 4 } }, // Số tiết dạy trong học kỳ
     // Dòng Tổng cộng
-    { s: { r: 9 + declaredTeachers.length, c: 0 }, e: { r: 9 + declaredTeachers.length, c: 1 } },
-    // Chữ ký
-    { s: { r: 12 + declaredTeachers.length, c: 3 }, e: { r: 12 + declaredTeachers.length, c: 4 } },
-    { s: { r: 13 + declaredTeachers.length, c: 0 }, e: { r: 13 + declaredTeachers.length, c: 1 } },
-    { s: { r: 13 + declaredTeachers.length, c: 3 }, e: { r: 13 + declaredTeachers.length, c: 4 } },
-    { s: { r: 14 + declaredTeachers.length, c: 0 }, e: { r: 14 + declaredTeachers.length, c: 1 } },
-    { s: { r: 14 + declaredTeachers.length, c: 3 }, e: { r: 14 + declaredTeachers.length, c: 4 } },
-    { s: { r: 17 + declaredTeachers.length, c: 3 }, e: { r: 17 + declaredTeachers.length, c: 4 } }
+    { s: { r: sumRowIdx, c: 0 }, e: { r: sumRowIdx, c: 1 } },
+    // Khối chữ ký cuối bảng (A-B và C-E)
+    { s: { r: rDate, c: 0 }, e: { r: rDate, c: 1 } },
+    { s: { r: rDate, c: 2 }, e: { r: rDate, c: 4 } },
+    { s: { r: rTitle, c: 0 }, e: { r: rTitle, c: 1 } },
+    { s: { r: rTitle, c: 2 }, e: { r: rTitle, c: 4 } },
+    { s: { r: rSub, c: 0 }, e: { r: rSub, c: 1 } },
+    { s: { r: rSub, c: 2 }, e: { r: rSub, c: 4 } },
+    { s: { r: rName, c: 0 }, e: { r: rName, c: 1 } },
+    { s: { r: rName, c: 2 }, e: { r: rName, c: 4 } }
   ];
 
-  // Chiều rộng các cột
+  // Chiều rộng các cột chuẩn A4
   ws['!cols'] = [
     { wch: 8 },  // TT
-    { wch: 28 }, // Họ và tên giáo viên
+    { wch: 30 }, // Họ và tên giáo viên
     { wch: 22 }, // Số tiết trên lớp/tuần
     { wch: 22 }, // Số tiết Thực hành/tuần
     { wch: 26 }  // Số tiết được Phụ cấp
   ];
 
-  // Định dạng kiểu ô bằng xlsx-js-style
+  // Chiều cao các hàng
+  const rowHeights = [];
+  rowHeights[0] = { hpt: 20 };
+  rowHeights[1] = { hpt: 20 };
+  rowHeights[2] = { hpt: 10 };
+  rowHeights[3] = { hpt: 28 };
+  rowHeights[4] = { hpt: 20 };
+  rowHeights[5] = { hpt: 18 };
+  rowHeights[6] = { hpt: 10 };
+  rowHeights[7] = { hpt: 24 };
+  rowHeights[8] = { hpt: 26 };
+  for (let r = 9; r < sumRowIdx; r++) {
+    rowHeights[r] = { hpt: 22 };
+  }
+  rowHeights[sumRowIdx] = { hpt: 24 };
+  rowHeights[sumRowIdx + 1] = { hpt: 12 };
+  rowHeights[sumRowIdx + 2] = { hpt: 12 };
+  rowHeights[rDate] = { hpt: 20 };
+  rowHeights[rTitle] = { hpt: 22 };
+  rowHeights[rSub] = { hpt: 18 };
+  rowHeights[sumRowIdx + 6] = { hpt: 16 };
+  rowHeights[sumRowIdx + 7] = { hpt: 16 };
+  rowHeights[rName] = { hpt: 24 };
+  ws['!rows'] = rowHeights;
+
+  // Định dạng kiểu ô toàn diện bằng xlsx-js-style
+  const fontName = 'Times New Roman';
   const borderThin = {
-    top: { style: 'thin', color: { rgb: '000000' } },
-    bottom: { style: 'thin', color: { rgb: '000000' } },
-    left: { style: 'thin', color: { rgb: '000000' } },
-    right: { style: 'thin', color: { rgb: '000000' } }
+    top: { style: 'thin', color: { rgb: '94A3B8' } },
+    bottom: { style: 'thin', color: { rgb: '94A3B8' } },
+    left: { style: 'thin', color: { rgb: '94A3B8' } },
+    right: { style: 'thin', color: { rgb: '94A3B8' } }
+  };
+  const borderDouble = {
+    top: { style: 'thin', color: { rgb: '94A3B8' } },
+    bottom: { style: 'double', color: { rgb: '0F172A' } },
+    left: { style: 'thin', color: { rgb: '94A3B8' } },
+    right: { style: 'thin', color: { rgb: '94A3B8' } }
   };
 
-  const headerStyle = {
-    font: { name: 'Times New Roman', sz: 12, bold: true },
+  function setCellStyle(r, c, style) {
+    const addr = XLSX.utils.encode_cell({ r, c });
+    if (!ws[addr]) {
+      ws[addr] = { t: 's', v: '' };
+    }
+    ws[addr].s = Object.assign({}, ws[addr].s || {}, style);
+  }
+
+  // 1. Cơ quan ban hành (A1:B1, A2:B2)
+  for (let c = 0; c <= 1; c++) {
+    setCellStyle(0, c, {
+      font: { name: fontName, sz: 10, bold: false, color: { rgb: '334155' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+    setCellStyle(1, c, {
+      font: { name: fontName, sz: 10.5, bold: true, color: { rgb: '0F172A' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+  }
+
+  // 2. Quốc hiệu tiêu ngữ (C1:E1, C2:E2)
+  for (let c = 2; c <= 4; c++) {
+    setCellStyle(0, c, {
+      font: { name: fontName, sz: 10.5, bold: true, color: { rgb: '0F172A' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+    setCellStyle(1, c, {
+      font: { name: fontName, sz: 10.5, bold: true, color: { rgb: '0F172A' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+  }
+
+  // 3. Tiêu đề chính, năm học, metadata thời gian xuất (Hàng 3, 4, 5)
+  for (let c = 0; c < numCols; c++) {
+    setCellStyle(3, c, {
+      font: { name: fontName, sz: 13, bold: true, color: { rgb: '0F172A' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+    setCellStyle(4, c, {
+      font: { name: fontName, sz: 11, bold: false, italic: true, color: { rgb: '047857' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+    setCellStyle(5, c, {
+      font: { name: fontName, sz: 9.5, italic: true, color: { rgb: '64748B' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+  }
+
+  // 4. Header bảng 2 hàng (Hàng 7 & 8)
+  // TT: A8 (top) & A9 (bottom)
+  setCellStyle(7, 0, {
+    font: { name: fontName, sz: 11, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'F1F5F9' } },
+    border: { top: { style: 'thin', color: { rgb: '94A3B8' } }, left: { style: 'thin', color: { rgb: '94A3B8' } }, right: { style: 'thin', color: { rgb: '94A3B8' } } }
+  });
+  setCellStyle(8, 0, {
+    font: { name: fontName, sz: 11, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'F1F5F9' } },
+    border: { bottom: { style: 'thin', color: { rgb: '94A3B8' } }, left: { style: 'thin', color: { rgb: '94A3B8' } }, right: { style: 'thin', color: { rgb: '94A3B8' } } }
+  });
+
+  // Họ và tên giáo viên: B8 (top) & B9 (bottom)
+  setCellStyle(7, 1, {
+    font: { name: fontName, sz: 11, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'F1F5F9' } },
+    border: { top: { style: 'thin', color: { rgb: '94A3B8' } }, left: { style: 'thin', color: { rgb: '94A3B8' } }, right: { style: 'thin', color: { rgb: '94A3B8' } } }
+  });
+  setCellStyle(8, 1, {
+    font: { name: fontName, sz: 11, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    fill: { fgColor: { rgb: 'F1F5F9' } },
+    border: { bottom: { style: 'thin', color: { rgb: '94A3B8' } }, left: { style: 'thin', color: { rgb: '94A3B8' } }, right: { style: 'thin', color: { rgb: '94A3B8' } } }
+  });
+
+  // Số tiết dạy trong học kỳ: C8, D8, E8
+  for (let c = 2; c <= 4; c++) {
+    const b = {
+      top: { style: 'thin', color: { rgb: '94A3B8' } },
+      bottom: { style: 'thin', color: { rgb: '94A3B8' } },
+      left: c === 2 ? { style: 'thin', color: { rgb: '94A3B8' } } : undefined,
+      right: c === 4 ? { style: 'thin', color: { rgb: '94A3B8' } } : undefined
+    };
+    setCellStyle(7, c, {
+      font: { name: fontName, sz: 11, bold: true, color: { rgb: '92400E' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      fill: { fgColor: { rgb: 'FEF3C7' } },
+      border: b
+    });
+  }
+
+  // Hàng 8 (Row 9 in Excel): C9, D9, E9
+  setCellStyle(8, 2, {
+    font: { name: fontName, sz: 10.5, bold: true, color: { rgb: '0F172A' } },
     alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
     fill: { fgColor: { rgb: 'F1F5F9' } },
     border: borderThin
-  };
-
-  const dataStyleLeft = {
-    font: { name: 'Times New Roman', sz: 12 },
-    alignment: { horizontal: 'left', vertical: 'center' },
+  });
+  setCellStyle(8, 3, {
+    font: { name: fontName, sz: 10.5, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    fill: { fgColor: { rgb: 'F1F5F9' } },
     border: borderThin
-  };
-
-  const dataStyleCenter = {
-    font: { name: 'Times New Roman', sz: 12 },
-    alignment: { horizontal: 'center', vertical: 'center' },
-    border: borderThin
-  };
-
-  const dataStyleBold = {
-    font: { name: 'Times New Roman', sz: 12, bold: true },
-    alignment: { horizontal: 'center', vertical: 'center' },
+  });
+  setCellStyle(8, 4, {
+    font: { name: fontName, sz: 10.5, bold: true, color: { rgb: '92400E' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
     fill: { fgColor: { rgb: 'FEF3C7' } },
     border: borderThin
-  };
+  });
 
-  // Duyệt và áp dụng style cho các ô trong bảng dữ liệu
-  const startRow = 7;
-  const endDataRow = 9 + declaredTeachers.length;
+  // 5. Data rows (Hàng 9 đến 8 + N)
+  for (let r = 9; r < sumRowIdx; r++) {
+    const isEven = (r - 9) % 2 === 0;
+    const bgRgb = isEven ? 'FFFFFF' : 'F8FAFC';
+    for (let c = 0; c < numCols; c++) {
+      let align = 'center';
+      let isBold = false;
+      let fontColor = '1E293B';
+      let cellBg = bgRgb;
 
-  for (let R = startRow; R <= endDataRow; ++R) {
-    for (let C = 0; C < numCols; ++C) {
-      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-
-      if (R === 7 || R === 8) {
-        ws[cellRef].s = headerStyle;
-      } else if (R === endDataRow) {
-        ws[cellRef].s = {
-          font: { name: 'Times New Roman', sz: 12, bold: true },
-          alignment: { horizontal: 'center', vertical: 'center' },
-          fill: { fgColor: { rgb: 'F1F5F9' } },
-          border: borderThin
-        };
-      } else {
-        if (C === 1) ws[cellRef].s = dataStyleLeft;
-        else if (C === 4) ws[cellRef].s = dataStyleBold;
-        else ws[cellRef].s = dataStyleCenter;
+      if (c === 1) {
+        align = 'left';
+        isBold = true;
+      } else if (c === 4) {
+        isBold = true;
+        fontColor = '92400E';
+        cellBg = 'FEF3C7';
       }
+
+      setCellStyle(r, c, {
+        font: { name: fontName, sz: 11, bold: isBold, color: { rgb: fontColor } },
+        fill: { fgColor: { rgb: cellBg } },
+        border: borderThin,
+        alignment: { horizontal: align, vertical: 'center' }
+      });
     }
   }
 
-  // Định dạng tiêu đề chính
-  const titleRef = XLSX.utils.encode_cell({ r: 3, c: 0 });
-  if (ws[titleRef]) {
-    ws[titleRef].s = {
-      font: { name: 'Times New Roman', sz: 14, bold: true },
+  // 6. Tổng cộng (Hàng sumRowIdx)
+  for (let c = 0; c < numCols; c++) {
+    const isPhucap = (c === 4);
+    setCellStyle(sumRowIdx, c, {
+      font: { name: fontName, sz: 11, bold: true, color: { rgb: isPhucap ? '92400E' : '0F172A' } },
+      fill: { fgColor: { rgb: isPhucap ? 'FEF3C7' : 'F1F5F9' } },
+      border: borderDouble,
       alignment: { horizontal: 'center', vertical: 'center' }
-    };
+    });
+  }
+
+  // 7. Khối chữ ký cuối bảng
+  // Ngày tháng (rDate)
+  for (let c = 0; c < numCols; c++) {
+    setCellStyle(rDate, c, {
+      font: { name: fontName, sz: 10.5, italic: true, color: { rgb: '334155' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+  }
+
+  // Tiêu đề chữ ký (rTitle)
+  for (let c = 0; c < numCols; c++) {
+    setCellStyle(rTitle, c, {
+      font: { name: fontName, sz: 11, bold: true, color: { rgb: '0F172A' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+  }
+
+  // Chú thích chữ ký (rSub)
+  for (let c = 0; c < numCols; c++) {
+    setCellStyle(rSub, c, {
+      font: { name: fontName, sz: 9.5, italic: true, color: { rgb: '64748B' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
+  }
+
+  // Tên người ký (rName)
+  for (let c = 0; c < numCols; c++) {
+    setCellStyle(rName, c, {
+      font: { name: fontName, sz: 11.5, bold: true, color: { rgb: '0F172A' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    });
   }
 
   const wb = XLSX.utils.book_new();
