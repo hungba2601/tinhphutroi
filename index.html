@@ -22986,8 +22986,13 @@ function exportGdtcTeachersStatusExcel() {
     return;
   }
 
-  const numCols = 7;
+  showToast("Đang chuẩn bị file Excel danh sách giáo viên...", "info");
+
+  const numCols = 8;
+  const midCol = 4;
   const now = new Date();
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const todayDay = String(now.getDate()).padStart(2, '0');
   const todayMonth = String(now.getMonth() + 1).padStart(2, '0');
   const todayYear = now.getFullYear();
@@ -22998,11 +23003,11 @@ function exportGdtcTeachersStatusExcel() {
 
   const r0 = new Array(numCols).fill("");
   r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
-  r0[3] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
+  r0[midCol] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
 
   const r1 = new Array(numCols).fill("");
   r1[0] = "TRƯỜNG THCS AN NHƠN";
-  r1[3] = "Độc lập - Tự do - Hạnh phúc";
+  r1[midCol] = "Độc lập - Tự do - Hạnh phúc";
 
   const r3 = new Array(numCols).fill("");
   r3[0] = filterTitle;
@@ -23010,15 +23015,33 @@ function exportGdtcTeachersStatusExcel() {
   const r4 = new Array(numCols).fill("");
   r4[0] = "NĂM HỌC 2024 - 2025";
 
-  const headers = ["STT", "Tài khoản", "Họ và tên giáo viên", "Ngày sinh", "Lớp giảng dạy", "Trạng thái kê khai", "Thực hành HK1 (tiết)", "Thực hành HK2 (tiết)"];
+  const r5 = new Array(numCols).fill("");
+  r5[0] = `Thời gian xuất: ${dateStr} ${timeStr} | Người lập: ${currentUser ? (currentUser.tenGv || currentUser.hoTen || '') : ''}`;
+
+  const headers = [
+    "STT",
+    "Tài khoản (SĐT)",
+    "Họ và tên giáo viên",
+    "Ngày sinh",
+    "Lớp giảng dạy",
+    "Trạng thái kê khai",
+    "Thực hành HK1 (tiết)",
+    "Thực hành HK2 (tiết)"
+  ];
 
   const aoa = [
-    r0, r1,
+    r0,
+    r1,
     new Array(numCols).fill(""),
-    r3, r4,
+    r3,
+    r4,
+    r5,
     new Array(numCols).fill(""),
     headers
   ];
+
+  let totalHk1 = 0;
+  let totalHk2 = 0;
 
   teachersToExport.forEach((t, idx) => {
     const store = getTeacherGdtcStore(t);
@@ -23027,8 +23050,11 @@ function exportGdtcTeachersStatusExcel() {
     const isDeclared = isTeacherGdtcDeclared(t, 'all');
     const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
     const classesText = (typeof formatTeacherClassesSummary === 'function')
-      ? (formatTeacherClassesSummary(rawClasses) || (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses))
-      : (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses);
+      ? (formatTeacherClassesSummary(rawClasses) || (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses) || '--')
+      : ((Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses) || '--');
+
+    totalHk1 += sumHk1;
+    totalHk2 += sumHk2;
 
     aoa.push([
       idx + 1,
@@ -23042,10 +23068,69 @@ function exportGdtcTeachersStatusExcel() {
     ]);
   });
 
+  const sumRow = new Array(numCols).fill("");
+  sumRow[0] = `TỔNG CỘNG (${teachersToExport.length} GIÁO VIÊN)`;
+  sumRow[6] = totalHk1;
+  sumRow[7] = totalHk2;
+  aoa.push(sumRow);
+
+  // Khối chữ ký cuối bảng
+  aoa.push(new Array(numCols).fill(""));
+  aoa.push(new Array(numCols).fill(""));
+
+  const signDateRow = new Array(numCols).fill("");
+  signDateRow[midCol] = `An Nhơn, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+  aoa.push(signDateRow);
+
+  const signTitleRow = new Array(numCols).fill("");
+  signTitleRow[0] = "PHÓ HIỆU TRƯỞNG";
+  signTitleRow[midCol] = "NGƯỜI LẬP BIỂU";
+  aoa.push(signTitleRow);
+
+  const signSubRow = new Array(numCols).fill("");
+  signSubRow[0] = "(Duyệt, ký và đóng dấu)";
+  signSubRow[midCol] = "(Ký và ghi rõ họ tên)";
+  aoa.push(signSubRow);
+
+  aoa.push(new Array(numCols).fill(""));
+  aoa.push(new Array(numCols).fill(""));
+
+  const signNameRow = new Array(numCols).fill("");
+  signNameRow[midCol] = currentUser ? (currentUser.tenGv || currentUser.hoTen || '') : '';
+  aoa.push(signNameRow);
+
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [
-    { wch: 8 }, { wch: 16 }, { wch: 26 }, { wch: 14 }, { wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 18 }
-  ];
+
+  // Cố định kiểu String cho cột Tài khoản/SĐT (cột B = index 1) để giữ số 0 ở đầu
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = 7; R <= range.e.r; ++R) {
+    const cellPhoneAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
+    if (ws[cellPhoneAddr]) {
+      ws[cellPhoneAddr].t = 's';
+      ws[cellPhoneAddr].v = String(ws[cellPhoneAddr].v || '');
+    }
+  }
+
+  applyStandardExcelSheetStyling(ws, {
+    numCols: numCols,
+    headerRowIdx: 7,
+    dataStartRowIdx: 8,
+    dataEndRowIdx: 7 + teachersToExport.length,
+    summaryRowIdx: 8 + teachersToExport.length,
+    summaryMergedCols: 6,
+    colAlignments: ["center", "center", "left", "center", "left", "center", "center", "center"],
+    colBolds: [false, false, true, false, false, false, true, true],
+    cols: [
+      { wch: 6 },  // STT
+      { wch: 16 }, // Tài khoản (SĐT)
+      { wch: 28 }, // Họ và tên giáo viên
+      { wch: 14 }, // Ngày sinh
+      { wch: 26 }, // Lớp giảng dạy
+      { wch: 20 }, // Trạng thái kê khai
+      { wch: 22 }, // Thực hành HK1 (tiết)
+      { wch: 22 }  // Thực hành HK2 (tiết)
+    ]
+  });
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "DanhSachGV_GDTC");
