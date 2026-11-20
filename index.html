@@ -1590,19 +1590,6 @@
             </p>
           </div>
 
-          <!-- Nút tiện ích điền nhanh -->
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="quickFillGdtcPeriods('day')" title="Điền cùng số tiết dạy cho toàn bộ các tuần"
-              class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition">
-              <i class="fa-solid fa-bolt text-amber-500"></i>
-              <span>Điền all Tiết dạy</span>
-            </button>
-            <button type="button" onclick="quickFillGdtcPeriods('thuchanh')" title="Điền cùng số tiết thực hành cho toàn bộ các tuần"
-              class="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs border border-amber-300 flex items-center gap-1.5 transition">
-              <i class="fa-solid fa-bolt text-amber-600"></i>
-              <span>Điền all Thực hành</span>
-            </button>
-          </div>
         </div>
 
         <!-- Table 4 cột đúng Hình H1 -->
@@ -1612,8 +1599,42 @@
               <tr class="bg-slate-50 text-slate-700 font-extrabold uppercase text-center border-b border-slate-200 tracking-wider">
                 <th class="py-3 px-4 border-r border-slate-200 w-36 sm:w-44">TUẦN HỌC</th>
                 <th class="py-3 px-4 border-r border-slate-200 text-left min-w-[200px]">LỚP DẠY</th>
-                <th class="py-3 px-4 border-r border-slate-200 w-36 sm:w-48">TỔNG SỐ TIẾT DẠY</th>
-                <th class="py-3 px-4 w-36 sm:w-48 text-amber-900 bg-amber-50/60">TỔNG SỐ TIẾT THỰC HÀNH</th>
+                <th class="py-2.5 px-3 border-r border-slate-200 w-44 sm:w-52 text-center">
+                  <div class="flex flex-col items-center justify-center gap-1.5">
+                    <span class="text-xs font-bold text-slate-800">TỔNG SỐ TIẾT DẠY</span>
+                    <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="number" id="quick-fill-gdtc-day-input" min="0" step="0.5" placeholder="18"
+                        title="Nhập số tiết dạy để điền nhanh cho tất cả các tuần"
+                        class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-amber-500"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillGdtcPeriods('day', this.value);}">
+                      <button type="button" id="btn-quick-fill-gdtc-day"
+                        onclick="quickFillGdtcPeriods('day', document.getElementById('quick-fill-gdtc-day-input').value)"
+                        title="Điền nhanh số tiết dạy này cho tất cả các tuần trong học kỳ"
+                        class="px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer">
+                        <i class="fa-solid fa-bolt text-amber-200 text-[10px]"></i>
+                        <span>Điền all</span>
+                      </button>
+                    </div>
+                  </div>
+                </th>
+                <th class="py-2.5 px-3 w-44 sm:w-52 text-center text-amber-900 bg-amber-50/60">
+                  <div class="flex flex-col items-center justify-center gap-1.5">
+                    <span class="text-xs font-bold text-amber-900">TỔNG SỐ TIẾT THỰC HÀNH</span>
+                    <div class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-amber-300 shadow-2xs">
+                      <input type="number" id="quick-fill-gdtc-thuchanh-input" min="0" step="0.5" placeholder="18"
+                        title="Nhập số tiết thực hành để điền nhanh cho tất cả các tuần"
+                        class="w-12 text-center py-0.5 px-1 bg-amber-50/50 border border-amber-200 rounded text-xs font-bold text-amber-900 outline-none focus:ring-1 focus:ring-amber-500"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillGdtcPeriods('thuchanh', this.value);}">
+                      <button type="button" id="btn-quick-fill-gdtc-thuchanh"
+                        onclick="quickFillGdtcPeriods('thuchanh', document.getElementById('quick-fill-gdtc-thuchanh-input').value)"
+                        title="Điền nhanh số tiết thực hành này cho tất cả các tuần trong học kỳ"
+                        class="px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer">
+                        <i class="fa-solid fa-bolt text-amber-200 text-[10px]"></i>
+                        <span>Điền all</span>
+                      </button>
+                    </div>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody id="gdtc-teacher-tbody" class="divide-y divide-slate-100">
@@ -21055,6 +21076,32 @@ function renderGdtcTeacherTable() {
   const weeks = gdtcActiveSemester === 'hk1' ? gdtcTeacherStore.hk1 : gdtcTeacherStore.hk2;
   const defaultClassesStr = (gdtcTeacherStore.classes || []).join(', ');
 
+  const isAdmin = isRoleAdmin(currentUser?.quyen) || isRoleBgh(currentUser?.quyen) || currentUser?.isLoggedInAsAdmin;
+  const isLocked = checkSystemLocked() && !isAdmin;
+
+  // Trạng thái khóa của 2 ô input điền nhanh trên header
+  const quickDayInput = document.getElementById('quick-fill-gdtc-day-input');
+  if (quickDayInput && document.activeElement !== quickDayInput) {
+    quickDayInput.disabled = isLocked;
+  }
+  const btnQuickDay = document.getElementById('btn-quick-fill-gdtc-day');
+  if (btnQuickDay) {
+    btnQuickDay.disabled = isLocked;
+    if (isLocked) btnQuickDay.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+    else btnQuickDay.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+  }
+
+  const quickThucHanhInput = document.getElementById('quick-fill-gdtc-thuchanh-input');
+  if (quickThucHanhInput && document.activeElement !== quickThucHanhInput) {
+    quickThucHanhInput.disabled = isLocked;
+  }
+  const btnQuickThucHanh = document.getElementById('btn-quick-fill-gdtc-thuchanh');
+  if (btnQuickThucHanh) {
+    btnQuickThucHanh.disabled = isLocked;
+    if (isLocked) btnQuickThucHanh.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+    else btnQuickThucHanh.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+  }
+
   let sumDay = 0;
   let sumThucHanh = 0;
 
@@ -21071,6 +21118,14 @@ function renderGdtcTeacherTable() {
     sumDay += tietDay;
     sumThucHanh += tietThucHanh;
 
+    const disabledAttr = isLocked ? 'disabled' : '';
+    const inputDayClass = isLocked
+      ? "w-24 sm:w-28 mx-auto text-center py-1.5 px-2 font-bold text-slate-500 border border-slate-200 rounded-xl bg-slate-100 cursor-not-allowed select-none"
+      : "w-24 sm:w-28 mx-auto text-center py-1.5 px-2 font-bold text-slate-800 border border-slate-200 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition bg-white";
+    const inputThucHanhClass = isLocked
+      ? "w-24 sm:w-28 mx-auto text-center py-1.5 px-2 font-extrabold text-amber-700/60 border border-amber-200 rounded-xl bg-amber-50/30 cursor-not-allowed select-none"
+      : "w-24 sm:w-28 mx-auto text-center py-1.5 px-2 font-extrabold text-amber-900 border border-amber-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition bg-amber-50/60";
+
     const tr = document.createElement('tr');
     tr.className = "hover:bg-amber-50/30 transition text-center text-xs sm:text-sm";
     tr.innerHTML = `
@@ -21085,20 +21140,21 @@ function renderGdtcTeacherTable() {
             ${escapeHtml(displayLopDayText)}
           </span>
           <button type="button" onclick="openGdtcEditWeekClassesModal(${index})" title="Chỉnh sửa lớp dạy tuần ${tuanNum}"
-            class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-500 hover:text-amber-800 flex items-center justify-center transition shrink-0">
+            ${disabledAttr}
+            class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-500 hover:text-amber-800 flex items-center justify-center transition shrink-0 ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}">
             <i class="fa-solid fa-pen-to-square text-xs"></i>
           </button>
         </div>
       </td>
       <td class="py-2.5 px-4 border-r border-slate-200">
-        <input type="number" min="0" max="60" value="${tietDay}"
+        <input type="number" min="0" max="60" value="${tietDay}" ${disabledAttr}
           oninput="handleGdtcRowChange(${index}, 'day', this.value)"
-          class="w-24 sm:w-28 mx-auto text-center py-1.5 px-2 font-bold text-slate-800 border border-slate-200 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition bg-white" />
+          class="${inputDayClass}" />
       </td>
       <td class="py-2.5 px-4 bg-amber-50/20">
-        <input type="number" min="0" max="60" value="${tietThucHanh}"
+        <input type="number" min="0" max="60" value="${tietThucHanh}" ${disabledAttr}
           oninput="handleGdtcRowChange(${index}, 'thuchanh', this.value)"
-          class="w-24 sm:w-28 mx-auto text-center py-1.5 px-2 font-extrabold text-amber-900 border border-amber-300 rounded-xl focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition bg-amber-50/60" />
+          class="${inputThucHanhClass}" />
       </td>
     `;
     tbody.appendChild(tr);
@@ -21152,17 +21208,37 @@ function handleGdtcRowChange(index, field, value) {
 }
 
 /**
- * Điền nhanh số tiết cho tất cả các tuần
+ * Điền nhanh số tiết cho tất cả các tuần (tương tự Phân hệ 1)
  */
-function quickFillGdtcPeriods(field) {
+function quickFillGdtcPeriods(field, val) {
+  const isAdmin = isRoleAdmin(currentUser?.quyen) || isRoleBgh(currentUser?.quyen) || currentUser?.isLoggedInAsAdmin;
+  if (checkSystemLocked() && !isAdmin) {
+    showToast("Hệ thống hiện đang bị KHÓA KÊ KHAI bởi Ban Giám Hiệu nhà trường!", "warning");
+    return;
+  }
+
   const isDay = field === 'day';
-  const label = isDay ? "số tiết dạy trên lớp" : "số tiết thực hành";
-  const defVal = isDay ? "18" : "18";
+  const label = isDay ? "tiết dạy" : "tiết thực hành";
+  const inputId = isDay ? 'quick-fill-gdtc-day-input' : 'quick-fill-gdtc-thuchanh-input';
+  const inputEl = document.getElementById(inputId);
 
-  const valStr = prompt(`Nhập ${label} áp dụng cho TẤT CẢ các tuần trong ${gdtcActiveSemester === 'hk1' ? 'Học Kỳ 1 (18 tuần)' : 'Học Kỳ 2 (17 tuần)'}:`, defVal);
-  if (valStr === null) return;
+  let rawVal = val;
+  if (rawVal === undefined || rawVal === null || String(rawVal).trim() === '') {
+    if (inputEl && inputEl.value !== '') {
+      rawVal = inputEl.value;
+    }
+  }
 
-  const num = Math.max(0, parseFloat(valStr) || 0);
+  let num = (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== "")
+    ? parseFloat(rawVal)
+    : 18;
+
+  if (isNaN(num) || num < 0) {
+    num = 18;
+  }
+
+  if (inputEl) inputEl.value = num;
+
   ensureGdtcWeeksStructure();
   const weeks = gdtcActiveSemester === 'hk1' ? gdtcTeacherStore.hk1 : gdtcTeacherStore.hk2;
 
@@ -21177,7 +21253,7 @@ function quickFillGdtcPeriods(field) {
     localStorage.setItem('gdtc_data_' + currentUser.taiKhoan, JSON.stringify(gdtcTeacherStore));
   }
 
-  showToast(`Đã điền ${num} ${label} cho tất cả các tuần!`, "success");
+  showToast(`Đã điền nhanh ${num} ${label} cho tất cả các tuần! Nhớ nhấn "Lưu Lên Google Sheet".`, "info");
 }
 
 /**
