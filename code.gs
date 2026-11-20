@@ -1972,6 +1972,32 @@ function handleGetAdminSummary(adminTaiKhoan) {
     Logger.log("Lỗi đọc hoaNhapMap trong handleGetAdminSummary: " + hnMapErr);
   }
 
+  const gdtcMap = {};
+  try {
+    const sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
+    if (sheetGdtc && sheetGdtc.getLastRow() > 1) {
+      const gnumCols = Math.max(3, sheetGdtc.getLastColumn());
+      const gVals = sheetGdtc.getRange(2, 1, sheetGdtc.getLastRow() - 1, gnumCols).getValues();
+      const gDisp = sheetGdtc.getRange(2, 1, sheetGdtc.getLastRow() - 1, gnumCols).getDisplayValues();
+      for (let g = 0; g < gVals.length; g++) {
+        const gRawTk = String(gVals[g][0] || "").trim();
+        const gDispTk = String(gDisp[g][0] || "").trim();
+        const gNormTk = normalizeUsername(gDispTk || gRawTk);
+        const gJsonStr = gVals[g][2] || "";
+        const gCleanRaw = gRawTk.replace(/^'+/, "").toLowerCase();
+        const gCleanNorm = gNormTk.replace(/^'+/, "").toLowerCase();
+        const gStripped = gCleanNorm.replace(/^0+/, "");
+        const gWithZero = (/^\d{9}$/.test(gStripped)) ? ("0" + gStripped) : gStripped;
+        if (gCleanRaw) gdtcMap[gCleanRaw] = gJsonStr;
+        if (gCleanNorm) gdtcMap[gCleanNorm] = gJsonStr;
+        if (gStripped) gdtcMap[gStripped] = gJsonStr;
+        if (gWithZero) gdtcMap[gWithZero] = gJsonStr;
+      }
+    }
+  } catch (gdtcMapErr) {
+    Logger.log("Lỗi đọc gdtcMap trong handleGetAdminSummary: " + gdtcMapErr);
+  }
+
   // Xác định xem người gọi có phải quyền BGH hay không
   let isCallerBgh = false;
   if (adminTaiKhoan) {
@@ -2013,6 +2039,10 @@ function handleGetAdminSummary(adminTaiKhoan) {
 
     const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
     const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || cleanNormTk === 'blt' || !isRoleGv(quyen, cleanNormTk)) ? null : dDataHn;
+
+    const dDataGdtc = gdtcMap[cleanNormTk] || gdtcMap[cleanRawTk] || gdtcMap[cleanNormTk.replace(/^0+/, "")] || gdtcMap['0' + cleanNormTk.replace(/^0+/, "")] || null;
+    const finalDataGdtc = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || cleanNormTk === 'blt' || !isRoleGv(quyen, cleanNormTk)) ? null : dDataGdtc;
+
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,
@@ -2023,7 +2053,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       hasData: !!dData,
       dataJson: dData ? dData.dataJson : null,
       lopDay: dData ? (dData.lopDay || "") : "",
-      dataHoaNhapJson: finalDataHn || null
+      dataHoaNhapJson: finalDataHn || null,
+      dataGdtcJson: finalDataGdtc || null
     });
   }
 
@@ -2853,6 +2884,24 @@ function capNhatCotSheetDataGdtc(sheet) {
   sheet.setColumnWidth(3, 400);
   sheet.getRange("A:C").setNumberFormat("@");
 
+  // Quét các dòng hiện có: nếu TK bị mất số 0 (chỉ có 9 chữ số), tự động bổ sung số 0 và ép kiểu Text
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    const tkRange = sheet.getRange(2, 1, lastRow - 1, 1);
+    const tkVals = tkRange.getValues();
+    let updated = false;
+    for (let r = 0; r < tkVals.length; r++) {
+      let v = String(tkVals[r][0] || "").trim().replace(/^'+/, "");
+      if (/^\d{9}$/.test(v)) {
+        tkVals[r][0] = "'" + "0" + v;
+        updated = true;
+      }
+    }
+    if (updated) {
+      tkRange.setNumberFormat("@").setValues(tkVals);
+    }
+  }
+
   // Nếu sheet mới tạo chưa có giáo viên, tự động đồng bộ ngay
   if (sheet.getLastRow() <= 1) {
     syncDataGdtcWithData(true);
@@ -3012,7 +3061,9 @@ function handleSaveGdtcData(taiKhoan, dataJson, isAdmin) {
   }
 
   const normTk = normalizeUsername(taiKhoan);
-  const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
+  const cleanStripped = normTk.replace(/^'+/, "").replace(/^0+/, "");
+  const standardTk = (/^\d{9}$/.test(cleanStripped)) ? ("0" + cleanStripped) : normTk;
+  const cellTk = "'" + standardTk;
 
   if (matchingRows.length === 0) {
     let tenGv = "";
@@ -3029,14 +3080,15 @@ function handleSaveGdtcData(taiKhoan, dataJson, isAdmin) {
         }
       }
     }
-    sheetGdtc.appendRow([cellTk, tenGv, dataJson]);
-    const newRow = sheetGdtc.getLastRow();
-    sheetGdtc.getRange(newRow, 1).setNumberFormat("@");
-    sheetGdtc.getRange(newRow, 3).setNumberFormat("@");
+    const newRow = sheetGdtc.getLastRow() + 1;
+    sheetGdtc.getRange(newRow, 1).setNumberFormat("@").setValue(cellTk);
+    sheetGdtc.getRange(newRow, 2).setValue(tenGv);
+    sheetGdtc.getRange(newRow, 3).setNumberFormat("@").setValue(dataJson);
   } else {
     for (let m = 0; m < matchingRows.length; m++) {
       const rowIndex = matchingRows[m];
-      sheetGdtc.getRange(rowIndex, 3).setValue(dataJson).setNumberFormat("@");
+      sheetGdtc.getRange(rowIndex, 1).setNumberFormat("@").setValue(cellTk);
+      sheetGdtc.getRange(rowIndex, 3).setNumberFormat("@").setValue(dataJson);
     }
   }
 
@@ -3066,7 +3118,9 @@ function handleGetAllGdtcData() {
         if (cleanRaw) map[cleanRaw] = hJsonStr;
         if (cleanNorm) map[cleanNorm] = hJsonStr;
         const stripped = cleanNorm.replace(/^0+/, "");
+        const withZero = (/^\d{9}$/.test(stripped)) ? ("0" + stripped) : stripped;
         if (stripped) map[stripped] = hJsonStr;
+        if (withZero) map[withZero] = hJsonStr;
       }
     }
     return jsonResponse({ success: true, data: map, isSystemLocked: isSystemLocked() });

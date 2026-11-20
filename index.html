@@ -21021,11 +21021,11 @@ async function showGdtcAdminView() {
   // Đồng bộ trạng thái khóa toàn trường
   updateGdtcAdminLockUI();
 
+  // Tải dữ liệu GDTC từ Cloud trước
+  await syncAllTeachersGdtcFromCloud();
+
   // Kích hoạt tab quản trị đang chọn (mặc định Tab 1: Quản Lý Giáo Viên)
   switchGdtcAdminTab(gdtcAdminActiveTab || 'teachers');
-
-  // Tải dữ liệu từ Cloud và cập nhật bảng
-  await syncAllTeachersGdtcFromCloud();
 }
 
 /**
@@ -21649,6 +21649,11 @@ async function syncAllTeachersGdtcFromCloud() {
     const res = await callGasBackend({ action: "getAllGdtcData" });
     if (res && res.success && res.data) {
       gdtcAllDataMap = res.data;
+      if (Array.isArray(adminTeachersList)) {
+        adminTeachersList.forEach(t => {
+          delete t._gdtcStore;
+        });
+      }
     }
   } catch (err) {
     console.warn("Lỗi syncAllTeachersGdtcFromCloud:", err);
@@ -21713,27 +21718,36 @@ function getGdtcTeachersList() {
  */
 function getTeacherGdtcStore(teacher) {
   if (!teacher) return { classes: [], hk1: [], hk2: [] };
-  if (teacher._gdtcStore) return teacher._gdtcStore;
+  if (teacher._gdtcStore && ((teacher._gdtcStore.hk1 && teacher._gdtcStore.hk1.length > 0) || (teacher._gdtcStore.classes && teacher._gdtcStore.classes.length > 0))) {
+    return teacher._gdtcStore;
+  }
 
   const rawTk = String(teacher.taiKhoan || '').trim();
-  const normTk = normalizeUsername(rawTk);
-  const cleanTk = normTk.replace(/^'+/, '').toLowerCase();
+  const cleanTk = rawTk.replace(/^'+/, '').toLowerCase();
   const stripped = cleanTk.replace(/^0+/, '');
+  const withZero = (/^\d{9}$/.test(stripped)) ? ('0' + stripped) : stripped;
 
-  let jsonStr = gdtcAllDataMap[cleanTk] || gdtcAllDataMap[normTk] || gdtcAllDataMap[rawTk] || gdtcAllDataMap[stripped] || teacher.dataGdtcJson || "";
+  let jsonStr = gdtcAllDataMap[cleanTk] ||
+                gdtcAllDataMap[stripped] ||
+                gdtcAllDataMap[withZero] ||
+                gdtcAllDataMap[rawTk] ||
+                (teacher.rawTaiKhoan && gdtcAllDataMap[String(teacher.rawTaiKhoan).trim()]) ||
+                (teacher.rawTaiKhoan && gdtcAllDataMap[String(teacher.rawTaiKhoan).trim().replace(/^0+/, '')]) ||
+                teacher.dataGdtcJson || "";
+
   if (jsonStr) {
     try {
       const parsed = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
-      if (parsed) {
+      if (parsed && typeof parsed === 'object') {
         teacher._gdtcStore = parsed;
         return parsed;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Lỗi parse JSON GDTC của", teacher.taiKhoan, e);
+    }
   }
 
-  const emptyStore = { classes: [], hk1: [], hk2: [] };
-  teacher._gdtcStore = emptyStore;
-  return emptyStore;
+  return { classes: [], hk1: [], hk2: [] };
 }
 
 /**
