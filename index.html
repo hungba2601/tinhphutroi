@@ -1684,9 +1684,8 @@
             <!-- Dropdown lọc trạng thái -->
             <select id="gdtc-admin-status-filter" onchange="handleGdtcAdminStatusFilterChange()"
               class="py-2 px-3 rounded-xl border border-slate-200 focus:border-amber-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white">
-              <option value="all">1. Tất cả GV thể dục</option>
-              <option value="declared">2. GV đã kê khai</option>
-              <option value="not_declared">3. GV chưa kê khai</option>
+              <option value="declared" selected>1. GV đã kê khai</option>
+              <option value="not_declared">2. GV chưa kê khai</option>
             </select>
           </div>
 
@@ -20784,7 +20783,7 @@ let gdtcActiveSemester = 'hk1'; // 'hk1' | 'hk2'
 let gdtcAdminActiveTab = 'teachers'; // 'teachers' | 'summary'
 let gdtcAdminActiveSem = 'hk1'; // 'hk1' | 'hk2' | 'all'
 let gdtcAdminSearchTerm = '';
-let gdtcAdminStatusFilter = 'all'; // 'all' | 'declared' | 'not_declared'
+let gdtcAdminStatusFilter = 'declared'; // 'declared' | 'not_declared'
 let gdtcAllDataMap = {}; // taiKhoan -> JSON string
 let currentGdtcViewingTeacher = null;
 let adminModalViewingGdtcSem = 'hk1';
@@ -21564,7 +21563,7 @@ function handleGdtcAdminSearch() {
 
 function handleGdtcAdminStatusFilterChange() {
   const select = document.getElementById('gdtc-admin-status-filter');
-  gdtcAdminStatusFilter = select ? select.value : 'all';
+  gdtcAdminStatusFilter = select ? select.value : 'declared';
   renderGdtcAdminTeachersTable();
 }
 
@@ -21630,6 +21629,39 @@ function getTeacherGdtcStore(teacher) {
 }
 
 /**
+ * Kiểm tra xem giáo viên đã kê khai môn GDTC hay chưa
+ * @param {Object} teacher - Đối tượng giáo viên
+ * @param {string} sem - 'hk1' | 'hk2' | 'all'
+ */
+function isTeacherGdtcDeclared(teacher, sem = 'all') {
+  if (!teacher) return false;
+  const store = getTeacherGdtcStore(teacher);
+  if (!store) return false;
+
+  const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
+  const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
+  const sumDay1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietDay) || 0), 0);
+  const sumDay2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietDay) || 0), 0);
+
+  const hasHk1 = (sumHk1 > 0 || sumDay1 > 0);
+  const hasHk2 = (sumHk2 > 0 || sumDay2 > 0);
+  const hasAny = hasHk1 || hasHk2;
+
+  if (sem === 'hk1') return hasHk1;
+  if (sem === 'hk2') return hasHk2;
+  return hasAny;
+}
+
+/**
+ * Lấy danh sách giáo viên GDTC đã kê khai dữ liệu
+ * @param {string} sem - 'hk1' | 'hk2' | 'all'
+ */
+function getGdtcDeclaredTeachers(sem = 'all') {
+  const allTeachers = getGdtcTeachersList();
+  return allTeachers.filter(t => isTeacherGdtcDeclared(t, sem));
+}
+
+/**
  * Render Tab 1: Quản Lý Giáo Viên (Giống Phân hệ 2)
  */
 function renderGdtcAdminTeachersTable() {
@@ -21646,7 +21678,7 @@ function renderGdtcAdminTeachersTable() {
     const store = getTeacherGdtcStore(t);
     const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
-    const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
+    const isDeclared = isTeacherGdtcDeclared(t, 'all');
 
     if (isDeclared) totalDeclared++;
     totalThucHanhAll += (sumHk1 + sumHk2);
@@ -21660,9 +21692,13 @@ function renderGdtcAdminTeachersTable() {
       if (!matchName && !matchTk && !matchClass) return false;
     }
 
-    // Lọc trạng thái
-    if (gdtcAdminStatusFilter === 'declared' && !isDeclared) return false;
-    if (gdtcAdminStatusFilter === 'not_declared' && isDeclared) return false;
+    // Lọc trạng thái (Chỉ còn 'declared' hoặc 'not_declared')
+    if (gdtcAdminStatusFilter === 'not_declared') {
+      if (isDeclared) return false;
+    } else {
+      // Mặc định là 'declared' (GV đã kê khai)
+      if (!isDeclared) return false;
+    }
 
     return true;
   });
@@ -21678,10 +21714,13 @@ function renderGdtcAdminTeachersTable() {
   if (statThucHanh) statThucHanh.textContent = `${totalThucHanhAll} tiết`;
 
   const badgeCount = document.getElementById('badge-gdtc-admin-summary-count');
-  if (badgeCount) badgeCount.textContent = allTeachers.length;
+  if (badgeCount) badgeCount.textContent = totalDeclared;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 italic">Không tìm thấy giáo viên nào phù hợp</td></tr>`;
+    const emptyMsg = gdtcAdminStatusFilter === 'not_declared'
+      ? 'Tất cả giáo viên đã hoàn tất kê khai môn thể dục'
+      : 'Chưa có giáo viên nào hoàn tất kê khai môn thể dục';
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 italic">${emptyMsg}</td></tr>`;
     return;
   }
 
@@ -21689,7 +21728,7 @@ function renderGdtcAdminTeachersTable() {
     const store = getTeacherGdtcStore(t);
     const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
-    const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
+    const isDeclared = isTeacherGdtcDeclared(t, 'all');
 
     const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
     const fullClassesText = Array.isArray(rawClasses) ? rawClasses.join(', ') : (rawClasses || '--');
@@ -21741,19 +21780,35 @@ function renderGdtcAdminSummaryTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  const allTeachers = getGdtcTeachersList();
   const sem = gdtcAdminActiveSem;
+  const semName = sem === 'hk1' ? 'Học Kỳ 1' : (sem === 'hk2' ? 'Học Kỳ 2' : 'Cả Năm');
+  const headingEl = document.getElementById('gdtc-summary-table-heading');
+  if (headingEl) {
+    headingEl.textContent = `Bảng Kê Tổng Hợp Tiết Dạy Thực Hành Thể Dục - ${semName}`;
+  }
+
+  // CHỈ LẤY GIÁO VIÊN ĐÃ KHAI BÁO
+  const declaredTeachers = getGdtcDeclaredTeachers(sem);
+
+  const badgeCount = document.getElementById('badge-gdtc-admin-summary-count');
+  if (badgeCount) badgeCount.textContent = declaredTeachers.length;
 
   let sumColDayTuan = 0;
   let sumColThucHanhTuan = 0;
   let sumColPhucap = 0;
 
-  if (allTeachers.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400 italic">Chưa có dữ liệu giáo viên</td></tr>`;
+  if (declaredTeachers.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400 italic">Chưa có giáo viên nào kê khai dữ liệu cho ${semName}</td></tr>`;
+    const sumDayEl = document.getElementById('gdtc-summary-sum-day-tuan');
+    if (sumDayEl) sumDayEl.textContent = 0;
+    const sumThucHanhEl = document.getElementById('gdtc-summary-sum-thuchanh-tuan');
+    if (sumThucHanhEl) sumThucHanhEl.textContent = 0;
+    const sumPhucapEl = document.getElementById('gdtc-summary-sum-phucap');
+    if (sumPhucapEl) sumPhucapEl.textContent = 0;
     return;
   }
 
-  allTeachers.forEach((t, idx) => {
+  declaredTeachers.forEach((t, idx) => {
     const store = getTeacherGdtcStore(t);
     let weeks = [];
     if (sem === 'hk1') {
@@ -21961,10 +22016,11 @@ function paginateGdtcSummaryPdf(totalRows) {
 function exportGdtcAdminPdf() {
   const sem = gdtcAdminActiveSem;
   const semLabel = sem === 'hk1' ? 'HỌC KỲ 1 (18 TUẦN THỰC HỌC)' : (sem === 'hk2' ? 'HỌC KỲ 2 (17 TUẦN THỰC HỌC)' : 'CẢ NĂM HỌC');
-  const allTeachers = getGdtcTeachersList();
+  // CHỈ LẤY GIÁO VIÊN ĐÃ KHAI BÁO
+  const declaredTeachers = getGdtcDeclaredTeachers(sem);
 
-  if (allTeachers.length === 0) {
-    showToast("Không có dữ liệu giáo viên để xuất PDF!", "warning");
+  if (declaredTeachers.length === 0) {
+    showToast("Chưa có giáo viên nào kê khai dữ liệu để xuất PDF!", "warning");
     return;
   }
 
@@ -21976,7 +22032,7 @@ function exportGdtcAdminPdf() {
   let sumThucHanhTuan = 0;
   let sumPhucap = 0;
 
-  const teacherDataList = allTeachers.map((t, idx) => {
+  const teacherDataList = declaredTeachers.map((t, idx) => {
     const store = getTeacherGdtcStore(t);
     let weeks = sem === 'hk1' ? (store.hk1 || []) : (sem === 'hk2' ? (store.hk2 || []) : [...(store.hk1 || []), ...(store.hk2 || [])]);
 
@@ -22146,10 +22202,11 @@ function exportGdtcAdminExcel() {
   const sem = gdtcAdminActiveSem;
   const semLabel = sem === 'hk1' ? 'Học Kỳ 1' : (sem === 'hk2' ? 'Học Kỳ 2' : 'Cả Năm');
   const semUpper = sem === 'hk1' ? 'HỌC KỲ 1 (18 TUẦN THỰC HỌC)' : (sem === 'hk2' ? 'HỌC KỲ 2 (17 TUẦN THỰC HỌC)' : 'CẢ NĂM HỌC');
-  const allTeachers = getGdtcTeachersList();
+  // CHỈ LẤY GIÁO VIÊN ĐÃ KHAI BÁO
+  const declaredTeachers = getGdtcDeclaredTeachers(sem);
 
-  if (allTeachers.length === 0) {
-    showToast("Không có dữ liệu giáo viên để xuất Excel!", "warning");
+  if (declaredTeachers.length === 0) {
+    showToast("Chưa có giáo viên nào kê khai dữ liệu để xuất Excel!", "warning");
     return;
   }
 
@@ -22202,7 +22259,7 @@ function exportGdtcAdminExcel() {
   let sumThucHanhTuan = 0;
   let sumPhucap = 0;
 
-  allTeachers.forEach((t, idx) => {
+  declaredTeachers.forEach((t, idx) => {
     const store = getTeacherGdtcStore(t);
     let weeks = sem === 'hk1' ? (store.hk1 || []) : (sem === 'hk2' ? (store.hk2 || []) : [...(store.hk1 || []), ...(store.hk2 || [])]);
 
@@ -22283,14 +22340,14 @@ function exportGdtcAdminExcel() {
     { s: { r: 7, c: 1 }, e: { r: 8, c: 1 } }, // Họ và tên giáo viên
     { s: { r: 7, c: 2 }, e: { r: 7, c: 4 } }, // Số tiết dạy trong học kỳ
     // Dòng Tổng cộng
-    { s: { r: 9 + allTeachers.length, c: 0 }, e: { r: 9 + allTeachers.length, c: 1 } },
+    { s: { r: 9 + declaredTeachers.length, c: 0 }, e: { r: 9 + declaredTeachers.length, c: 1 } },
     // Chữ ký
-    { s: { r: 12 + allTeachers.length, c: 3 }, e: { r: 12 + allTeachers.length, c: 4 } },
-    { s: { r: 13 + allTeachers.length, c: 0 }, e: { r: 13 + allTeachers.length, c: 1 } },
-    { s: { r: 13 + allTeachers.length, c: 3 }, e: { r: 13 + allTeachers.length, c: 4 } },
-    { s: { r: 14 + allTeachers.length, c: 0 }, e: { r: 14 + allTeachers.length, c: 1 } },
-    { s: { r: 14 + allTeachers.length, c: 3 }, e: { r: 14 + allTeachers.length, c: 4 } },
-    { s: { r: 17 + allTeachers.length, c: 3 }, e: { r: 17 + allTeachers.length, c: 4 } }
+    { s: { r: 12 + declaredTeachers.length, c: 3 }, e: { r: 12 + declaredTeachers.length, c: 4 } },
+    { s: { r: 13 + declaredTeachers.length, c: 0 }, e: { r: 13 + declaredTeachers.length, c: 1 } },
+    { s: { r: 13 + declaredTeachers.length, c: 3 }, e: { r: 13 + declaredTeachers.length, c: 4 } },
+    { s: { r: 14 + declaredTeachers.length, c: 0 }, e: { r: 14 + declaredTeachers.length, c: 1 } },
+    { s: { r: 14 + declaredTeachers.length, c: 3 }, e: { r: 14 + declaredTeachers.length, c: 4 } },
+    { s: { r: 17 + declaredTeachers.length, c: 3 }, e: { r: 17 + declaredTeachers.length, c: 4 } }
   ];
 
   // Chiều rộng các cột
@@ -22338,7 +22395,7 @@ function exportGdtcAdminExcel() {
 
   // Duyệt và áp dụng style cho các ô trong bảng dữ liệu
   const startRow = 7;
-  const endDataRow = 9 + allTeachers.length;
+  const endDataRow = 9 + declaredTeachers.length;
 
   for (let R = startRow; R <= endDataRow; ++R) {
     for (let C = 0; C < numCols; ++C) {
@@ -22384,19 +22441,28 @@ function exportGdtcAdminExcel() {
  */
 function exportGdtcTeachersStatusPdf() {
   const allTeachers = getGdtcTeachersList();
-  if (allTeachers.length === 0) {
-    showToast("Không có danh sách giáo viên để xuất PDF!", "warning");
+  const teachersToExport = allTeachers.filter(t => {
+    const isDeclared = isTeacherGdtcDeclared(t, 'all');
+    if (gdtcAdminStatusFilter === 'not_declared') return !isDeclared;
+    return isDeclared;
+  });
+
+  if (teachersToExport.length === 0) {
+    showToast("Không có danh sách giáo viên phù hợp bộ lọc để xuất PDF!", "warning");
     return;
   }
 
   const now = new Date();
   const dateStr = `ngày ${String(now.getDate()).padStart(2, '0')} tháng ${String(now.getMonth() + 1).padStart(2, '0')} năm ${now.getFullYear()}`;
+  const filterTitle = gdtcAdminStatusFilter === 'not_declared'
+    ? 'DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC'
+    : 'DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC';
 
-  const teacherDataList = allTeachers.map((t, idx) => {
+  const teacherDataList = teachersToExport.map((t, idx) => {
     const store = getTeacherGdtcStore(t);
     const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
-    const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
+    const isDeclared = isTeacherGdtcDeclared(t, 'all');
     const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
     const classesText = (typeof formatTeacherClassesSummary === 'function')
       ? (formatTeacherClassesSummary(rawClasses) || (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses) || '--')
@@ -22486,7 +22552,7 @@ function exportGdtcTeachersStatusPdf() {
 
       <div style="text-align: center; margin-bottom: 14px;">
         <div style="font-size: 12.5pt; font-weight: bold; text-transform: uppercase;">
-          DANH SÁCH THỐNG KÊ KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC
+          ${filterTitle}
         </div>
         <div style="font-size: 10.5pt; font-style: italic; margin-top: 2px;">
           NĂM HỌC 2024 - 2025
@@ -22535,11 +22601,26 @@ function exportGdtcTeachersStatusExcel() {
     return;
   }
   const allTeachers = getGdtcTeachersList();
+  const teachersToExport = allTeachers.filter(t => {
+    const isDeclared = isTeacherGdtcDeclared(t, 'all');
+    if (gdtcAdminStatusFilter === 'not_declared') return !isDeclared;
+    return isDeclared;
+  });
+
+  if (teachersToExport.length === 0) {
+    showToast("Không có danh sách giáo viên phù hợp bộ lọc để xuất Excel!", "warning");
+    return;
+  }
+
   const numCols = 7;
   const now = new Date();
   const todayDay = String(now.getDate()).padStart(2, '0');
   const todayMonth = String(now.getMonth() + 1).padStart(2, '0');
   const todayYear = now.getFullYear();
+
+  const filterTitle = gdtcAdminStatusFilter === 'not_declared'
+    ? 'THỐNG KÊ DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC'
+    : 'THỐNG KÊ DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC';
 
   const r0 = new Array(numCols).fill("");
   r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
@@ -22550,7 +22631,7 @@ function exportGdtcTeachersStatusExcel() {
   r1[3] = "Độc lập - Tự do - Hạnh phúc";
 
   const r3 = new Array(numCols).fill("");
-  r3[0] = "THỐNG KÊ DANH SÁCH GIÁO VIÊN KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC";
+  r3[0] = filterTitle;
 
   const r4 = new Array(numCols).fill("");
   r4[0] = "NĂM HỌC 2024 - 2025";
@@ -22565,11 +22646,11 @@ function exportGdtcTeachersStatusExcel() {
     headers
   ];
 
-  allTeachers.forEach((t, idx) => {
+  teachersToExport.forEach((t, idx) => {
     const store = getTeacherGdtcStore(t);
     const sumHk1 = (store.hk1 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
     const sumHk2 = (store.hk2 || []).reduce((acc, w) => acc + (parseFloat(w.soTietThucHanh) || 0), 0);
-    const isDeclared = (sumHk1 > 0 || sumHk2 > 0 || (store.hk1 && store.hk1.some(w => parseFloat(w.soTietDay) > 0)));
+    const isDeclared = isTeacherGdtcDeclared(t, 'all');
     const rawClasses = (store.classes && store.classes.length > 0) ? store.classes : (t.lopDay || '');
     const classesText = (typeof formatTeacherClassesSummary === 'function')
       ? (formatTeacherClassesSummary(rawClasses) || (Array.isArray(rawClasses) ? rawClasses.join(', ') : rawClasses))
