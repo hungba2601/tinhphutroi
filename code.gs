@@ -192,6 +192,10 @@ function doGet(e) {
       });
     }
 
+    if (action === "taoCotPhuong" || action === "capNhatCotPhuong" || action === "themCotPhuong") {
+      return jsonResponse({ success: true, message: taoCotPhuong() });
+    }
+
     if (action === "initialSetup") {
       const setupRes = initialSetup();
       return jsonResponse(setupRes);
@@ -274,6 +278,11 @@ function doPost(e) {
     const action = payload.action;
 
     switch (action) {
+      case "taoCotPhuong":
+      case "capNhatCotPhuong":
+      case "themCotPhuong":
+        return jsonResponse({ success: true, message: taoCotPhuong() });
+
       case "getHubServers":
       case "getHubSchools":
       case "listSchools":
@@ -602,6 +611,7 @@ function getSheetDataCols(sheetData) {
   for (let c = 0; c < header.length; c++) {
     const h = String(header[c] || "").trim().toLowerCase();
     if (h.includes("tài khoản") || h === "tk") colTk = c;
+    else if (h.includes("phường") || h.includes("phuong") || h.includes("ubnd")) colPhuong = c;
     else if (h.includes("tên") || h.includes("họ và tên")) colTenGv = c;
     else if (h.includes("ngày sinh") || h.includes("ngaysinh") || h.includes("sinh") || h.includes("dob")) colNgaySinh = c;
     else if (h.includes("quyền") || h.includes("quyen") || h.includes("role")) colQuyen = c;
@@ -2475,17 +2485,17 @@ function getOrCreateHubServerSheet(ss) {
   let sheet = ss.getSheetByName(SHEET_HUB_SERVER);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_HUB_SERVER);
-    sheet.appendRow(["Tài khoản", "Tên Trường / Đơn Vị", "Khối Lớp", "Địa chỉ URL Web App", "Ngày cập nhật"]);
-    const header = sheet.getRange(1, 1, 1, 5);
-    header.setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff");
+    sheet.appendRow(["Tài khoản", "Tên Trường / Đơn Vị", "Khối Lớp", "Địa chỉ URL Web App", "Phường / Đơn Vị Cấp Trên", "Ngày cập nhật"]);
+    const header = sheet.getRange(1, 1, 1, 6);
+    header.setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff").setHorizontalAlignment("center");
     sheet.setColumnWidth(1, 150);
     sheet.setColumnWidth(2, 280);
-    sheet.setColumnWidth(3, 300);
-    sheet.setColumnWidth(4, 400);
-    sheet.setColumnWidth(5, 160);
-    sheet.getRange("A:E").setNumberFormat("@");
+    sheet.setColumnWidth(3, 280);
+    sheet.setColumnWidth(4, 380);
+    sheet.setColumnWidth(5, 260);
+    sheet.setColumnWidth(6, 160);
+    sheet.getRange("A:F").setNumberFormat("@");
 
-    // Thêm trường trung tâm mặc định vào hàng đầu tiên
     let activeUrl = "";
     try {
       activeUrl = ScriptApp.getService().getUrl() || "";
@@ -2495,40 +2505,59 @@ function getOrCreateHubServerSheet(ss) {
       "Trường THCS An Nhơn (Hệ Thống Trung Tâm)",
       '{"6":["6/1","6/2","6/3","6/4"],"7":["7/1","7/2","7/3","7/4"],"8":["8/1","8/2","8/3","8/4"],"9":["9/1","9/2","9/3","9/4"]}',
       activeUrl || "https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec",
+      "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN",
       Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss")
     ]);
   } else {
-    // Nếu sheet cũ chỉ có 4 cột và cột 3 là URL -> tự động chèn thêm Cột C: Khối Lớp
-    try {
-      const lastCol = sheet.getLastColumn();
-      if (lastCol === 4) {
-        const headerVal = String(sheet.getRange(1, 3).getValue() || "").toLowerCase();
-        if (headerVal.includes("url") || headerVal.includes("địa chỉ")) {
-          sheet.insertColumnBefore(3);
-          sheet.getRange(1, 3).setValue("Khối Lớp").setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff");
-          sheet.setColumnWidth(3, 300);
-          sheet.getRange("C:C").setNumberFormat("@");
-        }
+    // Nếu sheet đã tồn tại, kiểm tra xem có cột Phường chưa
+    const lastCol = sheet.getLastColumn();
+    if (lastCol > 0) {
+      const headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      let hasPhuong = false;
+      for (let c = 0; c < headerRow.length; c++) {
+        const h = String(headerRow[c] || "").toLowerCase();
+        if (h.includes("phường") || h.includes("phuong") || h.includes("ubnd")) hasPhuong = true;
       }
-    } catch (e) {
-      Logger.log("Lỗi nâng cấp cấu trúc HUB_SERVER: " + e);
+      if (!hasPhuong) {
+        const newCol = lastCol + 1;
+        sheet.getRange(1, newCol).setValue("Phường / Đơn Vị Cấp Trên")
+          .setFontWeight("bold").setBackground("#4338ca").setFontColor("#ffffff").setHorizontalAlignment("center");
+        sheet.setColumnWidth(newCol, 260);
+        sheet.getRange(1, newCol, Math.max(sheet.getMaxRows(), 2), 1).setNumberFormat("@");
+      }
     }
   }
   return sheet;
 }
 
-/**
- * LẤY DANH SÁCH TẤT CẢ CÁC TRƯỜNG TỪ SHEET HUB_SERVER
- */
 function handleGetHubServers() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = getOrCreateHubServerSheet(ss);
     const lastRow = sheet.getLastRow();
     
+    // Đọc Sheet DATA để dự phòng tra cứu Phường và Tên Trường cho các trường
+    let dataMap = {};
+    try {
+      const sheetData = ss.getSheetByName(SHEET_DATA);
+      if (sheetData && sheetData.getLastRow() >= 2) {
+        const dCols = getSheetDataCols(sheetData);
+        const dVals = sheetData.getDataRange().getValues();
+        const dDisp = sheetData.getDataRange().getDisplayValues();
+        for (let r = 1; r < dVals.length; r++) {
+          const rTk = String(dDisp[r][dCols.colTk] || dVals[r][dCols.colTk] || "").trim().toLowerCase();
+          const rTen = String(dDisp[r][dCols.colTenGv] || dVals[r][dCols.colTenGv] || "").trim();
+          const rPhuong = dCols.colPhuong !== -1 ? String(dDisp[r][dCols.colPhuong] || dVals[r][dCols.colPhuong] || "").trim() : "";
+          if (rTk) {
+            dataMap[rTk] = { tenTruong: rTen, tenPhuong: rPhuong };
+          }
+        }
+      }
+    } catch (eData) {}
+
     const schools = [];
     if (lastRow >= 2) {
-      const numCols = Math.max(sheet.getLastColumn(), 5);
+      const numCols = Math.max(sheet.getLastColumn(), 6);
       const values = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
       const displayValues = sheet.getRange(2, 1, lastRow - 1, numCols).getDisplayValues();
 
@@ -2538,9 +2567,11 @@ function handleGetHubServers() {
         const col3 = String(displayValues[i][2] || values[i][2] || "").trim();
         const col4 = String(displayValues[i][3] || values[i][3] || "").trim();
         const col5 = String(displayValues[i][4] || values[i][4] || "").trim();
+        const col6 = String(displayValues[i][5] || values[i][5] || "").trim();
 
         let khoiLop = "";
         let url = "";
+        let tenPhuong = "";
         let updatedAt = "";
 
         if (col3.startsWith("http")) {
@@ -2549,16 +2580,32 @@ function handleGetHubServers() {
           url = col3;
           updatedAt = col4;
         } else {
-          // Định dạng mới (5 cột: Cột C là Khối Lớp)
+          // Định dạng mới
           khoiLop = col3;
           url = col4;
-          updatedAt = col5 || col4;
+          if (col5 && (col5.includes("Phường") || col5.includes("phường") || col5.includes("UBND") || col5.includes("Xã") || col5.includes("Thị trấn") || !col5.includes("/"))) {
+            tenPhuong = col5;
+            updatedAt = col6 || col5;
+          } else {
+            updatedAt = col5;
+            tenPhuong = col6;
+          }
+        }
+
+        // Nếu tenPhuong chưa có trong HUB_SERVER, tra cứu từ Sheet DATA trung tâm
+        const tkLower = tk.toLowerCase();
+        if (!tenPhuong && dataMap[tkLower] && dataMap[tkLower].tenPhuong) {
+          tenPhuong = dataMap[tkLower].tenPhuong;
+        }
+        if (!tenPhuong) {
+          tenPhuong = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
         }
 
         if (tenTruong || url) {
           schools.push({
             taiKhoan: tk || "admin",
             tenTruong: tenTruong || ("Trường " + (i + 1)),
+            tenPhuong: tenPhuong,
             khoiLop: khoiLop,
             url: url,
             updatedAt: updatedAt
@@ -2575,6 +2622,7 @@ function handleGetHubServers() {
       schools.push({
         taiKhoan: "admin",
         tenTruong: "Trường THCS An Nhơn (Hệ Thống Trung Tâm)",
+        tenPhuong: "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN",
         khoiLop: '{"6":["6/1","6/2","6/3","6/4"],"7":["7/1","7/2","7/3","7/4"],"8":["8/1","8/2","8/3","8/4"],"9":["9/1","9/2","9/3","9/4"]}',
         url: activeUrl || "https://script.google.com/macros/s/AKfycbyq_9IIe8b6BmqBJWz58XfkiPBoeDXZo5K5iBGLyicByK0Xww_0I5osFP_9CumCQio5xw/exec",
         updatedAt: Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss")
@@ -2589,16 +2637,11 @@ function handleGetHubServers() {
   } catch (err) {
     return jsonResponse({
       success: false,
-      message: "Lỗi lấy danh sách HUB_SERVER: " + err.toString(),
-      schools: []
+      message: "Lỗi lấy danh sách máy chủ: " + err.message
     });
   }
 }
 
-/**
- * ĐĂNG KÝ HOẶC CẬP NHẬT TRƯỜNG VÀO SHEET HUB_SERVER
- * Ghi dữ liệu Khối Lớp vào Cột C của sheet HUB_SERVER
- */
 function handleRegisterHubServer(payload) {
   try {
     const taiKhoan = String(payload.taiKhoan || payload.tai_khoan || "admin").trim();
@@ -2857,13 +2900,119 @@ function capNhatCotMoi() {
   return "Đã nâng cấp Cột F: Lớp Dạy (DATA), Cột C: Khối Lớp (HUB_SERVER) và Cột D: Lớp Dạy (DULIEU) thành công!";
 }
 
+
+/**
+ * ĐẢM BẢO CỘT PHƯỜNG TỒN TẠI TRÊN SHEET DATA (KHÔNG LÀM MẤT DỮ LIỆU)
+ * Trả về chỉ mục 0-based của cột Phường
+ */
+function ensureCotPhuong(sheetData) {
+  if (!sheetData) return -1;
+  const lastCol = Math.max(sheetData.getLastColumn(), 1);
+  const header = sheetData.getRange(1, 1, 1, lastCol).getValues()[0];
+  for (let c = 0; c < header.length; c++) {
+    const h = String(header[c] || "").trim().toLowerCase();
+    if (h.includes("phường") || h.includes("phuong") || h.includes("ubnd")) {
+      return c;
+    }
+  }
+
+  // Chưa có cột Phường -> Chèn cột mới sau cột Mật Khẩu hoặc trước cột Lớp Dạy
+  let colLopDayIndex = -1;
+  let colMatKhauIndex = -1;
+  for (let c = 0; c < header.length; c++) {
+    const h = String(header[c] || "").trim().toLowerCase();
+    if (h.includes("lớp dạy") || h.includes("lop day") || h.includes("lopday") || h === "lớp" || h === "lop") colLopDayIndex = c + 1;
+    if (h.includes("mật khẩu") || h.includes("matkhau") || h.includes("mk") || h.includes("pass")) colMatKhauIndex = c + 1;
+  }
+
+  let targetCol = -1;
+  if (colLopDayIndex !== -1) {
+    sheetData.insertColumnBefore(colLopDayIndex);
+    targetCol = colLopDayIndex;
+  } else if (colMatKhauIndex !== -1) {
+    sheetData.insertColumnAfter(colMatKhauIndex);
+    targetCol = colMatKhauIndex + 1;
+  } else {
+    targetCol = lastCol + 1;
+  }
+
+  sheetData.getRange(1, targetCol).setValue("Phường")
+    .setFontWeight("bold")
+    .setBackground("#059669")
+    .setFontColor("#ffffff")
+    .setHorizontalAlignment("center");
+  sheetData.setColumnWidth(targetCol, 260);
+  sheetData.getRange(1, targetCol, Math.max(sheetData.getMaxRows(), 2), 1).setNumberFormat("@");
+  return targetCol - 1;
+}
+
+/**
+ * HÀM TẠO HOẶC CẬP NHẬT CỘT PHƯỜNG CHO SHEET DATA
+ * Có thể chọn trực tiếp từ menu hàm Apps Script để Chạy (Run) trên Sheet Trung Tâm hoặc Sheet Trường
+ */
+function taoCotPhuong() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetData = ss.getSheetByName(SHEET_DATA);
+  if (!sheetData) {
+    const err = "Không tìm thấy Sheet DATA trong bảng tính!";
+    Logger.log(err);
+    return err;
+  }
+
+  const pColIdx = ensureCotPhuong(sheetData);
+  const targetCol = pColIdx + 1;
+
+  // Điền giá trị mặc định cho tài khoản admin / dòng 2 nếu đang để trống
+  const cols = getSheetDataCols(sheetData);
+  const lastRow = sheetData.getLastRow();
+  if (lastRow >= 2) {
+    const vals = sheetData.getRange(2, 1, lastRow - 1, sheetData.getLastColumn()).getValues();
+    for (let r = 0; r < vals.length; r++) {
+      const q = String(vals[r][cols.colQuyen] || "").toLowerCase();
+      const currentPhuong = String(vals[r][cols.colPhuong] || "").trim();
+      if ((isRoleAdmin(q) || isRoleBgh(q) || r === 0) && !currentPhuong) {
+        sheetData.getRange(r + 2, targetCol).setNumberFormat("@").setValue("ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN");
+      }
+    }
+  }
+
+  // Đảm bảo Sheet HUB_SERVER có cột Phường
+  try {
+    if (typeof getOrCreateHubServerSheet === 'function') {
+      getOrCreateHubServerSheet(ss);
+    }
+  } catch (hubErr) {
+    Logger.log("Lỗi kiểm tra HUB_SERVER: " + hubErr);
+  }
+
+  // Đảm bảo Sheet DATA GDTC tồn tại
+  try {
+    if (typeof taoSheetGDTC === 'function') {
+      taoSheetGDTC();
+    }
+  } catch (gdtcErr) {
+    Logger.log("Lỗi kiểm tra DATA GDTC: " + gdtcErr);
+  }
+
+  const msg = "Đã tạo và thiết lập Cột Phường thành công trên Sheet DATA!";
+  Logger.log(msg);
+  try {
+    ss.toast(msg, "Thành Công", 5);
+  } catch (tE) {}
+  return msg;
+}
+
+function capNhatCotPhuong() { return taoCotPhuong(); }
+function themCotPhuong() { return taoCotPhuong(); }
+function taoCotPhuongSheetData() { return taoCotPhuong(); }
+
+
 function initialSetup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // 1. Khởi tạo Sheet DATA (Cột A: TK | B: Tên GV | C: Ngày sinh | D: Quyền | E: Mật khẩu | F: Phường)
+  // 1. Khởi tạo Sheet DATA ĐẦY ĐỦ 8 CỘT (Cột A: TK | B: Tên GV | C: Ngày sinh | D: Quyền | E: Mật khẩu | F: Phường | G: Lớp Dạy | H: VERSON)
   let sheetData = ss.getSheetByName(SHEET_DATA);
   if (!sheetData) {
-    // Nếu có Trang tính 1 / Sheet1 mặc định của Google Sheet mới, đổi tên thành DATA
     const sheets = ss.getSheets();
     if (sheets.length === 1 && (sheets[0].getName() === "Sheet1" || sheets[0].getName() === "Trang tính 1")) {
       sheetData = sheets[0];
@@ -2873,27 +3022,30 @@ function initialSetup() {
     }
   }
   sheetData.clear();
-  sheetData.appendRow(["Tài khoản", "Tên GV", "Ngày sinh", "Quyền", "Mật khẩu", "Phường"]);
+  sheetData.appendRow(["Tài khoản", "Tên GV", "Ngày sinh", "Quyền", "Mật khẩu", "Phường", "Lớp Dạy", "VERSON"]);
   
   // Định dạng hàng tiêu đề và cột
-  const dataHeader = sheetData.getRange(1, 1, 1, 6);
-  dataHeader.setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
-  sheetData.setColumnWidth(1, 160);
+  const dataHeader = sheetData.getRange(1, 1, 1, 8);
+  dataHeader.setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff").setHorizontalAlignment("center");
+  sheetData.setColumnWidth(1, 150);
   sheetData.setColumnWidth(2, 240);
-  sheetData.setColumnWidth(3, 140);
-  sheetData.setColumnWidth(4, 100);
-  sheetData.setColumnWidth(5, 140);
+  sheetData.setColumnWidth(3, 130);
+  sheetData.setColumnWidth(4, 90);
+  sheetData.setColumnWidth(5, 120);
   sheetData.setColumnWidth(6, 260);
-  sheetData.getRange("A:F").setNumberFormat("@");
+  sheetData.setColumnWidth(7, 220);
+  sheetData.setColumnWidth(8, 100);
+  sheetData.getRange("A:H").setNumberFormat("@");
 
-  // Dữ liệu mẫu ban đầu
-  sheetData.appendRow(["admin", "Ban Giám Hiệu (Admin)", "15/08/1980", "admin", "admin123", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
-  sheetData.appendRow(["bgh_pht", "Phó Hiệu Trưởng (BGH)", "10/05/1982", "bgh", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
-  sheetData.appendRow(["gv_toan", "Vũ Ngọc Tuấn", "20/10/1985", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
-  sheetData.appendRow(["gv_van", "Nguyễn Thị Anh Thư", "12/03/1988", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
-  sheetData.appendRow(["gv_anh", "Trần Phương Thúy", "05/09/1990", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
-  sheetData.appendRow(["gv_khtn", "Đặng Ngọc Thanh Thủy", "28/11/1987", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
-  sheetData.getRange(2, 1, 6, 6).setNumberFormat("@");
+  // Dữ liệu mẫu ban đầu (đầy đủ cả 8 cột)
+  const defaultClasses = "6A1, 6A2, 6A3, 6A4, 7A1, 7A2, 7A3, 7A4, 8A1, 8A2, 8A3, 8A4, 9A1, 9A2, 9A3, 9A4";
+  sheetData.appendRow(["admin", "Ban Giám Hiệu (Admin)", "15/08/1980", "admin", "admin123", "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", defaultClasses, "2.0"]);
+  sheetData.appendRow(["bgh_pht", "Phó Hiệu Trưởng (BGH)", "10/05/1982", "bgh", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", "", "2.0"]);
+  sheetData.appendRow(["gv_toan", "Vũ Ngọc Tuấn", "20/10/1985", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", "", "2.0"]);
+  sheetData.appendRow(["gv_van", "Nguyễn Thị Anh Thư", "12/03/1988", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", "", "2.0"]);
+  sheetData.appendRow(["gv_anh", "Trần Phương Thúy", "05/09/1990", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", "", "2.0"]);
+  sheetData.appendRow(["gv_khtn", "Đặng Ngọc Thanh Thủy", "28/11/1987", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN", "", "2.0"]);
+  sheetData.getRange(2, 1, 6, 8).setNumberFormat("@");
 
   // 2. Khởi tạo và đồng bộ Sheet DULIEU (Phân hệ 1) theo đúng thứ tự
   syncDuLieuWithData(true);
