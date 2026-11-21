@@ -363,6 +363,16 @@ function doPost(e) {
         });
       }
 
+      case "saveSchoolInfo":
+      case "saveSchoolConfig":
+        return handleSaveSchoolInfo(payload);
+
+      case "getSchoolInfo":
+        return jsonResponse({
+          success: true,
+          schoolInfo: getSchoolInfo(SpreadsheetApp.getActiveSpreadsheet(), payload.taiKhoan || payload.tai_khoan)
+        });
+
       case "changePassword":
         return handleChangePassword(payload.taiKhoan || payload.tai_khoan, payload.oldPassword, payload.newPassword);
 
@@ -586,6 +596,7 @@ function getSheetDataCols(sheetData) {
   let colQuyen = 2;
   let colMatKhau = 3;
   let colLopDay = -1;
+  let colPhuong = -1;
 
   let colVersion = -1;
   for (let c = 0; c < header.length; c++) {
@@ -637,6 +648,7 @@ function getSheetDataCols(sheetData) {
     colQuyen: colQuyen,
     colMatKhau: colMatKhau,
     colLopDay: (typeof colLopDay === 'number' && !isNaN(colLopDay)) ? colLopDay : -1,
+    colPhuong: colPhuong,
     colVersion: colVersion
   };
 }
@@ -1375,6 +1387,100 @@ function syncDuLieuWithData(forceRebuild) {
  * Hỗ trợ nhận diện số điện thoại cả khi có hoặc không có số 0 ở đầu.
  * Đồng thời lấy dữ liệu JSON đã lưu (nếu có) từ Sheet DULIEU.
  */
+
+/**
+ * LẤY THÔNG TIN ĐƠN VỊ: TÊN TRƯỜNG & TÊN PHƯỜNG
+ * Ưu tiên đọc từ ScriptProperties, nếu chưa có sẽ tra cứu từ dòng Admin trong Sheet DATA
+ */
+function getSchoolInfo(ss, taiKhoan) {
+  let tenTruong = "";
+  let tenPhuong = "";
+
+  try {
+    const props = PropertiesService.getScriptProperties();
+    tenTruong = props.getProperty("SCHOOL_NAME") || "";
+    tenPhuong = props.getProperty("SCHOOL_WARD") || "";
+  } catch (e) {}
+
+  if (!tenTruong || !tenPhuong) {
+    try {
+      const sheetData = ss.getSheetByName(SHEET_DATA);
+      if (sheetData && sheetData.getLastRow() >= 2) {
+        const cols = getSheetDataCols(sheetData);
+        const dVals = sheetData.getRange(2, 1, sheetData.getLastRow() - 1, sheetData.getLastColumn()).getValues();
+        const dDisp = sheetData.getRange(2, 1, sheetData.getLastRow() - 1, sheetData.getLastColumn()).getDisplayValues();
+        for (let r = 0; r < dVals.length; r++) {
+          const rowTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
+          const isMatch = taiKhoan ? isUsernameMatch(rowTk, taiKhoan) : isSuperAdmin(dVals[r][cols.colQuyen]);
+          if (isMatch || (r === 0 && isSuperAdmin(dVals[r][cols.colQuyen]))) {
+            if (!tenTruong) tenTruong = String(dDisp[r][cols.colTenGv] || dVals[r][cols.colTenGv] || "").trim();
+            if (!tenPhuong && cols.colPhuong !== -1) {
+              tenPhuong = String(dDisp[r][cols.colPhuong] || dVals[r][cols.colPhuong] || "").trim();
+            }
+            if (tenTruong && tenPhuong) break;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  return {
+    tenTruong: tenTruong || "TRƯỜNG THCS AN NHƠN",
+    tenPhuong: tenPhuong || "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN"
+  };
+}
+
+/**
+ * XỬ LÝ LƯU THÔNG TIN ĐƠN VỊ (TÊN PHƯỜNG & TÊN TRƯỜNG)
+ * Ghi vào ScriptProperties và cập nhật dòng Admin trong Sheet DATA
+ */
+function handleSaveSchoolInfo(payload) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const taiKhoan = String(payload.taiKhoan || payload.tai_khoan || "admin").trim();
+  const tenTruong = String(payload.tenTruong || payload.ten_truong || "").trim();
+  const tenPhuong = String(payload.tenPhuong || payload.ten_phuong || payload.phuong || "").trim();
+
+  try {
+    const props = PropertiesService.getScriptProperties();
+    if (tenTruong) props.setProperty("SCHOOL_NAME", tenTruong);
+    if (tenPhuong) props.setProperty("SCHOOL_WARD", tenPhuong);
+  } catch (e) {}
+
+  try {
+    const sheetData = ss.getSheetByName(SHEET_DATA);
+    if (sheetData) {
+      const cols = getSheetDataCols(sheetData);
+      const numRows = sheetData.getLastRow();
+      if (numRows >= 2) {
+        const dVals = sheetData.getRange(2, 1, numRows - 1, sheetData.getLastColumn()).getValues();
+        const dDisp = sheetData.getRange(2, 1, numRows - 1, sheetData.getLastColumn()).getDisplayValues();
+        for (let r = 0; r < dVals.length; r++) {
+          const rowTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
+          if (isUsernameMatch(rowTk, taiKhoan) || (isSuperAdmin(dVals[r][cols.colQuyen]) && r === 0)) {
+            const rowIdx = r + 2;
+            if (tenTruong) {
+              sheetData.getRange(rowIdx, cols.colTenGv + 1).setValue(tenTruong);
+            }
+            if (cols.colPhuong !== -1 && tenPhuong) {
+              sheetData.getRange(rowIdx, cols.colPhuong + 1).setNumberFormat("@").setValue(tenPhuong);
+            }
+            break;
+          }
+        }
+      }
+    }
+  } catch (e) {}
+
+  return jsonResponse({
+    success: true,
+    message: "Đã lưu thông tin Tên Trường và Phường thành công!",
+    schoolInfo: {
+      tenTruong: tenTruong,
+      tenPhuong: tenPhuong
+    }
+  });
+}
+
 function handleLogin(taiKhoan, matKhau, clientVersion) {
   if (!taiKhoan || !matKhau) {
     return jsonResponse({ success: false, message: "Vui lòng nhập đầy đủ tài khoản và mật khẩu!" });

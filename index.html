@@ -3583,6 +3583,16 @@ function doPost(e) {
         });
       }
 
+      case "saveSchoolInfo":
+      case "saveSchoolConfig":
+        return handleSaveSchoolInfo(payload);
+
+      case "getSchoolInfo":
+        return jsonResponse({
+          success: true,
+          schoolInfo: getSchoolInfo(SpreadsheetApp.getActiveSpreadsheet(), payload.taiKhoan || payload.tai_khoan)
+        });
+
       case "changePassword":
         return handleChangePassword(payload.taiKhoan || payload.tai_khoan, payload.oldPassword, payload.newPassword);
 
@@ -3806,6 +3816,7 @@ function getSheetDataCols(sheetData) {
   let colQuyen = 2;
   let colMatKhau = 3;
   let colLopDay = -1;
+  let colPhuong = -1;
 
   for (let c = 0; c < header.length; c++) {
     const h = String(header[c] || "").trim().toLowerCase();
@@ -4581,6 +4592,100 @@ function syncDuLieuWithData(forceRebuild) {
  * Hỗ trợ nhận diện số điện thoại cả khi có hoặc không có số 0 ở đầu.
  * Đồng thời lấy dữ liệu JSON đã lưu (nếu có) từ Sheet DULIEU.
  */
+
+/**
+ * LẤY THÔNG TIN ĐƠN VỊ: TÊN TRƯỜNG & TÊN PHƯỜNG
+ * Ưu tiên đọc từ ScriptProperties, nếu chưa có sẽ tra cứu từ dòng Admin trong Sheet DATA
+ */
+function getSchoolInfo(ss, taiKhoan) {
+  let tenTruong = "";
+  let tenPhuong = "";
+
+  try {
+    const props = PropertiesService.getScriptProperties();
+    tenTruong = props.getProperty("SCHOOL_NAME") || "";
+    tenPhuong = props.getProperty("SCHOOL_WARD") || "";
+  } catch (e) {}
+
+  if (!tenTruong || !tenPhuong) {
+    try {
+      const sheetData = ss.getSheetByName(SHEET_DATA);
+      if (sheetData && sheetData.getLastRow() >= 2) {
+        const cols = getSheetDataCols(sheetData);
+        const dVals = sheetData.getRange(2, 1, sheetData.getLastRow() - 1, sheetData.getLastColumn()).getValues();
+        const dDisp = sheetData.getRange(2, 1, sheetData.getLastRow() - 1, sheetData.getLastColumn()).getDisplayValues();
+        for (let r = 0; r < dVals.length; r++) {
+          const rowTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
+          const isMatch = taiKhoan ? isUsernameMatch(rowTk, taiKhoan) : isSuperAdmin(dVals[r][cols.colQuyen]);
+          if (isMatch || (r === 0 && isSuperAdmin(dVals[r][cols.colQuyen]))) {
+            if (!tenTruong) tenTruong = String(dDisp[r][cols.colTenGv] || dVals[r][cols.colTenGv] || "").trim();
+            if (!tenPhuong && cols.colPhuong !== -1) {
+              tenPhuong = String(dDisp[r][cols.colPhuong] || dVals[r][cols.colPhuong] || "").trim();
+            }
+            if (tenTruong && tenPhuong) break;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  return {
+    tenTruong: tenTruong || getCurrentSchoolName(),
+    tenPhuong: tenPhuong || getCurrentSchoolWard()
+  };
+}
+
+/**
+ * XỬ LÝ LƯU THÔNG TIN ĐƠN VỊ (TÊN PHƯỜNG & TÊN TRƯỜNG)
+ * Ghi vào ScriptProperties và cập nhật dòng Admin trong Sheet DATA
+ */
+function handleSaveSchoolInfo(payload) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const taiKhoan = String(payload.taiKhoan || payload.tai_khoan || "admin").trim();
+  const tenTruong = String(payload.tenTruong || payload.ten_truong || "").trim();
+  const tenPhuong = String(payload.tenPhuong || payload.ten_phuong || payload.phuong || "").trim();
+
+  try {
+    const props = PropertiesService.getScriptProperties();
+    if (tenTruong) props.setProperty("SCHOOL_NAME", tenTruong);
+    if (tenPhuong) props.setProperty("SCHOOL_WARD", tenPhuong);
+  } catch (e) {}
+
+  try {
+    const sheetData = ss.getSheetByName(SHEET_DATA);
+    if (sheetData) {
+      const cols = getSheetDataCols(sheetData);
+      const numRows = sheetData.getLastRow();
+      if (numRows >= 2) {
+        const dVals = sheetData.getRange(2, 1, numRows - 1, sheetData.getLastColumn()).getValues();
+        const dDisp = sheetData.getRange(2, 1, numRows - 1, sheetData.getLastColumn()).getDisplayValues();
+        for (let r = 0; r < dVals.length; r++) {
+          const rowTk = String(dDisp[r][cols.colTk] || dVals[r][cols.colTk] || "").trim();
+          if (isUsernameMatch(rowTk, taiKhoan) || (isSuperAdmin(dVals[r][cols.colQuyen]) && r === 0)) {
+            const rowIdx = r + 2;
+            if (tenTruong) {
+              sheetData.getRange(rowIdx, cols.colTenGv + 1).setValue(tenTruong);
+            }
+            if (cols.colPhuong !== -1 && tenPhuong) {
+              sheetData.getRange(rowIdx, cols.colPhuong + 1).setNumberFormat("@").setValue(tenPhuong);
+            }
+            break;
+          }
+        }
+      }
+    }
+  } catch (e) {}
+
+  return jsonResponse({
+    success: true,
+    message: "Đã lưu thông tin Tên Trường và Phường thành công!",
+    schoolInfo: {
+      tenTruong: tenTruong,
+      tenPhuong: tenPhuong
+    }
+  });
+}
+
 function handleLogin(taiKhoan, matKhau) {
   if (!taiKhoan || !matKhau) {
     return jsonResponse({ success: false, message: "Vui lòng nhập đầy đủ tài khoản và mật khẩu!" });
@@ -5017,8 +5122,8 @@ function handleChangePassword(taiKhoan, oldPassword, newPassword) {
         return jsonResponse({ success: false, message: "Mật khẩu hiện tại không đúng!" });
       }
 
-      // Ghi mật khẩu mới vào Cột Mật khẩu
-      sheetData.getRange(i + 1, cols.colMatKhau + 1).setValue(newMkClean);
+      // Ghi mật khẩu mới vào Cột Mật khẩu (định dạng plain text để bảo toàn ký tự)
+      sheetData.getRange(i + 1, cols.colMatKhau + 1).setNumberFormat("@").setValue(String(newMkClean));
 
       return jsonResponse({
         success: true,
@@ -5143,6 +5248,32 @@ function handleGetAdminSummary(adminTaiKhoan) {
     Logger.log("Lỗi đọc hoaNhapMap trong handleGetAdminSummary: " + hnMapErr);
   }
 
+  const gdtcMap = {};
+  try {
+    const sheetGdtc = ss.getSheetByName(SHEET_DATA_GDTC);
+    if (sheetGdtc && sheetGdtc.getLastRow() > 1) {
+      const gnumCols = Math.max(3, sheetGdtc.getLastColumn());
+      const gVals = sheetGdtc.getRange(2, 1, sheetGdtc.getLastRow() - 1, gnumCols).getValues();
+      const gDisp = sheetGdtc.getRange(2, 1, sheetGdtc.getLastRow() - 1, gnumCols).getDisplayValues();
+      for (let g = 0; g < gVals.length; g++) {
+        const gRawTk = String(gVals[g][0] || "").trim();
+        const gDispTk = String(gDisp[g][0] || "").trim();
+        const gNormTk = normalizeUsername(gDispTk || gRawTk);
+        const gJsonStr = gVals[g][2] || "";
+        const gCleanRaw = gRawTk.replace(/^'+/, "").toLowerCase();
+        const gCleanNorm = gNormTk.replace(/^'+/, "").toLowerCase();
+        const gStripped = gCleanNorm.replace(/^0+/, "");
+        const gWithZero = (/^\d{9}$/.test(gStripped)) ? ("0" + gStripped) : gStripped;
+        if (gCleanRaw) gdtcMap[gCleanRaw] = gJsonStr;
+        if (gCleanNorm) gdtcMap[gCleanNorm] = gJsonStr;
+        if (gStripped) gdtcMap[gStripped] = gJsonStr;
+        if (gWithZero) gdtcMap[gWithZero] = gJsonStr;
+      }
+    }
+  } catch (gdtcMapErr) {
+    Logger.log("Lỗi đọc gdtcMap trong handleGetAdminSummary: " + gdtcMapErr);
+  }
+
   // Xác định xem người gọi có phải quyền BGH hay không
   let isCallerBgh = false;
   if (adminTaiKhoan) {
@@ -5184,6 +5315,10 @@ function handleGetAdminSummary(adminTaiKhoan) {
 
     const dDataHn = hoaNhapMap[cleanNormTk] || hoaNhapMap[cleanRawTk] || hoaNhapMap[cleanNormTk.replace(/^0+/, "")] || null;
     const finalDataHn = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || cleanNormTk === 'blt' || !isRoleGv(quyen, cleanNormTk)) ? null : dDataHn;
+
+    const dDataGdtc = gdtcMap[cleanNormTk] || gdtcMap[cleanRawTk] || gdtcMap[cleanNormTk.replace(/^0+/, "")] || gdtcMap['0' + cleanNormTk.replace(/^0+/, "")] || null;
+    const finalDataGdtc = (cleanNormTk === 'admin' || cleanRawTk === 'admin' || cleanNormTk === 'blt' || !isRoleGv(quyen, cleanNormTk)) ? null : dDataGdtc;
+
     list.push({
       taiKhoan: normTk, // Luôn trả về tài khoản đã chuẩn hóa có số 0 ở đầu!
       rawTaiKhoan: rawTk,
@@ -5194,7 +5329,8 @@ function handleGetAdminSummary(adminTaiKhoan) {
       hasData: !!dData,
       dataJson: dData ? dData.dataJson : null,
       lopDay: dData ? (dData.lopDay || "") : "",
-      dataHoaNhapJson: finalDataHn || null
+      dataHoaNhapJson: finalDataHn || null,
+      dataGdtcJson: finalDataGdtc || null
     });
   }
 
@@ -5687,6 +5823,24 @@ function capNhatCotSheetDataGdtc(sheet) {
   sheet.setColumnWidth(3, 400);
   sheet.getRange("A:C").setNumberFormat("@");
 
+  // Quét các dòng hiện có: nếu TK bị mất số 0 (chỉ có 9 chữ số), tự động bổ sung số 0 và ép kiểu Text
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    const tkRange = sheet.getRange(2, 1, lastRow - 1, 1);
+    const tkVals = tkRange.getValues();
+    let updated = false;
+    for (let r = 0; r < tkVals.length; r++) {
+      let v = String(tkVals[r][0] || "").trim().replace(/^'+/, "");
+      if (/^\d{9}$/.test(v)) {
+        tkVals[r][0] = "'" + "0" + v;
+        updated = true;
+      }
+    }
+    if (updated) {
+      tkRange.setNumberFormat("@").setValues(tkVals);
+    }
+  }
+
   // Nếu sheet mới tạo chưa có giáo viên, tự động đồng bộ ngay
   if (sheet.getLastRow() <= 1) {
     syncDataGdtcWithData(true);
@@ -5846,7 +6000,9 @@ function handleSaveGdtcData(taiKhoan, dataJson, isAdmin) {
   }
 
   const normTk = normalizeUsername(taiKhoan);
-  const cellTk = /^\d+$/.test(normTk) ? "'" + normTk : normTk;
+  const cleanStripped = normTk.replace(/^'+/, "").replace(/^0+/, "");
+  const standardTk = (/^\d{9}$/.test(cleanStripped)) ? ("0" + cleanStripped) : normTk;
+  const cellTk = "'" + standardTk;
 
   if (matchingRows.length === 0) {
     let tenGv = "";
@@ -5863,14 +6019,15 @@ function handleSaveGdtcData(taiKhoan, dataJson, isAdmin) {
         }
       }
     }
-    sheetGdtc.appendRow([cellTk, tenGv, dataJson]);
-    const newRow = sheetGdtc.getLastRow();
-    sheetGdtc.getRange(newRow, 1).setNumberFormat("@");
-    sheetGdtc.getRange(newRow, 3).setNumberFormat("@");
+    const newRow = sheetGdtc.getLastRow() + 1;
+    sheetGdtc.getRange(newRow, 1).setNumberFormat("@").setValue(cellTk);
+    sheetGdtc.getRange(newRow, 2).setValue(tenGv);
+    sheetGdtc.getRange(newRow, 3).setNumberFormat("@").setValue(dataJson);
   } else {
     for (let m = 0; m < matchingRows.length; m++) {
       const rowIndex = matchingRows[m];
-      sheetGdtc.getRange(rowIndex, 3).setValue(dataJson).setNumberFormat("@");
+      sheetGdtc.getRange(rowIndex, 1).setNumberFormat("@").setValue(cellTk);
+      sheetGdtc.getRange(rowIndex, 3).setNumberFormat("@").setValue(dataJson);
     }
   }
 
@@ -5900,7 +6057,9 @@ function handleGetAllGdtcData() {
         if (cleanRaw) map[cleanRaw] = hJsonStr;
         if (cleanNorm) map[cleanNorm] = hJsonStr;
         const stripped = cleanNorm.replace(/^0+/, "");
+        const withZero = (/^\d{9}$/.test(stripped)) ? ("0" + stripped) : stripped;
         if (stripped) map[stripped] = hJsonStr;
+        if (withZero) map[withZero] = hJsonStr;
       }
     }
     return jsonResponse({ success: true, data: map, isSystemLocked: isSystemLocked() });
@@ -5932,6 +6091,30 @@ function handleGetAllGdtcData() {
           </div>
 
           <div class="space-y-3.5">
+            <!-- KHAI BÁO THÔNG TIN ĐƠN VỊ DÀNH CHO BÁO CÁO TOÀN TRƯỜNG -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-indigo-50/60 rounded-xl border border-indigo-100">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5" for="admin-school-ward-input">
+                  <i class="fa-solid fa-landmark text-indigo-600 mr-1"></i>
+                  Tên Phường / Đơn vị cấp trên:
+                </label>
+                <input type="text" id="admin-school-ward-input"
+                  placeholder="Ví dụ: ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN"
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition">
+                <p class="text-[10.5px] text-slate-500 mt-1">In ở góc trái báo cáo (dòng 1)</p>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5" for="admin-school-name-input">
+                  <i class="fa-solid fa-school text-indigo-600 mr-1"></i>
+                  Tên Trường / Đơn vị trực thuộc:
+                </label>
+                <input type="text" id="admin-school-name-input"
+                  placeholder="Ví dụ: TRƯỜNG THCS AN NHƠN"
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs sm:text-sm font-semibold text-slate-800 transition">
+                <p class="text-[10.5px] text-slate-500 mt-1">Tên trường in ở tiêu đề, sổ & xuất file (dòng 2)</p>
+              </div>
+            </div>
+
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1.5" for="admin-custom-backend-input">
                 <i class="fa-solid fa-link text-indigo-600 mr-1"></i>
@@ -7953,18 +8136,53 @@ function handleGetAllGdtcData() {
     const HUB_SCHOOLS_CACHE_KEY = 'thcs_hub_schools_cache_v2';
     const SELECTED_SCHOOL_STORAGE_KEY = 'thcs_selected_school_url_v2';
     const SELECTED_SCHOOL_NAME_KEY = 'thcs_selected_school_name_v2';
+    const SELECTED_SCHOOL_WARD_KEY = 'thcs_selected_school_ward_v2';
 
     // Lấy tên trường đang chọn
     function getCurrentSchoolName() {
       try {
+        if (currentUser && currentUser.taiKhoan) {
+          const uName = localStorage.getItem('school_name_' + currentUser.taiKhoan.toLowerCase());
+          if (uName && uName.trim()) return uName.trim();
+        }
         const stored = localStorage.getItem(SELECTED_SCHOOL_NAME_KEY);
-        if (stored) return stored;
+        if (stored && stored.trim()) return stored.trim();
         const select = document.getElementById('login-school-select');
         if (select && select.selectedOptions && select.selectedOptions[0]) {
-          return select.selectedOptions[0].getAttribute('data-name') || select.selectedOptions[0].textContent.trim();
+          const val = select.selectedOptions[0].getAttribute('data-name') || select.selectedOptions[0].textContent.trim();
+          if (val && val.trim()) return val.trim();
         }
       } catch (e) { }
-      return "Trường THCS An Nhơn (Trung Tâm)";
+      return "TRƯỜNG THCS AN NHƠN";
+    }
+
+    // Lấy tên phường / cơ quan cấp trên
+    function getCurrentSchoolWard() {
+      try {
+        if (currentUser && currentUser.taiKhoan) {
+          const uWard = localStorage.getItem('school_ward_' + currentUser.taiKhoan.toLowerCase());
+          if (uWard && uWard.trim()) return uWard.trim();
+        }
+        const stored = localStorage.getItem(SELECTED_SCHOOL_WARD_KEY);
+        if (stored && stored.trim()) return stored.trim();
+      } catch (e) { }
+      return "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
+    }
+
+    // Lấy địa danh ký văn bản (tự động trích từ tên Phường / Xã)
+    function getCurrentSchoolLocation() {
+      const ward = getCurrentSchoolWard();
+      if (ward) {
+        const mPhuong = ward.match(/phường\s+([^,]+)/i);
+        if (mPhuong && mPhuong[1]) return mPhuong[1].trim();
+        const mXa = ward.match(/xã\s+([^,]+)/i);
+        if (mXa && mXa[1]) return mXa[1].trim();
+        const mTt = ward.match(/thị trấn\s+([^,]+)/i);
+        if (mTt && mTt[1]) return mTt[1].trim();
+        const cleaned = ward.replace(/ỦY BAN NHÂN DÂN/ig, '').replace(/UBND/ig, '').trim();
+        if (cleaned) return cleaned;
+      }
+      return "An Nhơn";
     }
 
     // Tải danh sách trường từ HUB_SERVER của máy chủ trung tâm
@@ -9361,6 +9579,16 @@ function handleGetAllGdtcData() {
           throw new Error(loginResult ? loginResult.message : "Đăng nhập thất bại");
         }
 
+        // Lưu thông tin Trường & Phường trả về từ máy chủ Backend
+        if (loginResult.schoolInfo) {
+          if (loginResult.schoolInfo.tenTruong) {
+            localStorage.setItem(SELECTED_SCHOOL_NAME_KEY, loginResult.schoolInfo.tenTruong);
+          }
+          if (loginResult.schoolInfo.tenPhuong) {
+            localStorage.setItem(SELECTED_SCHOOL_WARD_KEY, loginResult.schoolInfo.tenPhuong);
+          }
+        }
+
         const user = loginResult.user;
         const userIsAdmin = isRoleAdmin(user.quyen);
         const userIsSuperAdmin = isSuperAdmin(user.quyen);
@@ -9440,6 +9668,11 @@ function handleGetAllGdtcData() {
 
         const isUsingDefaultPassword = (passwordInput === '1234') || (user && user.isDefaultPassword === true);
 
+        if (currentUser && currentUser.taiKhoan && loginResult.schoolInfo) {
+          const tkLow = currentUser.taiKhoan.toLowerCase();
+          if (loginResult.schoolInfo.tenTruong) localStorage.setItem('school_name_' + tkLow, loginResult.schoolInfo.tenTruong);
+          if (loginResult.schoolInfo.tenPhuong) localStorage.setItem('school_ward_' + tkLow, loginResult.schoolInfo.tenPhuong);
+        }
         localStorage.setItem(LOCAL_USER_STORAGE_KEY, JSON.stringify(currentUser));
         document.getElementById('login-modal').classList.add('hidden');
 
@@ -10849,6 +11082,16 @@ function handleGetAllGdtcData() {
         input.value = customUrl;
       }
 
+      // Điền sẵn thông tin Tên Phường và Tên Trường
+      const wardInput = document.getElementById('admin-school-ward-input');
+      const nameInput = document.getElementById('admin-school-name-input');
+      if (wardInput) {
+        wardInput.value = getCurrentSchoolWard();
+      }
+      if (nameInput) {
+        nameInput.value = getCurrentSchoolName();
+      }
+
       // Điền sẵn danh sách khối lớp nếu đã có
       const currentAdminTk = (currentUser && currentUser.taiKhoan) ? currentUser.taiKhoan : "admin";
       const school = (hubSchoolsList || []).find(s => isUsernameEqual(s.taiKhoan, currentAdminTk));
@@ -11063,9 +11306,15 @@ function handleGetAllGdtcData() {
       if (!input) return;
       let url = input.value.trim();
 
-      // Tự động lấy Tên Trường và Tài Khoản từ Sheet Trung Tâm qua thông tin đăng nhập hiện tại
+      // Lấy thông tin Tên Trường, Phường và Tài Khoản
       let schoolAdmin = (currentUser && currentUser.taiKhoan) ? currentUser.taiKhoan : "admin";
-      let schoolName = (currentUser && currentUser.tenGv) ? currentUser.tenGv : ("Trường " + schoolAdmin);
+      const wardInput = document.getElementById('admin-school-ward-input');
+      const nameInput = document.getElementById('admin-school-name-input');
+      const customWard = wardInput ? wardInput.value.trim() : "";
+      const customName = nameInput ? nameInput.value.trim() : "";
+
+      let schoolName = customName || ((currentUser && currentUser.tenGv) ? currentUser.tenGv : ("Trường " + schoolAdmin));
+      let schoolWard = customWard || getCurrentSchoolWard();
 
       if (!url) {
         showToast("Vui lòng nhập đường dẫn URL Web App Google Apps Script!", "warning");
@@ -11101,10 +11350,12 @@ function handleGetAllGdtcData() {
           const tkKey = (currentUser.taiKhoan || "").toLowerCase();
           localStorage.setItem('backend_url_' + tkKey, url);
           localStorage.setItem('school_name_' + tkKey, schoolName);
+          localStorage.setItem('school_ward_' + tkKey, schoolWard);
           localStorage.setItem('school_classes_' + tkKey, khoiLopStr);
         }
         localStorage.setItem(SELECTED_SCHOOL_STORAGE_KEY, url);
         localStorage.setItem(SELECTED_SCHOOL_NAME_KEY, schoolName);
+        localStorage.setItem(SELECTED_SCHOOL_WARD_KEY, schoolWard);
         localStorage.setItem('school_classes_active', khoiLopStr);
         refreshGlobalBackendUrl();
         updateBackendStatusUI();
@@ -11120,7 +11371,17 @@ function handleGetAllGdtcData() {
 
         const allClassesCommaStr = [k6Val, k7Val, k8Val, k9Val].filter(Boolean).join(", ");
 
-        // ⭐️ GỬI ĐỒNG BỘ KHỐI LỚP VÀO SHEET DATA CỦA TRƯỜNG QUA URL BACKEND RIÊNG
+        // ⭐️ GỬI ĐỒNG BỘ THÔNG TIN TRƯỜNG & KHỐI LỚP VÀO SHEET DATA CỦA TRƯỜNG QUA URL BACKEND RIÊNG
+        try {
+          await callGasBackend({
+            action: "saveSchoolInfo",
+            taiKhoan: schoolAdmin,
+            tenTruong: schoolName,
+            tenPhuong: schoolWard
+          }, url);
+        } catch (subErr) {
+          console.warn("Lỗi lưu thông tin trường vào Backend riêng:", subErr);
+        }
         try {
           await callGasBackend({
             action: "saveClasses",
@@ -11138,6 +11399,7 @@ function handleGetAllGdtcData() {
             action: "registerHubServer",
             taiKhoan: schoolAdmin,
             tenTruong: schoolName,
+            tenPhuong: schoolWard,
             khoiLop: khoiLopStr,
             lopDay: allClassesCommaStr,
             url: url
@@ -11861,11 +12123,11 @@ function handleGetAllGdtcData() {
       const midCol = Math.floor(numCols / 2);
 
       const r0 = new Array(numCols).fill("");
-      r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
+      r0[0] = getCurrentSchoolWard();
       r0[midCol] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
 
       const r1 = new Array(numCols).fill("");
-      r1[0] = "TRƯỜNG THCS AN NHƠN";
+      r1[0] = getCurrentSchoolName();
       r1[midCol] = "Độc lập - Tự do - Hạnh phúc";
 
       const r3 = new Array(numCols).fill("");
@@ -11901,7 +12163,7 @@ function handleGetAllGdtcData() {
       aoa.push(new Array(numCols).fill(""));
 
       const signDateRow = new Array(numCols).fill("");
-      signDateRow[midCol] = `Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      signDateRow[midCol] = `${getCurrentSchoolLocation()}, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
       aoa.push(signDateRow);
 
       const signTitleRow = new Array(numCols).fill("");
@@ -12573,8 +12835,8 @@ function handleGetAllGdtcData() {
               <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
                 <tr>
                   <td style="width: 48%; text-align: center; border: none; vertical-align: top; padding: 0;">
-                    <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #334155;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-                    <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-top: 1px;">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</div>
+                    <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #334155;">${getCurrentSchoolWard()}</div>
+                    <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-top: 1px;">${getCurrentSchoolName()}</div>
                     <div style="width: 80px; height: 1px; background: #64748b; margin: 3px auto 0;"></div>
                   </td>
                   <td style="width: 4%; border: none;"></td>
@@ -12610,7 +12872,7 @@ function handleGetAllGdtcData() {
           pageHeaderHtml = `
             <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.5px solid #0f172a; padding-bottom: 2px;">
               <div>
-                <div style="font-size: 9px; font-weight: bold; text-transform: uppercase; color: #64748b;">TRƯỜNG THCS AN NHƠN</div>
+                <div style="font-size: 9px; font-weight: bold; text-transform: uppercase; color: #64748b;">${getCurrentSchoolName()}</div>
                 <div style="font-size: 10.5px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
                   ${shortTitle}
                 </div>
@@ -12637,7 +12899,7 @@ function handleGetAllGdtcData() {
             ${pageInfo.isLast ? signatureHtml : ''}
 
             <div style="margin-top: 6px; text-align: right; font-size: 8.5px; color: #64748b; font-style: italic;">
-              Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+              Hệ thống Quản lý Tiết vượt ${getCurrentSchoolName()} • Trang ${pageInfo.pageNum} / ${totalPages}
             </div>
           </div>
         `;
@@ -14746,8 +15008,8 @@ function handleGetAllGdtcData() {
               <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
                 <tr>
                   <td style="width: 48%; text-align: center; border: none; vertical-align: top; padding: 0;">
-                    <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #334155;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-                    <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-top: 1px;">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</div>
+                    <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #334155;">${getCurrentSchoolWard()}</div>
+                    <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #0f172a; margin-top: 1px;">${getCurrentSchoolName()}</div>
                     <div style="width: 80px; height: 1px; background: #64748b; margin: 3px auto 0;"></div>
                   </td>
                   <td style="width: 4%; border: none;"></td>
@@ -14780,7 +15042,7 @@ function handleGetAllGdtcData() {
           pageHeaderHtml = `
             <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.5px solid #0f172a; padding-bottom: 2px;">
               <div>
-                <div style="font-size: 9px; font-weight: bold; text-transform: uppercase; color: #64748b;">TRƯỜNG THCS AN NHƠN</div>
+                <div style="font-size: 9px; font-weight: bold; text-transform: uppercase; color: #64748b;">${getCurrentSchoolName()}</div>
                 <div style="font-size: 10.5px; font-weight: 900; text-transform: uppercase; color: #0f172a;">
                   ${shortTitle}
                 </div>
@@ -14807,7 +15069,7 @@ function handleGetAllGdtcData() {
             ${pageInfo.isLast ? signatureHtml : ''}
 
             <div style="margin-top: 6px; text-align: right; font-size: 8.5px; color: #64748b; font-style: italic;">
-              Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+              Hệ thống Quản lý Tiết vượt ${getCurrentSchoolName()} • Trang ${pageInfo.pageNum} / ${totalPages}
             </div>
           </div>
         `;
@@ -15051,11 +15313,11 @@ function handleGetAllGdtcData() {
       const midCol = Math.floor(numCols / 2);
 
       const r0 = new Array(numCols).fill("");
-      r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
+      r0[0] = getCurrentSchoolWard();
       r0[midCol] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
 
       const r1 = new Array(numCols).fill("");
-      r1[0] = "TRƯỜNG THCS AN NHƠN";
+      r1[0] = getCurrentSchoolName();
       r1[midCol] = "Độc lập - Tự do - Hạnh phúc";
 
       const r3 = new Array(numCols).fill("");
@@ -15091,7 +15353,7 @@ function handleGetAllGdtcData() {
       aoa.push(new Array(numCols).fill(""));
 
       const signDateRow = new Array(numCols).fill("");
-      signDateRow[midCol] = `Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      signDateRow[midCol] = `${getCurrentSchoolLocation()}, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
       aoa.push(signDateRow);
 
       const signTitleRow = new Array(numCols).fill("");
@@ -16647,8 +16909,8 @@ function handleGetAllGdtcData() {
             <!-- ĐƠN VỊ CHỦ QUẢN & TRƯỜNG Ở GÓC TRÁI -->
             <div class="text-left">
               <div class="inline-block text-center">
-                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-800 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">${getCurrentSchoolWard()}</p>
+                <p class="font-bold text-[11px] uppercase tracking-wider text-slate-800 mt-0.5">${getCurrentSchoolName()}</p>
                 <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
               </div>
             </div>
@@ -18794,8 +19056,8 @@ function handleGetAllGdtcData() {
           <!-- Đơn vị chủ quản bên trái -->
           <div class="text-left">
             <div class="inline-block text-center">
-              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">${getCurrentSchoolWard()}</p>
+              <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">${getCurrentSchoolName()}</p>
               <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
             </div>
           </div>
@@ -20545,8 +20807,8 @@ function handleGetAllGdtcData() {
           <div class="mb-1.5">
             <div class="text-left">
               <div class="inline-block text-center">
-                <p class="font-bold text-[10.5px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-                <p class="font-bold text-[10.5px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+                <p class="font-bold text-[10.5px] uppercase tracking-wider text-slate-700">${getCurrentSchoolWard()}</p>
+                <p class="font-bold text-[10.5px] uppercase tracking-wider text-slate-900 mt-0.5">${getCurrentSchoolName()}</p>
                 <div class="w-20 h-[1px] bg-slate-400 mx-auto my-0.5"></div>
               </div>
             </div>
@@ -20560,7 +20822,7 @@ function handleGetAllGdtcData() {
           </div>
         ` : `
           <div class="mb-1.5 flex items-center justify-between border-b border-slate-300 pb-0.5 text-[9.5px]">
-            <span class="font-bold uppercase text-slate-700">TRƯỜNG THCS AN NHƠN</span>
+            <span class="font-bold uppercase text-slate-700">${getCurrentSchoolName()}</span>
             <span class="font-black text-indigo-900 uppercase">BẢNG TỔNG HỢP SỐ TIẾT DẠY HÒA NHẬP TOÀN TRƯỜNG (\${semLabel}\${gradeTitleNote}) - Tiếp theo</span>
           </div>
         `;
@@ -20580,7 +20842,7 @@ function handleGetAllGdtcData() {
             ${pageInfo.isLast ? signatureHtml : ''}
 
             <div style="margin-top: 4px; text-align: right; font-size: 8px; color: #64748b; font-style: italic;">
-              Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+              Hệ thống Quản lý Tiết vượt ${getCurrentSchoolName()} • Trang ${pageInfo.pageNum} / ${totalPages}
             </div>
           </div>
         `;
@@ -20664,8 +20926,8 @@ function handleGetAllGdtcData() {
       pdfContainer.innerHTML = `
         <div class="mb-3">
           <div class="text-left inline-block text-center">
-            <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</p>
-            <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">TRƯỜNG TRUNG HỌC CƠ SỞ AN NHƠN</p>
+            <p class="font-bold text-[11px] uppercase tracking-wider text-slate-700">${getCurrentSchoolWard()}</p>
+            <p class="font-bold text-[11px] uppercase tracking-wider text-slate-900 mt-0.5">${getCurrentSchoolName()}</p>
             <div class="w-24 h-[1px] bg-slate-400 mx-auto my-1"></div>
           </div>
           <div class="text-center mt-2">
@@ -20813,11 +21075,11 @@ function handleGetAllGdtcData() {
       const midCol = Math.floor(numCols / 2);
 
       const r0 = new Array(numCols).fill("");
-      r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
+      r0[0] = getCurrentSchoolWard();
       r0[midCol] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
 
       const r1 = new Array(numCols).fill("");
-      r1[0] = "TRƯỜNG THCS AN NHƠN";
+      r1[0] = getCurrentSchoolName();
       r1[midCol] = "Độc lập - Tự do - Hạnh phúc";
 
       const r3 = new Array(numCols).fill("");
@@ -20890,7 +21152,7 @@ function handleGetAllGdtcData() {
       aoa.push(new Array(numCols).fill(""));
 
       const signDateRow = new Array(numCols).fill("");
-      signDateRow[midCol] = `Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      signDateRow[midCol] = `${getCurrentSchoolLocation()}, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
       aoa.push(signDateRow);
 
       const signTitleRow = new Array(numCols).fill("");
@@ -21005,11 +21267,11 @@ function handleGetAllGdtcData() {
       const midCol = Math.floor(numCols / 2);
 
       const r0 = new Array(numCols).fill("");
-      r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
+      r0[0] = getCurrentSchoolWard();
       r0[midCol] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
 
       const r1 = new Array(numCols).fill("");
-      r1[0] = "TRƯỜNG THCS AN NHƠN";
+      r1[0] = getCurrentSchoolName();
       r1[midCol] = "Độc lập - Tự do - Hạnh phúc";
 
       const r3 = new Array(numCols).fill("");
@@ -21097,7 +21359,7 @@ function handleGetAllGdtcData() {
       aoa.push(new Array(numCols).fill(""));
 
       const signDateRow = new Array(numCols).fill("");
-      signDateRow[midCol] = `Ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      signDateRow[midCol] = `${getCurrentSchoolLocation()}, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
       aoa.push(signDateRow);
 
       const signTitleRow = new Array(numCols).fill("");
@@ -22648,7 +22910,7 @@ function handleGetAllGdtcData() {
           <div style="height: 55px;"></div>
         </td>
         <td style="width: 50%; text-align: center; vertical-align: top;">
-          <div style="font-style: italic; font-size: 9.5pt;">An Nhơn, ${dateStr}</div>
+          <div style="font-style: italic; font-size: 9.5pt;">${getCurrentSchoolLocation()}, ${dateStr}</div>
           <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt; margin-top: 2px;">NGƯỜI LẬP BIỂU</div>
           <div style="font-style: italic; font-size: 9.5pt;">(Ký và ghi rõ họ tên)</div>
           <div style="margin-top: 55px; font-weight: bold; font-size: 10.5pt;">${currentUser ? (currentUser.tenGv || '') : ''}</div>
@@ -22676,8 +22938,8 @@ function handleGetAllGdtcData() {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top;">
-            <div style="font-size: 10pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
+            <div style="font-size: 10pt; text-transform: uppercase;">${getCurrentSchoolWard()}</div>
+            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">${getCurrentSchoolName()}</div>
             <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 110px; margin-left: auto; margin-right: auto;"></div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top;">
@@ -22701,7 +22963,7 @@ function handleGetAllGdtcData() {
       <!-- Header trang phụ -->
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
         <tr>
-          <td style="text-align: left; font-size: 9pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</td>
+          <td style="text-align: left; font-size: 9pt; font-weight: bold; text-transform: uppercase;">${getCurrentSchoolName()}</td>
           <td style="text-align: right; font-size: 9pt; font-weight: bold; text-transform: uppercase;">
             BẢNG TỔNG HỢP TIẾT DẠY THỰC HÀNH THỂ DỤC (${semLabel}) - Tiếp theo
           </td>
@@ -22724,7 +22986,7 @@ function handleGetAllGdtcData() {
         ${pageInfo.isLast ? signatureHtml : ''}
 
         <div style="margin-top: 10px; text-align: right; font-size: 8.5pt; color: #64748b; font-style: italic;">
-          Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+          Hệ thống Quản lý Tiết vượt ${getCurrentSchoolName()} • Trang ${pageInfo.pageNum} / ${totalPages}
         </div>
       </div>
     `;
@@ -22766,11 +23028,11 @@ function handleGetAllGdtcData() {
       const colPhucapHeader = sem === 'hk1' ? 'Số tiết được Phụ cấp HK1' : (sem === 'hk2' ? 'Số tiết được Phụ cấp HK2' : 'Số tiết được Phụ cấp Cả Năm');
 
       const r0 = new Array(numCols).fill("");
-      r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
+      r0[0] = getCurrentSchoolWard();
       r0[2] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
 
       const r1 = new Array(numCols).fill("");
-      r1[0] = "TRƯỜNG THCS AN NHƠN";
+      r1[0] = getCurrentSchoolName();
       r1[2] = "Độc lập - Tự do - Hạnh phúc";
 
       const r3 = new Array(numCols).fill("");
@@ -22849,7 +23111,7 @@ function handleGetAllGdtcData() {
       // Khối chữ ký cuối bảng (Chia đều 2 bên: A-B cho Phó Hiệu Trưởng, C-E cho Người Lập Biểu)
       const signDateRow = new Array(numCols).fill("");
       signDateRow[0] = `Ngày ...... tháng ...... năm ${todayYear}`;
-      signDateRow[2] = `An Nhơn, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      signDateRow[2] = `${getCurrentSchoolLocation()}, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
       aoa.push(signDateRow);
 
       const signTitleRow = new Array(numCols).fill("");
@@ -23217,7 +23479,7 @@ function handleGetAllGdtcData() {
           <div style="font-style: italic; font-size: 9.5pt;">(Duyệt)</div>
         </td>
         <td style="width: 50%; text-align: center; vertical-align: top;">
-          <div style="font-style: italic; font-size: 9.5pt;">An Nhơn, ${dateStr}</div>
+          <div style="font-style: italic; font-size: 9.5pt;">${getCurrentSchoolLocation()}, ${dateStr}</div>
           <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt; margin-top: 2px;">NGƯỜI LẬP BIỂU</div>
           <div style="font-style: italic; font-size: 9.5pt;">(Ký và ghi rõ họ tên)</div>
           <div style="margin-top: 55px; font-weight: bold; font-size: 10.5pt;">${currentUser ? (currentUser.tenGv || '') : ''}</div>
@@ -23250,8 +23512,8 @@ function handleGetAllGdtcData() {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top;">
-            <div style="font-size: 10pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
+            <div style="font-size: 10pt; text-transform: uppercase;">${getCurrentSchoolWard()}</div>
+            <div style="font-size: 10pt; font-weight: bold; text-transform: uppercase;">${getCurrentSchoolName()}</div>
             <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 110px; margin-left: auto; margin-right: auto;"></div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top;">
@@ -23273,7 +23535,7 @@ function handleGetAllGdtcData() {
     ` : `
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
         <tr>
-          <td style="text-align: left; font-size: 9pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</td>
+          <td style="text-align: left; font-size: 9pt; font-weight: bold; text-transform: uppercase;">${getCurrentSchoolName()}</td>
           <td style="text-align: right; font-size: 9pt; font-weight: bold; text-transform: uppercase;">
             THỐNG KÊ KÊ KHAI THỰC HÀNH THỂ DỤC (Trang ${pageInfo.pageNum}/${totalPages}) - Tiếp theo
           </td>
@@ -23295,7 +23557,7 @@ function handleGetAllGdtcData() {
         ${pageInfo.isLast ? signatureHtml : ''}
 
         <div style="margin-top: 10px; text-align: right; font-size: 8.5pt; color: #64748b; font-style: italic;">
-          Hệ thống Quản lý Tiết vượt THCS An Nhơn • Trang ${pageInfo.pageNum} / ${totalPages}
+          Hệ thống Quản lý Tiết vượt ${getCurrentSchoolName()} • Trang ${pageInfo.pageNum} / ${totalPages}
         </div>
       </div>
     `;
@@ -23340,11 +23602,11 @@ function handleGetAllGdtcData() {
         : 'THỐNG KÊ DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT DẠY THỰC HÀNH THỂ DỤC';
 
       const r0 = new Array(numCols).fill("");
-      r0[0] = "ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN";
+      r0[0] = getCurrentSchoolWard();
       r0[midCol] = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
 
       const r1 = new Array(numCols).fill("");
-      r1[0] = "TRƯỜNG THCS AN NHƠN";
+      r1[0] = getCurrentSchoolName();
       r1[midCol] = "Độc lập - Tự do - Hạnh phúc";
 
       const r3 = new Array(numCols).fill("");
@@ -23417,7 +23679,7 @@ function handleGetAllGdtcData() {
       aoa.push(new Array(numCols).fill(""));
 
       const signDateRow = new Array(numCols).fill("");
-      signDateRow[midCol] = `An Nhơn, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
+      signDateRow[midCol] = `${getCurrentSchoolLocation()}, ngày ${todayDay} tháng ${todayMonth} năm ${todayYear}`;
       aoa.push(signDateRow);
 
       const signTitleRow = new Array(numCols).fill("");
@@ -23527,8 +23789,8 @@ function handleGetAllGdtcData() {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
         <tr>
           <td style="width: 45%; text-align: center; vertical-align: top;">
-            <div style="font-size: 9.5pt; text-transform: uppercase;">ỦY BAN NHÂN DÂN PHƯỜNG AN NHƠN</div>
-            <div style="font-size: 9.5pt; font-weight: bold; text-transform: uppercase;">TRƯỜNG THCS AN NHƠN</div>
+            <div style="font-size: 9.5pt; text-transform: uppercase;">${getCurrentSchoolWard()}</div>
+            <div style="font-size: 9.5pt; font-weight: bold; text-transform: uppercase;">${getCurrentSchoolName()}</div>
             <div style="margin-top: 3px; border-bottom: 1px solid #000; width: 105px; margin-left: auto; margin-right: auto;"></div>
           </td>
           <td style="width: 55%; text-align: center; vertical-align: top;">
@@ -23586,7 +23848,7 @@ function handleGetAllGdtcData() {
             <div style="font-style: italic; font-size: 9pt;">(Ký và đóng dấu)</div>
           </td>
           <td style="width: 50%; text-align: center; vertical-align: top;">
-            <div style="font-style: italic; font-size: 9pt;">An Nhơn, ${dateStr}</div>
+            <div style="font-style: italic; font-size: 9pt;">${getCurrentSchoolLocation()}, ${dateStr}</div>
             <div style="font-weight: bold; text-transform: uppercase; font-size: 10pt; margin-top: 2px;">GIÁO VIÊN KÊ KHAI</div>
             <div style="font-style: italic; font-size: 9pt;">(Ký và ghi rõ họ tên)</div>
             <div style="margin-top: 45px; font-weight: bold; font-size: 10pt;">${teacher.tenGv || teacher.taiKhoan}</div>
