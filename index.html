@@ -2296,8 +2296,44 @@
                     </div>
                   </div>
                 </th>
-                <th class="col-day-ts10 py-3 px-2 min-w-[105px]" id="th-col-dayts10">(3) Dạy TS10/ B2</th>
-                <th class="col-bd-hsg py-3 px-2 min-w-[100px]" id="th-col-bdhsg">(4) BD HSG</th>
+                <th class="col-day-ts10 py-2 px-2 min-w-[145px] text-center" id="th-col-dayts10">
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="text-xs font-bold text-slate-800">(3) Dạy TS10/ B2</span>
+                    <div
+                      class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="number" id="quick-fill-ts10-input" min="0" step="0.5" placeholder="0"
+                        title="Nhập số tiết Dạy TS10/ B2 để điền nhanh cho tất cả các tuần"
+                        class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillTs10Weeks(this.value);}">
+                      <button type="button" id="btn-quick-fill-ts10-all"
+                        onclick="quickFillTs10Weeks(document.getElementById('quick-fill-ts10-input').value)"
+                        title="Điền nhanh số tiết Dạy TS10/ B2 cho tất cả các tuần trong học kỳ"
+                        class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer">
+                        <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
+                        <span>Điền all</span>
+                      </button>
+                    </div>
+                  </div>
+                </th>
+                <th class="col-bd-hsg py-2 px-2 min-w-[145px] text-center" id="th-col-bdhsg">
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="text-xs font-bold text-slate-800">(4) BD HSG</span>
+                    <div
+                      class="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300 shadow-2xs">
+                      <input type="number" id="quick-fill-bdhsg-input" min="0" step="0.5" placeholder="0"
+                        title="Nhập số tiết BD HSG để điền nhanh cho tất cả các tuần"
+                        class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); quickFillBdhsgWeeks(this.value);}">
+                      <button type="button" id="btn-quick-fill-bdhsg-all"
+                        onclick="quickFillBdhsgWeeks(document.getElementById('quick-fill-bdhsg-input').value)"
+                        title="Điền nhanh số tiết BD HSG cho tất cả các tuần trong học kỳ"
+                        class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11px] font-bold transition flex items-center gap-0.5 cursor-pointer">
+                        <i class="fa-solid fa-bolt text-amber-300 text-[10px]"></i>
+                        <span>Điền all</span>
+                      </button>
+                    </div>
+                  </div>
+                </th>
                 <th class="py-3 px-2 min-w-[100px]">(5) Nghỉ dạy (tiết)</th>
                 <th class="py-3 px-2 min-w-[95px] bg-emerald-50/60 text-emerald-900">(6) Thực dạy</th>
                 <th class="py-3 px-2 min-w-[95px] bg-teal-50/60 text-teal-900">(7) Tiết vượt</th>
@@ -15728,6 +15764,36 @@ function handleGetAllGdtcData() {
         }
       }
 
+      const quickFillTs10Input = document.getElementById('quick-fill-ts10-input');
+      if (quickFillTs10Input && document.activeElement !== quickFillTs10Input) {
+        quickFillTs10Input.disabled = isLocked;
+      }
+
+      const btnQuickFillTs10All = document.getElementById('btn-quick-fill-ts10-all');
+      if (btnQuickFillTs10All) {
+        btnQuickFillTs10All.disabled = isLocked;
+        if (isLocked) {
+          btnQuickFillTs10All.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          btnQuickFillTs10All.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      }
+
+      const quickFillBdhsgInput = document.getElementById('quick-fill-bdhsg-input');
+      if (quickFillBdhsgInput && document.activeElement !== quickFillBdhsgInput) {
+        quickFillBdhsgInput.disabled = isLocked;
+      }
+
+      const btnQuickFillBdhsgAll = document.getElementById('btn-quick-fill-bdhsg-all');
+      if (btnQuickFillBdhsgAll) {
+        btnQuickFillBdhsgAll.disabled = isLocked;
+        if (isLocked) {
+          btnQuickFillBdhsgAll.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        } else {
+          btnQuickFillBdhsgAll.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      }
+
       const btnSave = document.getElementById('btn-save-sheet');
       const btnIcon = document.getElementById('btn-save-icon');
       const btnText = document.getElementById('btn-save-text');
@@ -15984,6 +16050,74 @@ function handleGetAllGdtcData() {
       renderCurrentSemesterTable();
       triggerAutoSave();
       showToast(`Đã điền nhanh ${num} tiết kiêm nhiệm cho tất cả các tuần! Hãy nhấn "Lưu Lên Google Sheet" để lưu lại.`, "info");
+    }
+
+    function quickFillTs10Weeks(val) {
+      const semObj = SEMESTER_CONFIG[activeSemesterId];
+      if (!semObj) return;
+
+      if (isSemesterLocked(semObj.id)) {
+        showToast("Học kỳ này đã hoàn tất kê khai và đã khóa sổ. Vui lòng liên hệ Admin nếu cần mở khóa làm lại!", "warning");
+        return;
+      }
+
+      let num = (val !== undefined && val !== null && String(val).trim() !== "")
+        ? parseFloat(val)
+        : 0;
+
+      if (isNaN(num) || num < 0) {
+        num = 0;
+      }
+
+      const quickFillTs10Input = document.getElementById('quick-fill-ts10-input');
+      if (quickFillTs10Input) quickFillTs10Input.value = num;
+
+      if (!dataStore[semObj.id]) dataStore[semObj.id] = {};
+
+      semObj.weeks.forEach(w => {
+        if (!dataStore[semObj.id][w.id]) {
+          dataStore[semObj.id][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        }
+        dataStore[semObj.id][w.id].ts10 = num;
+      });
+
+      renderCurrentSemesterTable();
+      triggerAutoSave();
+      showToast(`Đã điền nhanh ${num} tiết Dạy TS10/ B2 cho tất cả các tuần! Hãy nhấn "Lưu Lên Google Sheet" để lưu lại.`, "info");
+    }
+
+    function quickFillBdhsgWeeks(val) {
+      const semObj = SEMESTER_CONFIG[activeSemesterId];
+      if (!semObj) return;
+
+      if (isSemesterLocked(semObj.id)) {
+        showToast("Học kỳ này đã hoàn tất kê khai và đã khóa sổ. Vui lòng liên hệ Admin nếu cần mở khóa làm lại!", "warning");
+        return;
+      }
+
+      let num = (val !== undefined && val !== null && String(val).trim() !== "")
+        ? parseFloat(val)
+        : 0;
+
+      if (isNaN(num) || num < 0) {
+        num = 0;
+      }
+
+      const quickFillBdhsgInput = document.getElementById('quick-fill-bdhsg-input');
+      if (quickFillBdhsgInput) quickFillBdhsgInput.value = num;
+
+      if (!dataStore[semObj.id]) dataStore[semObj.id] = {};
+
+      semObj.weeks.forEach(w => {
+        if (!dataStore[semObj.id][w.id]) {
+          dataStore[semObj.id][w.id] = { assigned: 0, duty: 0, leave: 0, bdhsg: 0, ts10: 0 };
+        }
+        dataStore[semObj.id][w.id].bdhsg = num;
+      });
+
+      renderCurrentSemesterTable();
+      triggerAutoSave();
+      showToast(`Đã điền nhanh ${num} tiết BD HSG cho tất cả các tuần! Hãy nhấn "Lưu Lên Google Sheet" để lưu lại.`, "info");
     }
 
     function handleInputKeydown(e, currentInput) {
