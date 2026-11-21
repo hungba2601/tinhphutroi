@@ -434,7 +434,7 @@
 
         <div>
           <label class="block text-xs font-bold uppercase text-slate-700 mb-1" for="new-pwd-input">Mật khẩu mới</label>
-          <input type="password" id="new-pwd-input" required placeholder="Tối thiểu 6 ký tự"
+          <input type="password" id="new-pwd-input" required placeholder="Tối thiểu 4 ký tự (khác 1234)"
             class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-semibold">
         </div>
 
@@ -4953,8 +4953,8 @@ function handleChangePassword(taiKhoan, oldPassword, newPassword) {
     return jsonResponse({ success: false, message: "Vui lòng nhập đầy đủ mật khẩu cũ và mới!" });
   }
 
-  if (String(newPassword).length < 6) {
-    return jsonResponse({ success: false, message: "Mật khẩu mới phải có ít nhất 6 ký tự!" });
+  if (String(newPassword).length < 4) {
+    return jsonResponse({ success: false, message: "Mật khẩu mới phải có ít nhất 4 ký tự!" });
   }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -9802,26 +9802,46 @@ function handleGetAllGdtcData() {
       showToast("Đang ở chế độ xem Sổ Tiết Vượt Cá Nhân của bạn", "info");
     }
 
+    function performLogout(targetUsername = "") {
+      const usernameToKeep = targetUsername || (currentUser ? currentUser.taiKhoan : "");
+
+      localStorage.removeItem(LOCAL_USER_STORAGE_KEY);
+      currentUser = { taiKhoan: "", tenGv: "", quyen: "gv", subject: "Toán", isLoggedInAsAdmin: false };
+      dataStore = initEmptyDataStore();
+      adminTeachersList = [];
+
+      sessionStorage.removeItem('active_module');
+      sessionStorage.removeItem('gdtc_view');
+      sessionStorage.removeItem('hoanhap_view');
+
+      const mainApp = document.getElementById('main-app');
+      if (mainApp) mainApp.classList.add('hidden');
+      const adminPortal = document.getElementById('admin-portal');
+      if (adminPortal) adminPortal.classList.add('hidden');
+      const hoanhapEl = document.getElementById('hoanhap-portal');
+      if (hoanhapEl) hoanhapEl.classList.add('hidden');
+      const gdtcEl = document.getElementById('gdtc-portal');
+      if (gdtcEl) gdtcEl.classList.add('hidden');
+      const moduleHub = document.getElementById('module-selection-portal');
+      if (moduleHub) moduleHub.classList.add('hidden');
+
+      const loginModal = document.getElementById('login-modal');
+      if (loginModal) loginModal.classList.remove('hidden');
+
+      if (usernameToKeep) {
+        const userInp = document.getElementById('login-username');
+        if (userInp) userInp.value = usernameToKeep;
+      }
+      const pwdInp = document.getElementById('login-password');
+      if (pwdInp) {
+        pwdInp.value = "";
+        setTimeout(() => pwdInp.focus(), 250);
+      }
+    }
+
     function handleLogout() {
       if (confirm("Thầy/Cô có chắc chắn muốn đăng xuất không?")) {
-        localStorage.removeItem(LOCAL_USER_STORAGE_KEY);
-        currentUser = { taiKhoan: "", tenGv: "", quyen: "gv", subject: "Toán", isLoggedInAsAdmin: false };
-        dataStore = initEmptyDataStore();
-        adminTeachersList = [];
-
-        document.getElementById('login-password').value = "";
-        sessionStorage.removeItem('active_module');
-        sessionStorage.removeItem('gdtc_view');
-        sessionStorage.removeItem('hoanhap_view');
-        document.getElementById('main-app').classList.add('hidden');
-        document.getElementById('admin-portal').classList.add('hidden');
-        const hoanhapEl = document.getElementById('hoanhap-portal');
-        if (hoanhapEl) hoanhapEl.classList.add('hidden');
-        const gdtcEl = document.getElementById('gdtc-portal');
-        if (gdtcEl) gdtcEl.classList.add('hidden');
-        const moduleHub = document.getElementById('module-selection-portal');
-        if (moduleHub) moduleHub.classList.add('hidden');
-        document.getElementById('login-modal').classList.remove('hidden');
+        performLogout();
         showToast("Đã đăng xuất khỏi hệ thống an toàn.", "info");
       }
     }
@@ -16215,9 +16235,10 @@ function handleGetAllGdtcData() {
       const currentPwd = document.getElementById('curr-pwd-input').value.trim();
       const newPwd = document.getElementById('new-pwd-input').value.trim();
       const confirmPwd = document.getElementById('confirm-new-pwd-input').value.trim();
+      const changedAccount = currentUser ? currentUser.taiKhoan : "";
 
-      if (newPwd.length < 6) {
-        showToast("Mật khẩu mới phải có tối thiểu 6 ký tự!", "error");
+      if (newPwd.length < 4) {
+        showToast("Mật khẩu mới phải có tối thiểu 4 ký tự!", "error");
         return;
       }
 
@@ -16240,8 +16261,14 @@ function handleGetAllGdtcData() {
         const activeBackendUrl = getActiveBackendUrl();
         const isNotConfigured = !activeBackendUrl || activeBackendUrl.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE");
         if (isNotConfigured) {
-          showToast("Đã đổi mật khẩu tạm thời. Cần gắn URL Web App vào code để cập nhật vào Sheet DATA!", "warn");
+          showToast("Đã đổi mật khẩu tạm thời. Vui lòng đăng nhập lại bằng mật khẩu mới!", "warn");
           closeChangePasswordModal();
+          if (typeof closeDefaultPasswordWarningModal === 'function') {
+            closeDefaultPasswordWarningModal();
+          }
+          setTimeout(() => {
+            performLogout(changedAccount);
+          }, 350);
           return;
         }
 
@@ -16256,8 +16283,14 @@ function handleGetAllGdtcData() {
           throw new Error(result ? result.message : "Đổi mật khẩu thất bại");
         }
 
-        showToast("Đổi mật khẩu thành công! Mật khẩu mới đã được lưu vào sheet DATA.", "success");
+        showToast("Đổi mật khẩu thành công! Vui lòng đăng nhập lại bằng mật khẩu mới.", "success");
         closeChangePasswordModal();
+        if (typeof closeDefaultPasswordWarningModal === 'function') {
+          closeDefaultPasswordWarningModal();
+        }
+        setTimeout(() => {
+          performLogout(changedAccount);
+        }, 350);
 
       } catch (err) {
         showToast(err.message || "Không thể đổi mật khẩu!", "error");

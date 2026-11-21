@@ -1690,8 +1690,8 @@ function handleChangePassword(taiKhoan, oldPassword, newPassword) {
     return jsonResponse({ success: false, message: "Vui lòng nhập đầy đủ mật khẩu cũ và mới!" });
   }
 
-  if (String(newPassword).length < 6) {
-    return jsonResponse({ success: false, message: "Mật khẩu mới phải có ít nhất 6 ký tự!" });
+  if (String(newPassword).length < 4) {
+    return jsonResponse({ success: false, message: "Mật khẩu mới phải có ít nhất 4 ký tự!" });
   }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
