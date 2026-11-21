@@ -532,8 +532,7 @@
             <i class="fa-solid fa-school text-lg"></i>
           </div>
           <div>
-            <h1 class="font-black text-sm sm:text-base text-slate-800 uppercase tracking-tight" id="teacher-header-school-name">Trường THCS An Nhơn</h1>
-            <p class="text-[11px] text-slate-500 font-medium">Hệ Thống Kê Khai & Quản Lý Tiết Dạy</p>
+            <h1 class="font-black text-base sm:text-lg text-slate-800 uppercase tracking-tight leading-snug">Hệ Thống Kê Khai & Quản Lý Tiết Dạy</h1>
           </div>
         </div>
 
@@ -8389,6 +8388,20 @@ function handleGetAllGdtcData() {
       }
     }
 
+    // Chuẩn hóa tên trường thành chuỗi không dấu an toàn để làm tên file PDF & Excel (VD: THCS_BINH_LOI_TRUNG)
+    function getSchoolFilenameSlug(delimiter) {
+      var d = delimiter || '_';
+      var rawName = (typeof getCurrentSchoolName === 'function') ? getCurrentSchoolName() : 'THCS_An_Nhon';
+      rawName = rawName.replace(/\s*\([^)]*\)/g, '').trim();
+      var cleaned = rawName
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[đĐ]/g, 'D')
+        .replace(/[^a-zA-Z0-9]+/g, d)
+        .replace(/^_+|_+$/g, '')
+        .replace(/^-+|-+$/g, '');
+      return cleaned || (d === '-' ? 'THCS-An-Nhon' : 'THCS_An_Nhon');
+    }
+
     // Lấy địa danh ký văn bản (tự động trích từ tên Phường / Xã)
     function getCurrentSchoolLocation() {
       const ward = getCurrentSchoolWard();
@@ -12223,8 +12236,9 @@ function handleGetAllGdtcData() {
       });
 
       // Xác định tiêu đề, cột và dữ liệu động theo đúng bộ lọc của Admin
-      let excelTitle = "BẢNG THỐNG KÊ TIẾN ĐỘ KÊ KHAI TIẾT DẠY VƯỢT ĐỊNH MỨC NĂM HỌC 2024 - 2025";
-      let excelFileName = `Thong_Ke_Tien_Do_Ke_Khai_Tiet_Vuot_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+      const schoolSlug = getSchoolFilenameSlug('_');
+      let excelTitle = `BẢNG THỐNG KÊ TIẾN ĐỘ KÊ KHAI TIẾT DẠY VƯỢT ĐỊNH MỨC NĂM HỌC 2024 - 2025`;
+      let excelFileName = `Thong_Ke_Tien_Do_Ke_Khai_Tiet_Vuot_${schoolSlug}_${fileTimestamp}.xlsx`;
       let excelHeaders = [];
       let excelRowMapper = null;
       let excelSummaryRow = [];
@@ -12233,7 +12247,7 @@ function handleGetAllGdtcData() {
 
       if (filterStatus === "hk1_none") {
         excelTitle = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT VƯỢT - HỌC KỲ 1";
-        excelFileName = `DanhSach_ChuaKeKhai_HK1_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+        excelFileName = `DanhSach_ChuaKeKhai_HK1_${schoolSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = ["STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Định Mức (Tiết/Tuần)", "Trạng Thái HK1", "Ghi Chú"];
         excelRowMapper = (t, idx, stats, phone) => [
           idx + 1, phone, t.tenGv || t.taiKhoan, t.ngaySinh || "", stats.subject || "Chưa chọn", stats.quota || 19, "CHƯA KÊ KHAI", "Chưa nộp kê khai HK1"
@@ -12245,7 +12259,7 @@ function handleGetAllGdtcData() {
         colAlignments = ["center", "center", "left", "center", "left", "center", "center", "left"];
       } else if (filterStatus === "hk1_done") {
         excelTitle = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT VƯỢT - HỌC KỲ 1";
-        excelFileName = `DanhSach_DaKeKhai_HK1_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+        excelFileName = `DanhSach_DaKeKhai_HK1_${schoolSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = ["STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Tiết QĐ/Tuần", "Định Mức HK1 (18t)", "Thực Dạy HK1 (Tiết)", "Vượt Tiết HK1 (Tiết)", "Trạng Thái HK1"];
         excelRowMapper = (t, idx, stats, phone) => [
           idx + 1, phone, t.tenGv || t.taiKhoan, t.ngaySinh || "", stats.subject || "Chưa chọn", stats.quota || 19, (stats.quota || 19) * 18, stats.hk1Actual || 0, stats.hk1Overtime || 0, "ĐÃ KÊ KHAI"
@@ -12260,7 +12274,7 @@ function handleGetAllGdtcData() {
         colAlignments = ["center", "center", "left", "center", "left", "center", "center", "center", "center", "center"];
       } else if (filterStatus === "hk2_none") {
         excelTitle = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT VƯỢT - HỌC KỲ 2";
-        excelFileName = `DanhSach_ChuaKeKhai_HK2_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+        excelFileName = `DanhSach_ChuaKeKhai_HK2_${schoolSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = ["STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Định Mức (Tiết/Tuần)", "Trạng Thái HK2", "Ghi Chú"];
         excelRowMapper = (t, idx, stats, phone) => [
           idx + 1, phone, t.tenGv || t.taiKhoan, t.ngaySinh || "", stats.subject || "Chưa chọn", stats.quota || 19, "CHƯA KÊ KHAI", "Chưa nộp kê khai HK2"
@@ -12272,7 +12286,7 @@ function handleGetAllGdtcData() {
         colAlignments = ["center", "center", "left", "center", "left", "center", "center", "left"];
       } else if (filterStatus === "hk2_done") {
         excelTitle = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT VƯỢT - HỌC KỲ 2";
-        excelFileName = `DanhSach_DaKeKhai_HK2_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+        excelFileName = `DanhSach_DaKeKhai_HK2_${schoolSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = ["STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Tiết QĐ/Tuần", "Định Mức HK2 (17t)", "Thực Dạy HK2 (Tiết)", "Vượt Tiết HK2 (Tiết)", "Trạng Thái HK2"];
         excelRowMapper = (t, idx, stats, phone) => [
           idx + 1, phone, t.tenGv || t.taiKhoan, t.ngaySinh || "", stats.subject || "Chưa chọn", stats.quota || 19, (stats.quota || 19) * 17, stats.hk2Actual || 0, stats.hk2Overtime || 0, "ĐÃ KÊ KHAI"
@@ -12287,7 +12301,7 @@ function handleGetAllGdtcData() {
         colAlignments = ["center", "center", "left", "center", "left", "center", "center", "center", "center", "center"];
       } else if (filterStatus === "both_done") {
         excelTitle = "BẢNG THỐNG KÊ GIÁO VIÊN ĐÃ HOÀN THÀNH KÊ KHAI CẢ 2 HỌC KỲ";
-        excelFileName = `DanhSach_DaKeKhai_CaNam_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+        excelFileName = `DanhSach_DaKeKhai_CaNam_${schoolSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = ["STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Tiết QĐ/Tuần", "Thực Dạy HK1", "Vượt HK1", "Thực Dạy HK2", "Vượt HK2", "Tổng Vượt Cả Năm", "Tiến Độ"];
         excelRowMapper = (t, idx, stats, phone) => [
           idx + 1, phone, t.tenGv || t.taiKhoan, t.ngaySinh || "", stats.subject || "Chưa chọn", stats.quota || 19, stats.hk1Actual || 0, stats.hk1Overtime || 0, stats.hk2Actual || 0, stats.hk2Overtime || 0, stats.yearOvertime || 0, "Đã xong cả năm"
@@ -12304,7 +12318,7 @@ function handleGetAllGdtcData() {
         colAlignments = ["center", "center", "left", "center", "left", "center", "center", "center", "center", "center", "center", "center"];
       } else if (filterStatus === "both_none") {
         excelTitle = "BẢNG THỐNG KÊ GIÁO VIÊN CHƯA KÊ KHAI CẢ 2 HỌC KỲ";
-        excelFileName = `DanhSach_ChuaKeKhai_CaNam_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+        excelFileName = `DanhSach_ChuaKeKhai_CaNam_${schoolSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = ["STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Tiết QĐ/Tuần", "Trạng Thái HK1", "Trạng Thái HK2", "Ghi Chú"];
         excelRowMapper = (t, idx, stats, phone) => [
           idx + 1, phone, t.tenGv || t.taiKhoan, t.ngaySinh || "", stats.subject || "Chưa chọn", stats.quota || 19, "Chưa khai", "Chưa khai", "Chưa nộp kê khai cả 2 HK"
@@ -12317,7 +12331,7 @@ function handleGetAllGdtcData() {
       } else {
         // Mặc định: Đầy đủ 15 cột
         excelTitle = "BẢNG THỐNG KÊ TIẾN ĐỘ KÊ KHAI TIẾT DẠY VƯỢT ĐỊNH MỨC NĂM HỌC 2024 - 2025";
-        excelFileName = `Thong_Ke_Tien_Do_Ke_Khai_Tiet_Vuot_THCS_An_Nhon_${fileTimestamp}.xlsx`;
+        excelFileName = `Thong_Ke_Tien_Do_Ke_Khai_Tiet_Vuot_${schoolSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = [
           "STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Định Mức (Tiết/Tuần)", "Trạng Thái HK1", "Thực Dạy HK1 (Tiết)", "Vượt Tiết HK1 (Tiết)", "Trạng Thái HK2", "Thực Dạy HK2 (Tiết)", "Vượt Tiết HK2 (Tiết)", "Tổng Tiết Vượt Cả Năm", "Đánh Giá Tiến Độ", "Phân Quyền / Vai Trò"
         ];
@@ -12598,17 +12612,18 @@ function handleGetAllGdtcData() {
       });
 
       // Xác định tiêu đề, cấu trúc cột động theo bộ lọc (Thiết kế chuẩn Khổ Dọc A4)
+      const schoolSlugHyphen = getSchoolFilenameSlug('-');
       let titleMain = "BẢNG THỐNG KÊ TIẾN ĐỘ KÊ KHAI TIẾT DẠY VƯỢT ĐỊNH MỨC NĂM HỌC 2024 - 2025";
       let shortTitle = "BẢNG THỐNG KÊ TIẾN ĐỘ KÊ KHAI TIẾT DẠY VƯỢT ĐỊNH MỨC (Tiếp theo)";
       let modalHeaderTitle = "Bản In Thống Kê Tiến Độ Kê Khai Giáo Viên (Khổ Dọc A4)";
-      let exportFileName = `ThongKe-TienDo-KeKhai-THCS-An-Nhon-${dateSlug}.pdf`;
+      let exportFileName = `ThongKe-TienDo-KeKhai-${schoolSlugHyphen}-${dateSlug}.pdf`;
       let tableTheadHtml = "";
 
       if (filterStatus === "hk1_none") {
         titleMain = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT VƯỢT - HỌC KỲ 1";
         shortTitle = "DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT VƯỢT - HỌC KỲ 1 (Tiếp theo)";
         modalHeaderTitle = "Bản In DS Giáo Viên Chưa Kê Khai HK1 (Khổ Dọc A4)";
-        exportFileName = `DanhSach-ChuaKeKhai-HK1-THCS-An-Nhon-${dateSlug}.pdf`;
+        exportFileName = `DanhSach-ChuaKeKhai-HK1-${schoolSlugHyphen}-${dateSlug}.pdf`;
         tableTheadHtml = `
           <thead>
             <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: bold; text-align: center; font-size: 9px;">
@@ -12627,7 +12642,7 @@ function handleGetAllGdtcData() {
         titleMain = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT VƯỢT - HỌC KỲ 1";
         shortTitle = "DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT VƯỢT - HỌC KỲ 1 (Tiếp theo)";
         modalHeaderTitle = "Bản In DS Giáo Viên Đã Kê Khai HK1 (Khổ Dọc A4)";
-        exportFileName = `DanhSach-DaKeKhai-HK1-THCS-An-Nhon-${dateSlug}.pdf`;
+        exportFileName = `DanhSach-DaKeKhai-HK1-${schoolSlugHyphen}-${dateSlug}.pdf`;
         tableTheadHtml = `
           <thead>
             <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: bold; text-align: center; font-size: 9px;">
@@ -12648,7 +12663,7 @@ function handleGetAllGdtcData() {
         titleMain = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT VƯỢT - HỌC KỲ 2";
         shortTitle = "DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI TIẾT VƯỢT - HỌC KỲ 2 (Tiếp theo)";
         modalHeaderTitle = "Bản In DS Giáo Viên Chưa Kê Khai HK2 (Khổ Dọc A4)";
-        exportFileName = `DanhSach-ChuaKeKhai-HK2-THCS-An-Nhon-${dateSlug}.pdf`;
+        exportFileName = `DanhSach-ChuaKeKhai-HK2-${schoolSlugHyphen}-${dateSlug}.pdf`;
         tableTheadHtml = `
           <thead>
             <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: bold; text-align: center; font-size: 9px;">
@@ -12667,7 +12682,7 @@ function handleGetAllGdtcData() {
         titleMain = "BẢNG THỐNG KÊ DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT VƯỢT - HỌC KỲ 2";
         shortTitle = "DANH SÁCH GIÁO VIÊN ĐÃ KÊ KHAI TIẾT VƯỢT - HỌC KỲ 2 (Tiếp theo)";
         modalHeaderTitle = "Bản In DS Giáo Viên Đã Kê Khai HK2 (Khổ Dọc A4)";
-        exportFileName = `DanhSach-DaKeKhai-HK2-THCS-An-Nhon-${dateSlug}.pdf`;
+        exportFileName = `DanhSach-DaKeKhai-HK2-${schoolSlugHyphen}-${dateSlug}.pdf`;
         tableTheadHtml = `
           <thead>
             <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: bold; text-align: center; font-size: 9px;">
@@ -12688,7 +12703,7 @@ function handleGetAllGdtcData() {
         titleMain = "BẢNG THỐNG KÊ GIÁO VIÊN ĐÃ HOÀN THÀNH KÊ KHAI CẢ 2 HỌC KỲ (HK1 & HK2)";
         shortTitle = "DANH SÁCH GIÁO VIÊN HOÀN THÀNH CẢ NĂM (Tiếp theo)";
         modalHeaderTitle = "Bản In DS Giáo Viên Đã Hoàn Thành Cả Năm (Khổ Dọc A4)";
-        exportFileName = `DanhSach-DaKeKhai-CaNam-THCS-An-Nhon-${dateSlug}.pdf`;
+        exportFileName = `DanhSach-DaKeKhai-CaNam-${schoolSlugHyphen}-${dateSlug}.pdf`;
         tableTheadHtml = `
           <thead>
             <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: bold; text-align: center; font-size: 8.5px;">
@@ -12711,7 +12726,7 @@ function handleGetAllGdtcData() {
         titleMain = "BẢNG THỐNG KÊ GIÁO VIÊN CHƯA KÊ KHAI CẢ 2 HỌC KỲ (HK1 & HK2)";
         shortTitle = "DANH SÁCH GIÁO VIÊN CHƯA KÊ KHAI CẢ 2 HỌC KỲ (Tiếp theo)";
         modalHeaderTitle = "Bản In DS Giáo Viên Chưa Kê Khai Cả Năm (Khổ Dọc A4)";
-        exportFileName = `DanhSach-ChuaKeKhai-CaNam-THCS-An-Nhon-${dateSlug}.pdf`;
+        exportFileName = `DanhSach-ChuaKeKhai-CaNam-${schoolSlugHyphen}-${dateSlug}.pdf`;
         tableTheadHtml = `
           <thead>
             <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: bold; text-align: center; font-size: 9px;">
@@ -12731,7 +12746,7 @@ function handleGetAllGdtcData() {
         titleMain = "BẢNG THỐNG KÊ TIẾN ĐỘ KÊ KHAI TIẾT DẠY VƯỢT ĐỊNH MỨC NĂM HỌC 2024 - 2025";
         shortTitle = "BẢNG THỐNG KÊ TIẾN ĐỘ KÊ KHAI TIẾT DẠY VƯỢT ĐỊNH MỨC (Tiếp theo)";
         modalHeaderTitle = "Bản In Thống Kê Tiến Độ Kê Khai Giáo Viên (Khổ Dọc A4)";
-        exportFileName = `ThongKe-TienDo-KeKhai-THCS-An-Nhon-${dateSlug}.pdf`;
+        exportFileName = `ThongKe-TienDo-KeKhai-${schoolSlugHyphen}-${dateSlug}.pdf`;
         tableTheadHtml = `
           <thead>
             <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: bold; text-align: center; font-size: 8.5px;">
@@ -13145,7 +13160,7 @@ function handleGetAllGdtcData() {
       const element = document.getElementById('teachers-status-print-modal-content');
       const now = new Date();
       const dateSlug = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-      const filename = currentTeachersStatusPdfFileName || `ThongKe-TienDo-KeKhai-THCS-An-Nhon-${dateSlug}.pdf`;
+      const filename = currentTeachersStatusPdfFileName || `ThongKe-TienDo-KeKhai-${schoolSlugHyphen}-${dateSlug}.pdf`;
 
       // Tạm thời bỏ margin-bottom & padding container để khi ghép trang PDF hoàn toàn liền mạch và không bị lẹm viền phải
       const originalPadding = element.style.padding;
@@ -15142,7 +15157,8 @@ function handleGetAllGdtcData() {
         `;
       }
 
-      currentSchoolSummaryPdfFileName = `TongHop-TietVuot-THCS-An-Nhon-${semName}${filterSlug}-${dateSlug}.pdf`;
+      const schoolSlugHyphen = getSchoolFilenameSlug('-');
+      currentSchoolSummaryPdfFileName = `TongHop-TietVuot-${schoolSlugHyphen}-${semName}${filterSlug}-${dateSlug}.pdf`;
 
       const pages = paginateTeachersForSchoolSummaryPdf(filteredTeachers.length);
       const totalPages = pages.length;
@@ -15323,7 +15339,8 @@ function handleGetAllGdtcData() {
 
       const now = new Date();
       const dateSlug = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-      const filename = currentSchoolSummaryPdfFileName || `TongHop-TietVuot-THCS-An-Nhon-${semName}${filterSlug}-${dateSlug}.pdf`;
+      const schoolSlugHyphen = getSchoolFilenameSlug('-');
+      const filename = currentSchoolSummaryPdfFileName || `TongHop-TietVuot-${schoolSlugHyphen}-${semName}${filterSlug}-${dateSlug}.pdf`;
 
       // Tạm thời bỏ margin-bottom & padding container để khi ghép trang PDF hoàn toàn liền mạch và không bị lẹm viền phải
       const originalPadding = element.style.padding;
@@ -15452,7 +15469,8 @@ function handleGetAllGdtcData() {
         excelTitle = "BẢNG KÊ TỔNG HỢP TIẾT DẠY VƯỢT ĐỊNH MỨC TOÀN TRƯỜNG - HỌC KỲ 1";
         excelSubtitle = `NĂM HỌC 2024 - 2025 (HỌC KỲ 1: 18 TUẦN)${filterSubNote}`;
         formulaNote = "Tiết vượt HK1 = Thực dạy HK1 - (Tiết quy định × 18 tuần)";
-        excelFileName = `TongHop_TietVuot_THCS_An_Nhon_HK1${filterSlug}_${fileTimestamp}.xlsx`;
+        const schoolSlug = getSchoolFilenameSlug('_');
+        excelFileName = `TongHop_TietVuot_${schoolSlug}_HK1${filterSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = [
           "STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Tiết QĐ/Tuần", "Định Mức HK1 (18t)", "Thực Dạy HK1 (Tiết)", "Vượt Tiết HK1 (Tiết)"
         ];
@@ -15480,7 +15498,8 @@ function handleGetAllGdtcData() {
         excelTitle = "BẢNG KÊ TỔNG HỢP TIẾT DẠY VƯỢT ĐỊNH MỨC TOÀN TRƯỜNG - HỌC KỲ 2";
         excelSubtitle = `NĂM HỌC 2024 - 2025 (HỌC KỲ 2: 17 TUẦN)${filterSubNote}`;
         formulaNote = "Tiết vượt HK2 = Thực dạy HK2 - (Tiết quy định × 17 tuần)";
-        excelFileName = `TongHop_TietVuot_THCS_An_Nhon_HK2${filterSlug}_${fileTimestamp}.xlsx`;
+        const schoolSlug = getSchoolFilenameSlug('_');
+        excelFileName = `TongHop_TietVuot_${schoolSlug}_HK2${filterSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = [
           "STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Tiết QĐ/Tuần", "Định Mức HK2 (17t)", "Thực Dạy HK2 (Tiết)", "Vượt Tiết HK2 (Tiết)"
         ];
@@ -15508,7 +15527,8 @@ function handleGetAllGdtcData() {
         excelTitle = "BẢNG KÊ TỔNG HỢP TIẾT DẠY VƯỢT ĐỊNH MỨC TOÀN TRƯỜNG - CẢ NĂM HỌC";
         excelSubtitle = `NĂM HỌC 2024 - 2025 (HK1: 18 TUẦN, HK2: 17 TUẦN)${filterSubNote}`;
         formulaNote = "Tiết vượt cả năm = Vượt HK1 + Vượt HK2";
-        excelFileName = `TongHop_TietVuot_THCS_An_Nhon_CaNam${filterSlug}_${fileTimestamp}.xlsx`;
+        const schoolSlug = getSchoolFilenameSlug('_');
+        excelFileName = `TongHop_TietVuot_${schoolSlug}_CaNam${filterSlug}_${fileTimestamp}.xlsx`;
         excelHeaders = [
           "STT", "Tài Khoản (SĐT)", "Họ và Tên Giáo Viên", "Ngày Sinh", "Môn Giảng Dạy", "Tiết QĐ/Tuần", "Thực Dạy HK1 (Tiết)", "Vượt Tiết HK1 (Tiết)", "Thực Dạy HK2 (Tiết)", "Vượt Tiết HK2 (Tiết)", "Tổng Tiết Vượt Cả Năm"
         ];
@@ -17271,7 +17291,7 @@ function handleGetAllGdtcData() {
         const element = document.getElementById('print-modal-content');
         const activeSem = currentPdfExportSemId || activeSemesterId;
         const targetTeacher = currentPdfExportTeacher || currentUser;
-        const filename = `TietVuot-${activeSem.toUpperCase()}-${sanitizeName(targetTeacher.tenGv)}.pdf`;
+        const filename = `TietVuot-${getSchoolFilenameSlug('-')}-${activeSem.toUpperCase()}-${sanitizeName(targetTeacher.tenGv)}.pdf`;
         const opt = {
           margin: [5, 6, 5, 6],
           filename: filename,
@@ -19395,9 +19415,9 @@ function handleGetAllGdtcData() {
 
       const targetTeacher = currentHoaNhapPdfTeacher || currentUser;
       const sem = currentHoaNhapPdfSem || hoaNhapActiveSem;
-      let filename = `Phieu_Day_Hoa_Nhap_${(targetTeacher.tenGv || 'GiaoVien').replace(/\s+/g, '_')}.pdf`;
+      let filename = `Phieu_Day_Hoa_Nhap_${getSchoolFilenameSlug('_')}_${(targetTeacher.tenGv || 'GiaoVien').replace(/\s+/g, '_')}.pdf`;
       if (!currentHoaNhapPdfTeacher) {
-        filename = `Tong_Hop_Tiet_Day_Hoa_Nhap_Toan_Truong_${sem}.pdf`;
+        filename = `Tong_Hop_Tiet_Day_Hoa_Nhap_${getSchoolFilenameSlug('_')}_${sem}.pdf`;
       }
 
       // Xử lý tạm thời container và các trang để khi html2pdf ghép trang hoàn toàn liền mạch, không bị giật trang
@@ -21368,7 +21388,7 @@ function handleGetAllGdtcData() {
 
       const opt = {
         margin: [8, 8, 8, 8],
-        filename: `Thong_Ke_Giao_Vien_Hoa_Nhap_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.pdf`,
+        filename: `Thong_Ke_Giao_Vien_Hoa_Nhap_${getSchoolFilenameSlug('_')}_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
@@ -21596,7 +21616,8 @@ function handleGetAllGdtcData() {
       XLSX.utils.book_append_sheet(wb, ws, "GiaoVienHoaNhap");
 
       const fileDate = `${todayYear}${todayMonth}${todayDay}`;
-      XLSX.writeFile(wb, `Thong_Ke_Giao_Vien_Hoa_Nhap_THCS_An_Nhon_${fileDate}.xlsx`);
+      const schoolSlug = getSchoolFilenameSlug('_');
+      XLSX.writeFile(wb, `Thong_Ke_Giao_Vien_Hoa_Nhap_${schoolSlug}_${fileDate}.xlsx`);
       showToast("Đã xuất file Excel thống kê giáo viên dạy hòa nhập thành công!", "success");
     }
 
@@ -21801,8 +21822,7 @@ function handleGetAllGdtcData() {
         : hoaNhapSummaryStatusFilter === 'not_declared'
           ? '_CAC_LOP_CHUA_KHAI_BAO'
           : '';
-      const rawSchoolName = typeof getCurrentSchoolName === 'function' ? getCurrentSchoolName() : 'THCS_An_Nhon';
-      const safeSchoolName = rawSchoolName.replace(/[^a-zA-Z0-9\u00C0-\u1EF9]/g, '_').replace(/_+/g, '_');
+      const safeSchoolName = getSchoolFilenameSlug('_');
       const fileName = `Bao_Cao_Tong_Hop_Tiet_Day_Hoa_Nhap_${safeSchoolName}_${semLabel.replace(/\s+/g, '_')}${filterFileNote}_${fileDate}.xlsx`;
       XLSX.writeFile(wb, fileName);
       showToast("Đã xuất file Excel báo cáo tổng hợp hòa nhập thành công!", "success");
@@ -23797,7 +23817,8 @@ function handleGetAllGdtcData() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "TongHopGDTC");
 
-      const fileName = `Bao_Cao_Tong_Hop_Tiet_Thuc_Hanh_The_Duc_${sem.toUpperCase()}_${todayYear}.xlsx`;
+      const schoolSlug = getSchoolFilenameSlug('_');
+      const fileName = `Bao_Cao_Tong_Hop_Tiet_Thuc_Hanh_The_Duc_${schoolSlug}_${sem.toUpperCase()}_${todayYear}.xlsx`;
       XLSX.writeFile(wb, fileName);
       showToast("Xuất file Excel báo cáo tổng hợp thành công!", "success");
     }
@@ -24126,7 +24147,8 @@ function handleGetAllGdtcData() {
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "DanhSachGV_GDTC");
-      XLSX.writeFile(wb, `Danh_Sach_Ke_Khai_GDTC_${todayYear}.xlsx`);
+      const schoolSlug = getSchoolFilenameSlug('_');
+      XLSX.writeFile(wb, `Danh_Sach_Ke_Khai_GDTC_${schoolSlug}_${todayYear}.xlsx`);
       showToast("Xuất Excel danh sách GV thành công!", "success");
     }
 
@@ -24308,12 +24330,13 @@ function handleGetAllGdtcData() {
       const titleEl = document.getElementById('gdtc-pdf-preview-title');
       const rawTitle = titleEl ? titleEl.textContent : '';
       let filename = `Bao_Cao_GDTC_${Date.now()}.pdf`;
+      const schoolSlug = getSchoolFilenameSlug('_');
       if (rawTitle.includes('Phiếu Kê Khai')) {
-        filename = `Phieu_Ke_Khai_GDTC_${(currentUser ? (currentUser.tenGv || 'GiaoVien') : 'GiaoVien').replace(/\s+/g, '_')}.pdf`;
+        filename = `Phieu_Ke_Khai_GDTC_${schoolSlug}_${(currentUser ? (currentUser.tenGv || 'GiaoVien') : 'GiaoVien').replace(/\s+/g, '_')}.pdf`;
       } else if (rawTitle.includes('Tổng Hợp')) {
-        filename = `Bao_Cao_Tong_Hop_GDTC_${gdtcAdminActiveSem.toUpperCase()}_2024_2025.pdf`;
+        filename = `Bao_Cao_Tong_Hop_GDTC_${schoolSlug}_${gdtcAdminActiveSem.toUpperCase()}_2024_2025.pdf`;
       } else if (rawTitle.includes('Thống Kê')) {
-        filename = `Danh_Sach_Thong_Ke_GDTC_2024_2025.pdf`;
+        filename = `Danh_Sach_Thong_Ke_GDTC_${schoolSlug}_2024_2025.pdf`;
       }
 
       const opt = {
