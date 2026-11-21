@@ -2483,14 +2483,14 @@ function taoCotPhuong() {
     }
   }
 
-  // Đảm bảo Sheet HUB_SERVER có cột Phường
+  // Nếu có Sheet HUB_SERVER do copy nhầm từ máy chủ trung tâm thì tự động xóa (user_code.gs không dùng HUB_SERVER)
   try {
-    if (typeof getOrCreateHubServerSheet === 'function') {
-      getOrCreateHubServerSheet(ss);
+    const sHub = ss.getSheetByName("HUB_SERVER");
+    if (sHub && ss.getSheets().length > 1) {
+      ss.deleteSheet(sHub);
+      Logger.log("Đã tự động xóa Sheet HUB_SERVER thừa trên trường đơn vị.");
     }
-  } catch (hubErr) {
-    Logger.log("Lỗi kiểm tra HUB_SERVER: " + hubErr);
-  }
+  } catch (e) {}
 
   // Đảm bảo Sheet DATA GDTC tồn tại
   try {
@@ -2588,8 +2588,8 @@ function initialSetup() {
     Logger.log("Lỗi cài đặt Properties: " + propErr);
   }
 
-  // 7. Dọn dẹp sheet mặc định "Sheet1" hoặc "Trang tính 1" nếu còn thừa
-  const defaultSheets = ["Sheet1", "Trang tính 1"];
+  // 7. Dọn dẹp sheet mặc định "Sheet1", "Trang tính 1" và "HUB_SERVER" (nếu có do copy nhầm từ trung tâm)
+  const defaultSheets = ["Sheet1", "Trang tính 1", "HUB_SERVER"];
   defaultSheets.forEach(defName => {
     const s = ss.getSheetByName(defName);
     if (s && ss.getSheets().length > 1) {
@@ -2599,10 +2599,10 @@ function initialSetup() {
     }
   });
 
-  Logger.log("🎉 KHỞI TẠO HỆ THỐNG THÀNH CÔNG ĐẦY ĐỦ CẢ 3 PHÂN HỆ: DATA, DULIEU, HOA NHAP, dulieu_hoanhap, DATA GDTC!");
+  Logger.log("🎉 KHỞI TẠO HỆ THỐNG TRƯỜNG ĐƠN VỊ THÀNH CÔNG ĐẦY ĐỦ 5 SHEET: DATA, DULIEU, HOA NHAP, dulieu_hoanhap, DATA GDTC! (Không có HUB_SERVER)");
   return {
     success: true,
-    message: "Khởi tạo thành công đầy đủ cả 3 Phân hệ: DATA, DULIEU, HOA NHAP, dulieu_hoanhap, DATA GDTC!"
+    message: "Khởi tạo thành công đầy đủ 5 Sheet: DATA, DULIEU, HOA NHAP, dulieu_hoanhap, DATA GDTC! (Hệ thống trường đơn vị không sử dụng Sheet HUB_SERVER)"
   };
 }
 
