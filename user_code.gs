@@ -11,7 +11,7 @@
  * 3. Xóa toàn bộ mã cũ và dán toàn bộ mã nguồn file user_code.gs này vào. Nhấn Ctrl + S.
  * 4. Chọn hàm 'initialSetup' trong danh sách hàm và nhấn nút 'Chạy' (Run).
  *    (Cấp quyền cho Apps Script khi được hỏi).
- *    -> Hệ thống sẽ tự động tạo đúng 4 sheet chuẩn: DATA, DULIEU, HOA NHAP, dulieu_hoanhap (KHÔNG CÓ SHEET HUB_SERVER).
+ *    -> Hệ thống sẽ tự động tạo đầy đủ 5 sheet chuẩn của 3 Phân hệ: DATA, DULIEU, HOA NHAP, dulieu_hoanhap, DATA GDTC.
  * 5. Nhấn nút "Triển khai" (Deploy) -> "Quản lý bản triển khai" -> "Triển khai mới":
  *    - Chọn loại: "Ứng dụng web" (Web App).
  *    - Mô tả: "Backend Tinh Phu Troi".
@@ -2400,7 +2400,7 @@ function capNhatCotMoi() {
 function initialSetup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // 1. Khởi tạo Sheet DATA
+  // 1. Khởi tạo Sheet DATA (Cột A: TK | B: Tên GV | C: Ngày sinh | D: Quyền | E: Mật khẩu | F: Phường)
   let sheetData = ss.getSheetByName(SHEET_DATA);
   if (!sheetData) {
     // Nếu có Trang tính 1 / Sheet1 mặc định của Google Sheet mới, đổi tên thành DATA
@@ -2413,31 +2413,32 @@ function initialSetup() {
     }
   }
   sheetData.clear();
-  sheetData.appendRow(["Tài khoản", "Tên GV", "Ngày sinh", "Quyền", "Mật khẩu"]);
+  sheetData.appendRow(["Tài khoản", "Tên GV", "Ngày sinh", "Quyền", "Mật khẩu", "Phường"]);
   
   // Định dạng hàng tiêu đề và cột
-  const dataHeader = sheetData.getRange(1, 1, 1, 5);
+  const dataHeader = sheetData.getRange(1, 1, 1, 6);
   dataHeader.setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
   sheetData.setColumnWidth(1, 160);
   sheetData.setColumnWidth(2, 240);
   sheetData.setColumnWidth(3, 140);
   sheetData.setColumnWidth(4, 100);
   sheetData.setColumnWidth(5, 140);
-  sheetData.getRange("A:E").setNumberFormat("@");
+  sheetData.setColumnWidth(6, 260);
+  sheetData.getRange("A:F").setNumberFormat("@");
 
   // Dữ liệu mẫu ban đầu
-  sheetData.appendRow(["admin", "Ban Giám Hiệu (Admin)", "15/08/1980", "admin", "admin123"]);
-  sheetData.appendRow(["bgh_pht", "Phó Hiệu Trưởng (BGH)", "10/05/1982", "bgh", "1234"]);
-  sheetData.appendRow(["gv_toan", "Vũ Ngọc Tuấn", "20/10/1985", "gv", "1234"]);
-  sheetData.appendRow(["gv_van", "Nguyễn Thị Anh Thư", "12/03/1988", "gv", "1234"]);
-  sheetData.appendRow(["gv_anh", "Trần Phương Thúy", "05/09/1990", "gv", "1234"]);
-  sheetData.appendRow(["gv_khtn", "Đặng Ngọc Thanh Thủy", "28/11/1987", "gv", "1234"]);
-  sheetData.getRange(2, 1, 6, 5).setNumberFormat("@");
+  sheetData.appendRow(["admin", "Ban Giám Hiệu (Admin)", "15/08/1980", "admin", "admin123", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
+  sheetData.appendRow(["bgh_pht", "Phó Hiệu Trưởng (BGH)", "10/05/1982", "bgh", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
+  sheetData.appendRow(["gv_toan", "Vũ Ngọc Tuấn", "20/10/1985", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
+  sheetData.appendRow(["gv_van", "Nguyễn Thị Anh Thư", "12/03/1988", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
+  sheetData.appendRow(["gv_anh", "Trần Phương Thúy", "05/09/1990", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
+  sheetData.appendRow(["gv_khtn", "Đặng Ngọc Thanh Thủy", "28/11/1987", "gv", "1234", "ỦY BAN NHÂN DÂN PHƯỜNG"]);
+  sheetData.getRange(2, 1, 6, 6).setNumberFormat("@");
 
-  // 2. Khởi tạo và đồng bộ Sheet DULIEU theo đúng thứ tự
+  // 2. Khởi tạo và đồng bộ Sheet DULIEU (Phân hệ 1) theo đúng thứ tự
   syncDuLieuWithData(true);
 
-  // 3. Khởi tạo Sheet HOA NHAP
+  // 3. Khởi tạo Sheet HOA NHAP (Phân hệ 2: danh sách HS hòa nhập)
   let sheetHN = initHoaNhapSheet(ss);
   if (sheetHN.getLastRow() <= 1) {
     sheetHN.appendRow(["Nguyễn Văn An", "15/04/2012", "6A1", "Khuyết tật phát triển trí tuệ"]);
@@ -2446,10 +2447,17 @@ function initialSetup() {
     sheetHN.getRange(2, 2, 3, 1).setNumberFormat("@");
   }
 
-  // 4. Khởi tạo và đồng bộ Sheet dulieu_hoanhap theo đúng thứ tự
+  // 4. Khởi tạo và đồng bộ Sheet dulieu_hoanhap (Phân hệ 2: dữ liệu giáo viên) theo đúng thứ tự
   syncDuLieuHoaNhapWithData(true);
 
-  // 5. Khởi tạo các cấu hình hệ thống mặc định (Properties)
+  // 5. Khởi tạo và đồng bộ Sheet DATA GDTC (Phân hệ 3: dữ liệu thể dục GDTC) theo đúng thứ tự
+  try {
+    taoSheetGDTC();
+  } catch (gdtcErr) {
+    Logger.log("Lỗi khởi tạo Sheet DATA GDTC: " + gdtcErr);
+  }
+
+  // 6. Khởi tạo các cấu hình hệ thống mặc định (Properties)
   try {
     const props = PropertiesService.getScriptProperties();
     props.setProperties({
@@ -2461,7 +2469,7 @@ function initialSetup() {
     Logger.log("Lỗi cài đặt Properties: " + propErr);
   }
 
-  // 6. Dọn dẹp sheet mặc định "Sheet1" hoặc "Trang tính 1" nếu còn thừa
+  // 7. Dọn dẹp sheet mặc định "Sheet1" hoặc "Trang tính 1" nếu còn thừa
   const defaultSheets = ["Sheet1", "Trang tính 1"];
   defaultSheets.forEach(defName => {
     const s = ss.getSheetByName(defName);
@@ -2472,10 +2480,10 @@ function initialSetup() {
     }
   });
 
-  Logger.log("Khởi tạo và đồng bộ thành công đầy đủ 4 sheet: DATA, DULIEU, HOA NHAP, dulieu_hoanhap!");
+  Logger.log("🎉 KHỞI TẠO HỆ THỐNG THÀNH CÔNG ĐẦY ĐỦ CẢ 3 PHÂN HỆ: DATA, DULIEU, HOA NHAP, dulieu_hoanhap, DATA GDTC!");
   return {
     success: true,
-    message: "Khởi tạo thành công đầy đủ 4 Sheet: DATA, DULIEU, HOA NHAP, dulieu_hoanhap!"
+    message: "Khởi tạo thành công đầy đủ cả 3 Phân hệ: DATA, DULIEU, HOA NHAP, dulieu_hoanhap, DATA GDTC!"
   };
 }
 
