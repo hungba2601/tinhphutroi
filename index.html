@@ -1265,11 +1265,9 @@
             <div class="flex items-center gap-2 flex-wrap">
               <select id="hn-summary-status-filter" onchange="handleHoaNhapSummaryStatusFilterChange(this.value)"
                 class="text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
-                <option value="all">1. Tất cả các lớp</option>
-                <option value="k6">2. Khối 6</option>
-                <option value="k7">3. Khối 7</option>
-                <option value="k8">4. Khối 8</option>
-                <option value="k9">5. Khối 9</option>
+                <option value="declared" selected>1. Các lớp đã khai báo</option>
+                <option value="not_declared">2. Các lớp chưa khai báo</option>
+                <option value="all">3. Tất cả các lớp</option>
               </select>
 
               <button type="button" onclick="reloadHoaNhapData()"
@@ -19421,7 +19419,7 @@ function handleGetAllGdtcData() {
     }
 
     let hoaNhapSummarySearchQuery = "";
-    let hoaNhapSummaryStatusFilter = "all";
+    let hoaNhapSummaryStatusFilter = "declared";
 
     function handleHoaNhapSummarySearch(val) {
       hoaNhapSummarySearchQuery = (val || "").trim().toLowerCase();
@@ -19429,7 +19427,7 @@ function handleGetAllGdtcData() {
     }
 
     function handleHoaNhapSummaryStatusFilterChange(val) {
-      hoaNhapSummaryStatusFilter = val || "all";
+      hoaNhapSummaryStatusFilter = val || "declared";
       renderHoaNhapAdminSummaryTable();
     }
 
@@ -19820,10 +19818,8 @@ function handleGetAllGdtcData() {
               const tietTuan = parseFloat(r.tietTuan) || 0;
               if (tietTuan <= 0 && (!r.tongTiet || parseFloat(r.tongTiet) <= 0)) return;
 
-              // Bộ lọc theo Khối (Khối 6, 7, 8, 9 hoặc Tất cả các lớp)
-              if (hoaNhapSummaryStatusFilter && hoaNhapSummaryStatusFilter !== 'all') {
-                if (getClassGrade(r.lop) !== hoaNhapSummaryStatusFilter) return;
-              }
+              // Bộ lọc trạng thái: nếu chọn 'not_declared' thì bỏ qua dòng đã kê khai
+              if (hoaNhapSummaryStatusFilter === 'not_declared') return;
 
               const normLop = normalizeClassName(r.lop);
               const matchedStudents = (hoaNhapStudentsList || []).filter(s => normalizeClassName(s.lop) === normLop);
@@ -19857,10 +19853,8 @@ function handleGetAllGdtcData() {
             // Giáo viên chưa kê khai -> nếu có lớp có HS hòa nhập, hiển thị dòng lớp đó với số tiết = 0
             if (stats.hnClassesList && stats.hnClassesList.length > 0) {
               stats.hnClassesList.forEach(c => {
-                // Bộ lọc theo Khối
-                if (hoaNhapSummaryStatusFilter && hoaNhapSummaryStatusFilter !== 'all') {
-                  if (getClassGrade(c) !== hoaNhapSummaryStatusFilter) return;
-                }
+                // Bộ lọc trạng thái: nếu chọn 'declared' thì bỏ qua giáo viên chưa kê khai
+                if (hoaNhapSummaryStatusFilter === 'declared') return;
 
                 const matchedStudents = (hoaNhapStudentsList || []).filter(s => isSameClass(s.lop, c));
                 const classWeeksList = matchedStudents.map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
@@ -19898,17 +19892,31 @@ function handleGetAllGdtcData() {
         classMap.get(key).students.push(s);
       });
 
-      let sortedClasses = Array.from(classMap.values()).sort((a, b) => compareSchoolClasses(a.rawClass, b.rawClass));
+      // Bổ sung các lớp mà giáo viên đã kê khai trong Phân hệ 2 (nếu có lớp chưa nằm trong hoaNhapStudentsList)
+      list.forEach(t => {
+        const stats = getTeacherHoaNhapStats(t);
+        const store = stats.store;
+        const semRows = sem === 'all'
+          ? (store.hk1 || []).concat(store.hk2 || [])
+          : (store[sem] || []);
+        semRows.forEach(r => {
+          const rawClass = (r.lop || '').trim();
+          if (!rawClass) return;
+          const key = normalizeClassKey(rawClass);
+          if (!classMap.has(key)) {
+            const matchedStudents = (hoaNhapStudentsList || []).filter(s => normalizeClassName(s.lop) === normalizeClassName(rawClass));
+            classMap.set(key, { key, rawClass, students: matchedStudents });
+          }
+        });
+      });
 
-      // Áp dụng bộ lọc theo Khối cho danh sách các lớp
-      if (hoaNhapSummaryStatusFilter && hoaNhapSummaryStatusFilter !== 'all') {
-        sortedClasses = sortedClasses.filter(clsItem => getClassGrade(clsItem.rawClass) === hoaNhapSummaryStatusFilter);
-      }
+      let sortedClasses = Array.from(classMap.values()).sort((a, b) => compareSchoolClasses(a.rawClass, b.rawClass));
 
       const resultRows = [];
 
-      sortedClasses.forEach((clsItem, clsIdx) => {
-        const teacherRowsInClass = [];
+      sortedClasses.forEach((clsItem) => {
+        const declaredRows = [];
+        const undeclaredRows = [];
 
         list.forEach(t => {
           const stats = getTeacherHoaNhapStats(t);
@@ -19928,7 +19936,7 @@ function handleGetAllGdtcData() {
                 const soTuan = expectedWeeks;
                 const tongTiet = tietTuan * soTuan;
 
-                teacherRowsInClass.push({
+                declaredRows.push({
                   teacherTk: t.taiKhoan,
                   teacherName: t.tenGv,
                   monGv: r.monDay || t.monGv || t.subject || "Tin học",
@@ -19946,7 +19954,7 @@ function handleGetAllGdtcData() {
               const classWeeksList = (clsItem.students || []).map(s => calculateHoaNhapStudentWeeks(s.thoiGian, sem).weeks);
               const soTuan = classWeeksList.length > 0 ? Math.max(...classWeeksList) : defaultSoTuan;
 
-              teacherRowsInClass.push({
+              undeclaredRows.push({
                 teacherTk: t.taiKhoan,
                 teacherName: t.tenGv,
                 monGv: t.monGv || t.subject || "--",
@@ -19961,23 +19969,62 @@ function handleGetAllGdtcData() {
           }
         });
 
-        if (teacherRowsInClass.length > 0) {
-          teacherRowsInClass[0].isClassFirstRow = true;
-          teacherRowsInClass.forEach(r => resultRows.push(r));
+        const isClassDeclared = declaredRows.length > 0;
+
+        // BỘ LỌC 3 MỨC THEO YÊU CẦU:
+        // 1. 'declared': Các lớp đã khai báo
+        // 2. 'not_declared': Các lớp chưa khai báo
+        // 3. 'all': Tất cả các lớp
+        if (hoaNhapSummaryStatusFilter === 'declared' && !isClassDeclared) {
+          return; // Bỏ qua lớp chưa khai báo
+        }
+        if (hoaNhapSummaryStatusFilter === 'not_declared' && isClassDeclared) {
+          return; // Bỏ qua lớp đã khai báo
+        }
+
+        let classDisplayRows = [];
+        if (hoaNhapSummaryStatusFilter === 'declared') {
+          classDisplayRows = declaredRows;
+        } else if (hoaNhapSummaryStatusFilter === 'not_declared') {
+          if (undeclaredRows.length > 0) {
+            classDisplayRows = undeclaredRows;
+          } else {
+            classDisplayRows = [{
+              teacherTk: '',
+              teacherName: 'Chưa có GV kê khai',
+              monGv: '--',
+              lop: clsItem.rawClass,
+              students: clsItem.students,
+              tietTuan: 0,
+              soTuan: defaultSoTuan,
+              tongTiet: 0,
+              isDeclared: false
+            }];
+          }
         } else {
-          // Lớp này có HS hòa nhập nhưng CHƯA CÓ giáo viên nào kê khai trên Google Sheet
-          resultRows.push({
-            teacherTk: '',
-            teacherName: 'Chưa có GV kê khai',
-            monGv: '--',
-            lop: clsItem.rawClass,
-            students: clsItem.students,
-            tietTuan: 0,
-            soTuan: defaultSoTuan,
-            tongTiet: 0,
-            isDeclared: false,
-            isClassFirstRow: true
-          });
+          // 'all': Tất cả các lớp
+          if (declaredRows.length > 0) {
+            classDisplayRows = declaredRows.concat(undeclaredRows);
+          } else if (undeclaredRows.length > 0) {
+            classDisplayRows = undeclaredRows;
+          } else {
+            classDisplayRows = [{
+              teacherTk: '',
+              teacherName: 'Chưa có GV kê khai',
+              monGv: '--',
+              lop: clsItem.rawClass,
+              students: clsItem.students,
+              tietTuan: 0,
+              soTuan: defaultSoTuan,
+              tongTiet: 0,
+              isDeclared: false
+            }];
+          }
+        }
+
+        if (classDisplayRows.length > 0) {
+          classDisplayRows[0].isClassFirstRow = true;
+          classDisplayRows.forEach(r => resultRows.push(r));
         }
       });
 
@@ -20074,11 +20121,17 @@ function handleGetAllGdtcData() {
         });
       });
 
+      const filterLabel = hoaNhapSummaryStatusFilter === 'declared'
+        ? 'Đã khai báo'
+        : hoaNhapSummaryStatusFilter === 'not_declared'
+          ? 'Chưa khai báo'
+          : 'Toàn trường';
+
       const statTotalTeachers = document.getElementById('hn-sum-stat-total-teachers');
       if (statTotalTeachers) {
         statTotalTeachers.textContent = hoaNhapSummaryStatusFilter === 'all'
           ? totalTeachers
-          : `${activeGradeTeachers.size} GV (${hoaNhapSummaryStatusFilter.toUpperCase()})`;
+          : `${activeGradeTeachers.size} GV (${filterLabel})`;
       }
 
       const statHnTeachers = document.getElementById('hn-sum-stat-hn-teachers');
@@ -20814,11 +20867,13 @@ function handleGetAllGdtcData() {
         totalPeriodsAllSchool += r.tongTiet;
       });
 
-      const gradeTitleNote = (hoaNhapSummaryStatusFilter && hoaNhapSummaryStatusFilter !== 'all')
-        ? ` - KHỐI ${hoaNhapSummaryStatusFilter.replace('k', '')}`
-        : '';
+      const filterTitleNote = hoaNhapSummaryStatusFilter === 'declared'
+        ? ' - CÁC LỚP ĐÃ KHAI BÁO'
+        : hoaNhapSummaryStatusFilter === 'not_declared'
+          ? ' - CÁC LỚP CHƯA KHAI BÁO'
+          : '';
 
-      if (titleEl) titleEl.textContent = `Báo Cáo Tổng Hợp Số Tiết Dạy Hòa Nhập Toàn Trường - ${semLabel}${gradeTitleNote}`;
+      if (titleEl) titleEl.textContent = `Báo Cáo Tổng Hợp Số Tiết Dạy Hòa Nhập Toàn Trường - ${semLabel}${filterTitleNote}`;
 
       const pages = paginateHoaNhapSummaryPdf(summaryRows);
       const totalPages = pages.length;
@@ -21384,10 +21439,12 @@ function handleGetAllGdtcData() {
       const todayMonth = String(now.getMonth() + 1).padStart(2, '0');
       const todayYear = now.getFullYear();
 
-      const gradeTitleNote = (hoaNhapSummaryStatusFilter && hoaNhapSummaryStatusFilter !== 'all')
-        ? ` - KHỐI ${hoaNhapSummaryStatusFilter.replace('k', '')}`
-        : '';
-      const excelTitle = `BÁO CÁO TỔNG HỢP SỐ TIẾT DẠY HÒA NHẬP TOÀN TRƯỜNG - ${semUpper}${gradeTitleNote}`;
+      const filterTitleNote = hoaNhapSummaryStatusFilter === 'declared'
+        ? ' - CÁC LỚP ĐÃ KHAI BÁO'
+        : hoaNhapSummaryStatusFilter === 'not_declared'
+          ? ' - CÁC LỚP CHƯA KHAI BÁO'
+          : '';
+      const excelTitle = `BÁO CÁO TỔNG HỢP SỐ TIẾT DẠY HÒA NHẬP TOÀN TRƯỜNG - ${semUpper}${filterTitleNote}`;
       const excelHeaders = [
         "STT", "Họ và tên giáo viên", "Môn dạy", "Lớp dạy", "Họ và tên học sinh", "Ngày sinh", "Dạng khuyết tật", "Mức độ", "Số tiết thực dạy/tuần", "Số tuần thực dạy", "Tổng số tiết dạy"
       ];
@@ -21537,10 +21594,14 @@ function handleGetAllGdtcData() {
       XLSX.utils.book_append_sheet(wb, ws, "BaoCaoHoaNhap");
 
       const fileDate = `${todayYear}${todayMonth}${todayDay}`;
-      const gradeFileNote = (hoaNhapSummaryStatusFilter && hoaNhapSummaryStatusFilter !== 'all')
-        ? `_${hoaNhapSummaryStatusFilter.toUpperCase()}`
-        : '';
-      const fileName = `Bao_Cao_Tong_Hop_Tiet_Day_Hoa_Nhap_THCS_An_Nhon_${semLabel.replace(/\s+/g, '_')}${gradeFileNote}_${fileDate}.xlsx`;
+      const filterFileNote = hoaNhapSummaryStatusFilter === 'declared'
+        ? '_CAC_LOP_DA_KHAI_BAO'
+        : hoaNhapSummaryStatusFilter === 'not_declared'
+          ? '_CAC_LOP_CHUA_KHAI_BAO'
+          : '';
+      const rawSchoolName = typeof getCurrentSchoolName === 'function' ? getCurrentSchoolName() : 'THCS_An_Nhon';
+      const safeSchoolName = rawSchoolName.replace(/[^a-zA-Z0-9\u00C0-\u1EF9]/g, '_').replace(/_+/g, '_');
+      const fileName = `Bao_Cao_Tong_Hop_Tiet_Day_Hoa_Nhap_${safeSchoolName}_${semLabel.replace(/\s+/g, '_')}${filterFileNote}_${fileDate}.xlsx`;
       XLSX.writeFile(wb, fileName);
       showToast("Đã xuất file Excel báo cáo tổng hợp hòa nhập thành công!", "success");
     }
