@@ -405,7 +405,7 @@
        2. MODAL ĐỔI MẬT KHẨU
        ======================================================== -->
   <div id="change-password-modal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden">
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden">
     <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border border-emerald-100 relative animate-fade-in">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <div class="flex items-center gap-2.5">
@@ -461,6 +461,61 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       2B. MODAL CẢNH BÁO ĐỔI MẬT KHẨU MẶC ĐỊNH (BẢO MẬT)
+       ======================================================== -->
+  <div id="default-password-warning-modal"
+    class="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden transition-opacity duration-200"
+    onclick="if(event.target === this) closeDefaultPasswordWarningModal()">
+    <div
+      class="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-amber-200 p-6 sm:p-7 relative overflow-hidden animate-fade-in flex flex-col items-center text-center">
+
+      <!-- Nút X đóng góc trên (tương đương Để sau) -->
+      <button type="button" onclick="closeDefaultPasswordWarningModal()"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-xs transition"
+        title="Để sau">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Icon bao ngoài cảnh báo bảo mật -->
+      <div
+        class="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl mb-4 shadow-sm bg-amber-100 text-amber-600">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+
+      <!-- Tiêu đề -->
+      <h3 class="font-black text-lg sm:text-xl text-slate-800 mb-2 leading-snug">
+        Cảnh Báo Bảo Mật Tài Khoản
+      </h3>
+
+      <!-- Nội dung chính -->
+      <div class="text-xs sm:text-sm text-slate-600 mb-5 leading-relaxed space-y-2.5 w-full text-center">
+        <p>
+          Thầy/Cô đang đăng nhập bằng <strong>mật khẩu mặc định (<span class="font-mono font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">1234</span>)</strong>.
+        </p>
+        <div class="text-amber-800 bg-amber-50 p-3 rounded-2xl border border-amber-200/90 font-medium text-xs text-left flex items-start gap-2.5 shadow-2xs">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600 text-base mt-0.5 shrink-0"></i>
+          <span>Để bảo mật thông tin phân công, hồ sơ tiết dạy và dữ liệu cá nhân, vui lòng đổi sang mật khẩu mới ngay!</span>
+        </div>
+      </div>
+
+      <!-- 2 Nút hành động: Để sau và Đổi ngay -->
+      <div class="w-full grid grid-cols-2 gap-3 pt-1">
+        <button type="button" onclick="closeDefaultPasswordWarningModal()"
+          class="py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+          <i class="fa-regular fa-clock"></i>
+          <span>Để sau</span>
+        </button>
+        <button type="button" onclick="handleDefaultPasswordChangeNow()"
+          class="py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-amber-500/30 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-key"></i>
+          <span>Đổi ngay</span>
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -4523,7 +4578,8 @@ function handleLogin(taiKhoan, matKhau) {
           taiKhoan: normalizeUsername(rowTk),
           tenGv: rowTenGv,
           ngaySinh: rowNgaySinh,
-          quyen: rowQuyen || "gv"
+          quyen: rowQuyen || "gv",
+          isDefaultPassword: (rowMk === '1234')
         };
       } else {
         return jsonResponse({ success: false, message: "Mật khẩu không chính xác!" });
@@ -9188,7 +9244,7 @@ function handleGetAllGdtcData() {
           } else if (passwordInput === '1234' || passwordInput === 'thcsrd' || passwordInput === '123456') {
             loginResult = {
               success: true,
-              user: { taiKhoan: normalizeUsername(usernameInput), tenGv: "Thầy/Cô " + usernameInput, ngaySinh: "", quyen: "gv" },
+              user: { taiKhoan: normalizeUsername(usernameInput), tenGv: "Thầy/Cô " + usernameInput, ngaySinh: "", quyen: "gv", isDefaultPassword: (passwordInput === '1234') },
               data: null
             };
           } else {
@@ -9346,12 +9402,22 @@ function handleGetAllGdtcData() {
           applyColumnConfigUI();
         }
 
+        const isUsingDefaultPassword = (passwordInput === '1234') || (user && user.isDefaultPassword === true);
+
         localStorage.setItem(LOCAL_USER_STORAGE_KEY, JSON.stringify(currentUser));
         document.getElementById('login-modal').classList.add('hidden');
 
         // HIỂN THỊ MÀN HÌNH CHỌN 1 TRONG 2 PHÂN HỆ CHO CẢ GV VÀ ADMIN
         showModuleSelectionScreen();
         showToast(`Xin chào ${currentUser.isLoggedInAsAdmin ? 'Quản trị viên' : 'Thầy/Cô'} ${currentUser.tenGv}! Vui lòng chọn phân hệ làm việc.`, "success");
+
+        // ⭐️ NẾU LÀ GIÁO VIÊN VÀ ĐANG DÙNG MẬT KHẨU MẶC ĐỊNH (1234): CẢNH BÁO BẢO MẬT ĐỔI MẬT KHẨU
+        const isTeacher = !currentUser.isLoggedInAsAdmin && !isRoleAdmin(currentUser.quyen);
+        if (isTeacher && isUsingDefaultPassword) {
+          setTimeout(() => {
+            showDefaultPasswordWarningModal();
+          }, 450);
+        }
 
         // ⭐️ NẾU LÀ QUẢN TRỊ VIÊN: KIỂM TRA PHIÊN BẢN BACKEND VÀ GHI VÀO CỘT G SHEET DATA TRUNG TÂM
         if (currentUser.isLoggedInAsAdmin || isRoleAdmin(currentUser.quyen)) {
@@ -16095,13 +16161,49 @@ function handleGetAllGdtcData() {
     }
 
     /* =======================================================
-       K. ĐỔI MẬT KHẨU
+       K. ĐỔI MẬT KHẨU & CẢNH BÁO MẬT KHẨU MẶC ĐỊNH
        ======================================================= */
-    function openChangePasswordModal() {
-      document.getElementById('curr-pwd-input').value = "";
-      document.getElementById('new-pwd-input').value = "";
-      document.getElementById('confirm-new-pwd-input').value = "";
-      document.getElementById('change-password-modal').classList.remove('hidden');
+    function showDefaultPasswordWarningModal() {
+      const modal = document.getElementById('default-password-warning-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeDefaultPasswordWarningModal() {
+      const modal = document.getElementById('default-password-warning-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function handleDefaultPasswordChangeNow() {
+      closeDefaultPasswordWarningModal();
+      openChangePasswordModal('1234');
+    }
+
+    function openChangePasswordModal(prefilledOldPassword = "") {
+      const currInput = document.getElementById('curr-pwd-input');
+      const newInput = document.getElementById('new-pwd-input');
+      const confirmInput = document.getElementById('confirm-new-pwd-input');
+
+      if (currInput) currInput.value = prefilledOldPassword || "";
+      if (newInput) newInput.value = "";
+      if (confirmInput) confirmInput.value = "";
+
+      if (currentUser) {
+        const userLabel = document.getElementById('change-pwd-user-label');
+        if (userLabel) {
+          userLabel.textContent = `${currentUser.tenGv || currentUser.taiKhoan} (${currentUser.taiKhoan})`;
+        }
+      }
+
+      const modal = document.getElementById('change-password-modal');
+      if (modal) modal.classList.remove('hidden');
+
+      setTimeout(() => {
+        if (prefilledOldPassword) {
+          if (newInput) newInput.focus();
+        } else {
+          if (currInput) currInput.focus();
+        }
+      }, 150);
     }
 
     function closeChangePasswordModal() {
@@ -16119,6 +16221,11 @@ function handleGetAllGdtcData() {
         return;
       }
 
+      if (newPwd === '1234') {
+        showToast("Vui lòng đặt mật khẩu mới khác mật khẩu mặc định (1234)!", "error");
+        return;
+      }
+
       if (newPwd !== confirmPwd) {
         showToast("Xác nhận mật khẩu mới không trùng khớp!", "error");
         return;
@@ -16130,7 +16237,8 @@ function handleGetAllGdtcData() {
       spinner.classList.remove('hidden');
 
       try {
-        const isNotConfigured = !GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE");
+        const activeBackendUrl = getActiveBackendUrl();
+        const isNotConfigured = !activeBackendUrl || activeBackendUrl.includes("REPLACE_WITH_YOUR_WEB_APP_URL_HERE");
         if (isNotConfigured) {
           showToast("Đã đổi mật khẩu tạm thời. Cần gắn URL Web App vào code để cập nhật vào Sheet DATA!", "warn");
           closeChangePasswordModal();
@@ -16142,13 +16250,13 @@ function handleGetAllGdtcData() {
           taiKhoan: currentUser.taiKhoan,
           oldPassword: currentPwd,
           newPassword: newPwd
-        });
+        }, activeBackendUrl);
 
         if (!result || !result.success) {
           throw new Error(result ? result.message : "Đổi mật khẩu thất bại");
         }
 
-        showToast("Đổi mật khẩu thành công và đã ghi vào sheet DATA!", "success");
+        showToast("Đổi mật khẩu thành công! Mật khẩu mới đã được lưu vào sheet DATA.", "success");
         closeChangePasswordModal();
 
       } catch (err) {

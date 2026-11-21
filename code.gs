@@ -1408,7 +1408,8 @@ function handleLogin(taiKhoan, matKhau, clientVersion) {
           taiKhoan: normalizeUsername(rowTk),
           tenGv: rowTenGv,
           ngaySinh: rowNgaySinh,
-          quyen: rowQuyen || "gv"
+          quyen: rowQuyen || "gv",
+          isDefaultPassword: (rowMk === '1234')
         };
       } else {
         return jsonResponse({ success: false, message: "Mật khẩu không chính xác!" });
@@ -1846,8 +1847,8 @@ function handleChangePassword(taiKhoan, oldPassword, newPassword) {
         return jsonResponse({ success: false, message: "Mật khẩu hiện tại không đúng!" });
       }
 
-      // Ghi mật khẩu mới vào Cột Mật khẩu
-      sheetData.getRange(i + 1, cols.colMatKhau + 1).setValue(newMkClean);
+      // Ghi mật khẩu mới vào Cột Mật khẩu (định dạng plain text để bảo toàn ký tự)
+      sheetData.getRange(i + 1, cols.colMatKhau + 1).setNumberFormat("@").setValue(String(newMkClean));
 
       return jsonResponse({
         success: true,
