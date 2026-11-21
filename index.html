@@ -1303,7 +1303,7 @@
               <button type="button" onclick="switchHoaNhapSummaryViewMode('by_class')" id="btn-hn-sum-mode-class"
                 class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-xs">
                 <i class="fa-solid fa-layer-group"></i>
-                <span>Sắp Xếp Theo Lớp (6A1 → 9A14)</span>
+                <span id="btn-hn-sum-mode-class-text">Sắp Xếp Theo Lớp</span>
               </button>
               <button type="button" onclick="switchHoaNhapSummaryViewMode('by_teacher')" id="btn-hn-sum-mode-teacher"
                 class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-indigo-900">
@@ -10336,6 +10336,9 @@ function handleGetAllGdtcData() {
             t.taiKhoan = normalizeUsername(t.taiKhoan);
             return t;
           });
+          if (typeof updateHoaNhapSummaryClassButtonLabel === 'function') {
+            updateHoaNhapSummaryClassButtonLabel();
+          }
 
           // Tài khoản BGH sẽ không nhìn thấy các tài khoản Admin
           if (isRoleBgh(currentUser.quyen)) {
@@ -19733,8 +19736,92 @@ function handleGetAllGdtcData() {
       });
     }
 
-    // Chế độ sắp xếp Tab 2: 'by_class' (Mặc định: theo lớp 6A1 -> 9A14) hoặc 'by_teacher'
+    // Chế độ sắp xếp Tab 2: 'by_class' (Mặc định: theo danh sách lớp của trường) hoặc 'by_teacher'
     let hoaNhapSummaryViewMode = 'by_class';
+
+    // Lấy nhãn dải lớp thực tế của đơn vị/trường đang đăng nhập (VD: 6/1 → 9/4 hoặc 6A1 → 9A14)
+    function getCurrentSchoolClassRangeLabel() {
+      const classesSet = new Set();
+      const currentAdminTk = (currentUser && currentUser.taiKhoan) ? currentUser.taiKhoan.toLowerCase() : "admin";
+
+      // 1. Lấy từ tài khoản admin của trường trong adminTeachersList (được nạp từ cột Lớp Dạy của Sheet DATA)
+      if (Array.isArray(adminTeachersList)) {
+        const adminUser = adminTeachersList.find(t => {
+          const tk = (t.taiKhoan || "").toLowerCase();
+          return tk === currentAdminTk || tk === "admin" || (t.quyen || "").toLowerCase() === "admin";
+        });
+        if (adminUser && adminUser.lopDay) {
+          parseTeacherLopDay(adminUser.lopDay).forEach(c => { if (c) classesSet.add(c); });
+        }
+      }
+
+      // 2. Lấy từ currentUser.lopDay nếu có
+      if (classesSet.size === 0 && currentUser && currentUser.lopDay) {
+        parseTeacherLopDay(currentUser.lopDay).forEach(c => { if (c) classesSet.add(c); });
+      }
+
+      // 3. Lấy từ HUB_SERVER hoặc localStorage cho trường hiện tại
+      if (classesSet.size === 0) {
+        const currentSchoolUrl = typeof getActiveBackendUrl === 'function' ? getActiveBackendUrl() : '';
+        let school = (typeof hubSchoolsList !== 'undefined' && Array.isArray(hubSchoolsList))
+          ? hubSchoolsList.find(s => s.url === currentSchoolUrl || isUsernameEqual(s.taiKhoan, currentAdminTk))
+          : null;
+
+        let rawKhoiLop = school ? school.khoiLop : null;
+        if (!rawKhoiLop) {
+          rawKhoiLop = localStorage.getItem('school_classes_' + currentAdminTk) || localStorage.getItem('school_classes_active');
+        }
+
+        if (rawKhoiLop) {
+          ['6', '7', '8', '9'].forEach(g => {
+            const gClasses = parseClassesForGrade(rawKhoiLop, g);
+            (gClasses || []).forEach(c => { if (c) classesSet.add(c); });
+          });
+        }
+      }
+
+      // 4. Lấy từ getSchoolGradeClasses
+      if (classesSet.size === 0 && typeof getSchoolGradeClasses === 'function') {
+        ['6', '7', '8', '9'].forEach(g => {
+          const gClasses = getSchoolGradeClasses(g);
+          (gClasses || []).forEach(c => { if (c) classesSet.add(c); });
+        });
+      }
+
+      // 5. Gom từ tất cả giáo viên trong adminTeachersList nếu có
+      if (classesSet.size === 0 && Array.isArray(adminTeachersList) && adminTeachersList.length > 0) {
+        adminTeachersList.forEach(t => {
+          const tCls = parseTeacherLopDay(t.lopDay || '');
+          tCls.forEach(c => { if (c) classesSet.add(c); });
+        });
+      }
+
+      // 6. Gom từ học sinh hòa nhập nếu có
+      if (classesSet.size === 0 && Array.isArray(hoaNhapStudentsList) && hoaNhapStudentsList.length > 0) {
+        hoaNhapStudentsList.forEach(s => {
+          const c = (s.lop || '').trim();
+          if (c) classesSet.add(c);
+        });
+      }
+
+      const sorted = Array.from(classesSet).sort(compareSchoolClasses);
+      if (sorted.length > 1) {
+        return `${sorted[0]} → ${sorted[sorted.length - 1]}`;
+      } else if (sorted.length === 1) {
+        return sorted[0];
+      }
+      return "";
+    }
+
+    // Cập nhật nhãn nút "Sắp Xếp Theo Lớp" theo đúng tên lớp của đơn vị đang đăng nhập
+    function updateHoaNhapSummaryClassButtonLabel() {
+      const btnText = document.getElementById('btn-hn-sum-mode-class-text');
+      const range = getCurrentSchoolClassRangeLabel();
+      const label = range ? `Sắp Xếp Theo Lớp (${range})` : `Sắp Xếp Theo Lớp`;
+      if (btnText) {
+        btnText.textContent = label;
+      }
+    }
 
     function switchHoaNhapSummaryViewMode(mode) {
       hoaNhapSummaryViewMode = mode;
@@ -19752,6 +19839,7 @@ function handleGetAllGdtcData() {
           : "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-indigo-900";
       }
 
+      updateHoaNhapSummaryClassButtonLabel();
       renderHoaNhapAdminSummaryTable();
     }
 
@@ -20055,6 +20143,7 @@ function handleGetAllGdtcData() {
 
     // Render Tab 2: Tổng Hợp Toàn Trường (Dạy Hòa Nhập) - 11 cột chuẩn như cũ
     function renderHoaNhapAdminSummaryTable() {
+      updateHoaNhapSummaryClassButtonLabel();
       const tbody = document.getElementById('hn-admin-summary-tbody');
       const thead = document.getElementById('hn-admin-summary-thead');
       const tfoot = document.getElementById('hn-admin-summary-tfoot');

@@ -2069,7 +2069,7 @@ function handleGetAdminSummary(adminTaiKhoan) {
       matKhau: matKhau,
       hasData: !!dData,
       dataJson: dData ? dData.dataJson : null,
-      lopDay: dData ? (dData.lopDay || "") : "",
+      lopDay: (cols.colLopDay !== -1 && (rowDisp[cols.colLopDay] || rowRaw[cols.colLopDay])) ? String(rowDisp[cols.colLopDay] || rowRaw[cols.colLopDay] || "").trim() : (dData ? (dData.lopDay || "") : ""),
       dataHoaNhapJson: finalDataHn || null,
       dataGdtcJson: finalDataGdtc || null
     });
