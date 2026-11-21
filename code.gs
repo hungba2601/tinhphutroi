@@ -787,8 +787,14 @@ function syncDuLieuHoaNhapWithData(forceRebuild) {
       const rawTk = String(duLieuValues[j][0] || "").trim();
       const dispTk = String(duLieuDisplay[j][0] || "").trim();
       const normTk = normalizeUsername(dispTk || rawTk);
-      // Tự động nhận diện nếu sheet trước đó có 2 cột (JSON ở col 2) hoặc đã có 3 cột (JSON ở col 3)
-      const jsonContent = duLieuLastCol >= 3 ? (duLieuValues[j][2] !== undefined && duLieuValues[j][2] !== "" ? duLieuValues[j][2] : duLieuValues[j][1]) : duLieuValues[j][1];
+      // Chỉ đọc đúng cột 3 (JSON) của Sheet dulieu_hoanhap, không lấy cột 2 (Tên GV)
+      let jsonContent = "";
+      if (duLieuLastCol >= 3 && duLieuValues[j][2] !== undefined && duLieuValues[j][2] !== null) {
+        const cVal = String(duLieuValues[j][2]).trim();
+        if (cVal.startsWith("{") || cVal.startsWith("[")) {
+          jsonContent = cVal;
+        }
+      }
       if (jsonContent) {
         if (normTk) existingJsonMap[normTk.toLowerCase()] = jsonContent;
         if (rawTk) existingJsonMap[rawTk.toLowerCase()] = jsonContent;
@@ -1182,11 +1188,19 @@ function handleGetAllHoaNhapData() {
         const cleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
         // Bỏ qua tài khoản admin / BGH, không đưa vào danh sách giáo viên dạy hòa nhập
         if (cleanRaw === 'admin' || cleanNorm === 'admin' || cleanRaw === 'blt' || cleanNorm === 'blt' || cleanRaw === 'bgh' || cleanNorm === 'bgh') continue;
-        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
-        if (cleanRaw) map[cleanRaw] = hJsonStr;
-        if (cleanNorm) map[cleanNorm] = hJsonStr;
-        const stripped = cleanNorm.replace(/^0+/, "");
-        if (stripped) map[stripped] = hJsonStr;
+        let hJsonStr = "";
+        if (hnumCols >= 3 && hnVals[h][2] !== undefined && hnVals[h][2] !== null) {
+          const rawVal = String(hnVals[h][2]).trim();
+          if (rawVal.startsWith("{") || rawVal.startsWith("[")) {
+            hJsonStr = rawVal;
+          }
+        }
+        if (hJsonStr) {
+          if (cleanRaw) map[cleanRaw] = hJsonStr;
+          if (cleanNorm) map[cleanNorm] = hJsonStr;
+          const stripped = cleanNorm.replace(/^0+/, "");
+          if (stripped) map[stripped] = hJsonStr;
+        }
       }
     }
     return jsonResponse({ success: true, data: map, isSystemLocked: isSystemLocked() });
@@ -2066,13 +2080,21 @@ function handleGetAdminSummary(adminTaiKhoan) {
         const hRawTk = String(hnVals[h][0] || "").trim();
         const hDispTk = String(hnDisp[h][0] || "").trim();
         const hNormTk = normalizeUsername(hDispTk || hRawTk);
-        const hJsonStr = hnVals[h][2] || hnVals[h][1] || "";
+        let hJsonStr = "";
+        if (hnumCols >= 3 && hnVals[h][2] !== undefined && hnVals[h][2] !== null) {
+          const rawVal = String(hnVals[h][2]).trim();
+          if (rawVal.startsWith("{") || rawVal.startsWith("[")) {
+            hJsonStr = rawVal;
+          }
+        }
         const hCleanRaw = hRawTk.replace(/^'+/, "").toLowerCase();
         const hCleanNorm = hNormTk.replace(/^'+/, "").toLowerCase();
-        if (hCleanRaw) hoaNhapMap[hCleanRaw] = hJsonStr;
-        if (hCleanNorm) hoaNhapMap[hCleanNorm] = hJsonStr;
-        const hStripped = hCleanNorm.replace(/^0+/, "");
-        if (hStripped) hoaNhapMap[hStripped] = hJsonStr;
+        if (hJsonStr) {
+          if (hCleanRaw) hoaNhapMap[hCleanRaw] = hJsonStr;
+          if (hCleanNorm) hoaNhapMap[hCleanNorm] = hJsonStr;
+          const hStripped = hCleanNorm.replace(/^0+/, "");
+          if (hStripped) hoaNhapMap[hStripped] = hJsonStr;
+        }
       }
     }
   } catch (hnMapErr) {
